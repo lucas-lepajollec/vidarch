@@ -5,8 +5,12 @@ import compression from 'compression';
 import rateLimit from 'express-rate-limit';
 import path from 'path';
 import fs from 'fs';
+import { fileURLToPath } from 'url';
 import { PORT, DOWNLOADS_DIR, DATA_DIR, ROOT_DIR, IS_PROD, DB_PATH } from './config.js';
 import { initDatabase } from './db/database.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Import route handlers
 import searchRoutes from './routes/search.js';
