@@ -1,0 +1,53 @@
+{
+  "name": "vidarch",
+  "version": "1.0.0",
+  "description": "Self-hosted Video Archiver, Subscriptions Manager & Player",
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently -n \"SERVER,CLIENT\" -c \"cyan,magenta\" \"tsx watch server/src/index.ts\" \"npm --prefix client run dev\"",
+    "dev:server": "tsx watch server/src/index.ts",
+    "dev:client": "npm --prefix client run dev",
+    "build:client": "npm --prefix client run build",
+    "build:server": "tsc -p server/tsconfig.json",
+    "build": "npm run build:client && npm run build:server",
+    "start": "node dist/server/index.js"
+  },
+  "keywords": [
+    "youtube",
+    "archiver",
+    "ytdlp",
+    "media-server",
+    "video-player"
+  ],
+  "author": "Lucas",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lucas-lepajollec/vidarch.git"
+  },
+  "dependencies": {
+    "@types/multer": "^2.2.0",
+    "better-sqlite3": "^13.0.3",
+    "compression": "^1.8.1",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.6.2",
+    "helmet": "^8.3.0",
+    "multer": "^2.2.0",
+    "node-cron": "^4.6.0",
+    "uuid": "^14.0.1"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^9.6.0",
+    "@types/compression": "^1.8.1",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/node": "^26.2.0",
+    "@types/node-cron": "^3.0.11",
+    "@types/uuid": "^10.0.0",
+    "concurrently": "^10.0.5",
+    "tsx": "^4.23.12",
+    "typescript": "^7.0.2"
+  }
+}

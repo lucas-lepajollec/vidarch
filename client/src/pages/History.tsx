@@ -1,0 +1,381 @@
+import React, { useState, useEffect } from 'react';
+import { 
+  History as HistoryIcon, 
+  Trash2, 
+  Search as SearchIcon, 
+  X, 
+  Play, 
+  HardDrive,
+  Clock,
+  ExternalLink,
+  ChevronRight,
+  ListFilter
+} from 'lucide-react';
+import type { Video } from '../types';
+import { useMyTube } from '../context/MyTubeContext';
+
+interface SearchHistoryItem {
+  id: string;
+  query: string;
+  result_count?: number;
+  searched_at: string;
+}
+
+export const HistoryPage: React.FC = () => {
+  const { goTo, dataVersion } = useMyTube();
+  const [activeTab, setActiveTab] = useState<'videos' | 'searches'>('videos');
+  const [videos, setVideos] = useState<Video[]>([]);
+  const [searches, setSearches] = useState<SearchHistoryItem[]>([]);
+  const [searchFilter, setSearchFilter] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+
+  const loadData = async () => {
+    setIsLoading(true);
+    try {
+      const [vRes, sRes] = await Promise.all([
+        fetch('/api/history/videos'),
+        fetch('/api/history/searches'),
+      ]);
+
+      if (vRes.ok) {
+        const vData = await vRes.json();
+        setVideos(vData);
+      }
+      if (sRes.ok) {
+        const sData = await sRes.json();
+        setSearches(sData);
+      }
+    } catch (err) {
+      console.error('Error fetching history:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+  }, [dataVersion]);
+
+  const handleClearVideosHistory = async () => {
+    if (!confirm("Effacer tout l'historique des vidéos regardées ?")) return;
+    try {
+      await fetch('/api/history/videos', { method: 'DELETE' });
+      setVideos([]);
+    } catch (err) {
+      console.error('Clear videos history error:', err);
+    }
+  };
+
+  const handleClearSearchHistory = async () => {
+    if (!confirm("Effacer tout l'historique de recherche ?")) return;
+    try {
+      await fetch('/api/history/searches', { method: 'DELETE' });
+      setSearches([]);
+    } catch (err) {
+      console.error('Clear searches history error:', err);
+    }
+  };
+
+  const handleRemoveVideo = async (videoId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await fetch(`/api/history/videos/${videoId}`, { method: 'DELETE' });
+      setVideos(prev => prev.filter(v => v.id !== videoId));
+    } catch (err) {
+      console.error('Remove video from history error:', err);
+    }
+  };
+
+  const handleRemoveSearch = async (searchId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await fetch(`/api/history/searches/${encodeURIComponent(searchId)}`, { method: 'DELETE' });
+      setSearches(prev => prev.filter(s => s.id !== searchId));
+    } catch (err) {
+      console.error('Remove search query error:', err);
+    }
+  };
+
+  const filteredVideos = videos.filter(v => 
+    !searchFilter.trim() || 
+    v.title.toLowerCase().includes(searchFilter.toLowerCase()) || 
+    v.channel_title?.toLowerCase().includes(searchFilter.toLowerCase())
+  );
+
+  const filteredSearches = searches.filter(s =>
+    !searchFilter.trim() ||
+    s.query.toLowerCase().includes(searchFilter.toLowerCase())
+  );
+
+  const formatDate = (dateStr?: string) => {
+    if (!dateStr) return '';
+    try {
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return dateStr;
+      return d.toLocaleDateString('fr-FR', { 
+        day: 'numeric', 
+        month: 'short', 
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch {
+      return dateStr;
+    }
+  };
+
+  return (
+    <div className="flex-1 w-full px-3 sm:px-6 pt-3 pb-8 flex flex-col lg:flex-row gap-8 text-[#f1f1f1]">
+      {/* ========================================================================= */}
+      {/* Video List or Search List (Left on desktop, below controls on mobile)     */}
+      {/* ========================================================================= */}
+      <div className="order-2 lg:order-1 flex-1 space-y-4 min-w-0">
+        <h1 className="text-xl font-bold text-white tracking-tight">
+          {activeTab === 'videos' ? 'Historique des vidéos regardées' : 'Historique des recherches'}
+        </h1>
+
+        {/* 1. VIDEOS LIST */}
+        {activeTab === 'videos' && (
+          <div>
+            {filteredVideos.length > 0 ? (
+              <div className="space-y-4">
+                {filteredVideos.map((video) => {
+                  const isDownloaded = video.is_downloaded === 1;
+                  const thumbSrc = (isDownloaded && video.local_thumbnail_path)
+                    ? `/media/downloads/${encodeURIComponent(video.local_thumbnail_path).replace(/%2F/g, '/')}`
+                    : video.thumbnail_url || `https://i.ytimg.com/vi/${video.id}/hqdefault.jpg`;
+
+                  const progressPercent = video.duration && video.watch_progress
+                    ? Math.min(100, Math.round((video.watch_progress / video.duration) * 100))
+                    : 0;
+
+                  return (
+                    <div
+                      key={video.id}
+                      onClick={() => goTo('watch', { videoId: video.id })}
+                      className="flex flex-col sm:flex-row gap-4 p-2 rounded-2xl hover:bg-[#181818] transition group cursor-pointer"
+                    >
+                      {/* 16:9 Thumbnail */}
+                      <div className="relative w-full sm:w-60 md:w-64 aspect-video rounded-xl overflow-hidden bg-[#222] flex-shrink-0 shadow-sm">
+                        <img
+                          src={thumbSrc}
+                          alt={video.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                        />
+                        {video.duration_string && (
+                          <span className="absolute bottom-1.5 right-1.5 bg-black/85 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">
+                            {video.duration_string}
+                          </span>
+                        )}
+                        {isDownloaded && (
+                          <span className="absolute top-1.5 left-1.5 bg-emerald-600/90 text-white text-[9px] font-bold px-1.5 py-0.5 rounded flex items-center gap-1 shadow">
+                            <HardDrive className="w-2.5 h-2.5" />
+                            <span>Stocké</span>
+                          </span>
+                        )}
+                        {progressPercent > 0 && (
+                          <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/20">
+                            <div className="h-full bg-[#ff0033]" style={{ width: `${progressPercent}%` }} />
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Info */}
+                      <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
+                        <div>
+                          <div className="flex items-start justify-between gap-2">
+                            <h3 className="text-sm font-semibold text-white group-hover:text-[#3ea6ff] line-clamp-2 leading-snug">
+                              {video.title}
+                            </h3>
+                            <button
+                              onClick={(e) => handleRemoveVideo(video.id, e)}
+                              className="p-1.5 text-[#aaa] hover:text-white rounded-full hover:bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer flex-shrink-0"
+                              title="Supprimer de l'historique"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+
+                          <div 
+                            className="flex items-center gap-2 mt-1.5 group/ch cursor-pointer"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (video.channel_id) goTo('channel', { channelId: video.channel_id });
+                            }}
+                          >
+                            <span className="text-xs text-[#aaa] group-hover/ch:text-white font-medium">
+                              {video.channel_title}
+                            </span>
+                          </div>
+
+                          {video.description && (
+                            <p className="text-xs text-[#717171] mt-2 line-clamp-2 leading-relaxed">
+                              {video.description}
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Timestamp */}
+                        <div className="flex items-center gap-2 text-[11px] text-[#717171] mt-2">
+                          {(video as any).last_watched_at ? (
+                            <span>Vu le {formatDate((video as any).last_watched_at)}</span>
+                          ) : (
+                            <span>Vu récemment</span>
+                          )}
+                          {progressPercent > 0 && (
+                            <span>• {progressPercent}% regardé</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : !isLoading && (
+              <div className="py-20 text-center max-w-md mx-auto space-y-3">
+                <div className="w-16 h-16 rounded-full bg-[#272727] flex items-center justify-center text-[#aaa] mx-auto">
+                  <HistoryIcon className="w-8 h-8" />
+                </div>
+                <h3 className="font-bold text-base text-white">Aucune vidéo dans l'historique</h3>
+                <p className="text-xs text-[#aaa]">
+                  Les vidéos que vous regardez sur VidArch apparaîtront automatiquement ici.
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* 2. SEARCHES LIST */}
+        {activeTab === 'searches' && (
+          <div>
+            {filteredSearches.length > 0 ? (
+              <div className="space-y-1">
+                {filteredSearches.map((s) => (
+                  <div
+                    key={s.id}
+                    onClick={() => goTo('search', { query: s.query })}
+                    className="flex items-center justify-between p-3 rounded-xl hover:bg-[#181818] transition cursor-pointer group"
+                  >
+                    <div className="flex items-center gap-3.5 min-w-0">
+                      <SearchIcon className="w-4 h-4 text-[#aaa] group-hover:text-white flex-shrink-0" />
+                      <div className="min-w-0">
+                        <span className="text-sm font-semibold text-white group-hover:text-[#3ea6ff] transition block truncate">
+                          {s.query}
+                        </span>
+                        <span className="text-[11px] text-[#717171]">
+                          Recherché le {formatDate(s.searched_at)}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+                      <button
+                        onClick={(e) => handleRemoveSearch(s.id, e)}
+                        className="p-1.5 text-[#aaa] hover:text-white rounded-full hover:bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                        title="Supprimer cette recherche"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : !isLoading && (
+              <div className="py-20 text-center max-w-md mx-auto space-y-3">
+                <div className="w-16 h-16 rounded-full bg-[#272727] flex items-center justify-center text-[#aaa] mx-auto">
+                  <SearchIcon className="w-8 h-8" />
+                </div>
+                <h3 className="font-bold text-base text-white">Aucune recherche enregistrée</h3>
+                <p className="text-xs text-[#aaa]">
+                  Vos prochaines recherches apparaîtront ici.
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* ========================================================================= */}
+      {/* Controls Sidebar (Top on mobile, Right pinned on desktop)                 */}
+      {/* ========================================================================= */}
+      <div className="order-1 lg:order-2 w-full lg:w-72 xl:w-80 flex-shrink-0 space-y-5 pt-1 lg:sticky lg:top-18 lg:self-start border-b lg:border-b-0 border-[#272727] pb-6 lg:pb-0">
+        {/* Search Input with underline */}
+        <div className="flex items-center border-b border-[#3e3e3e] focus-within:border-white py-1.5 transition">
+          <SearchIcon className="w-4 h-4 text-[#888] mr-3 flex-shrink-0" />
+          <input
+            type="text"
+            value={searchFilter}
+            onChange={(e) => setSearchFilter(e.target.value)}
+            placeholder="Rechercher dans l'historique..."
+            className="w-full bg-transparent text-[16px] sm:text-xs text-white placeholder-[#717171] focus:outline-none"
+          />
+          {searchFilter && (
+            <button onClick={() => setSearchFilter('')} className="text-[#888] hover:text-white p-0.5">
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+
+        {/* Clear Action Buttons */}
+        <div className="space-y-1">
+          <button
+            onClick={handleClearVideosHistory}
+            disabled={videos.length === 0}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-[#f1f1f1] hover:bg-[#272727] transition cursor-pointer disabled:opacity-40"
+          >
+            <Trash2 className="w-4 h-4 text-[#aaa]" />
+            <span>Effacer tout l'historique des vidéos</span>
+          </button>
+
+          <button
+            onClick={handleClearSearchHistory}
+            disabled={searches.length === 0}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-[#f1f1f1] hover:bg-[#272727] transition cursor-pointer disabled:opacity-40"
+          >
+            <Trash2 className="w-4 h-4 text-[#aaa]" />
+            <span>Effacer tout l'historique des recherches</span>
+          </button>
+        </div>
+
+        {/* Type d'historique Radio Buttons (Native YouTube style) */}
+        <div className="space-y-3 pt-2">
+          <span className="text-xs font-bold text-white block">Type d'historique</span>
+          
+          <div className="space-y-1">
+            <label 
+              onClick={() => setActiveTab('videos')}
+              className="flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-[#272727] cursor-pointer transition"
+            >
+              <span className={`text-xs font-medium ${activeTab === 'videos' ? 'text-white font-bold' : 'text-[#aaa]'}`}>
+                Vidéos regardées ({videos.length})
+              </span>
+              <input
+                type="radio"
+                name="history_type"
+                checked={activeTab === 'videos'}
+                onChange={() => setActiveTab('videos')}
+                className="accent-[#ff0033] w-4 h-4 cursor-pointer"
+              />
+            </label>
+
+            <label 
+              onClick={() => setActiveTab('searches')}
+              className="flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-[#272727] cursor-pointer transition"
+            >
+              <span className={`text-xs font-medium ${activeTab === 'searches' ? 'text-white font-bold' : 'text-[#aaa]'}`}>
+                Recherches ({searches.length})
+              </span>
+              <input
+                type="radio"
+                name="history_type"
+                checked={activeTab === 'searches'}
+                onChange={() => setActiveTab('searches')}
+                className="accent-[#ff0033] w-4 h-4 cursor-pointer"
+              />
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};

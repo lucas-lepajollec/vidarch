@@ -1,0 +1,16 @@
+node_modules
+client/node_modules
+client/dist
+dist
+data
+downloads
+*.log
+.env
+.env.*
+.git
+.gitignore
+.github
+.agents
+.agent
+*.md
+!.env.example

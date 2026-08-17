@@ -1,0 +1,27 @@
+name: 💡 Feature Request
+description: Suggest an idea or feature for VidArch
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for suggesting an improvement for VidArch!
+  - type: textarea
+    id: problem
+    attributes:
+      label: Is your feature request related to a problem?
+      description: A clear description of what the problem or limitation is.
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution / Feature
+      description: A clear description of what you want to happen.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternative Approaches
+      description: Any alternative solutions or features you've considered.

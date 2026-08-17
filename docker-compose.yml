@@ -1,0 +1,20 @@
+services:
+  vidarch:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: vidarch:latest
+    container_name: vidarch
+    restart: unless-stopped
+    ports:
+      - "2499:2499"
+    environment:
+      - PORT=2499
+      - NODE_ENV=production
+      - DATA_DIR=/app/data
+      - DOWNLOADS_DIR=/app/downloads
+    volumes:
+      # Persistent SQLite database & cookies.txt
+      - ./data:/app/data
+      # Downloaded videos and channel archives
+      - ./downloads:/app/downloads

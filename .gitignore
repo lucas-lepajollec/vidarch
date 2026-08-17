@@ -1,0 +1,61 @@
+# ==========================================
+# VidArch — Git Ignore Configuration
+# ==========================================
+
+# Node Dependencies
+node_modules/
+client/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Production Builds
+dist/
+client/dist/
+*.tsbuildinfo
+
+# Persistent Media & Local Database
+# Only .gitkeep is tracked; all downloaded mp4, webm, sqlite db, cookies, and thumbnails are ignored.
+data/*
+!data/.gitkeep
+!data/*.example.*
+downloads/*
+!downloads/.gitkeep
+
+# Explicit SQLite Database & Cookies Shield
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+cookies.txt
+*.cookies
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Logs & Runtime Dumps
+*.log
+logs/
+temp/
+
+# OS Specific
+.DS_Store
+Thumbs.db
+*.pem
+*.key
+*.cert
+
+# IDEs and Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# AI Agent Local Configs
+.agents/
+.agent/
+.gemini/

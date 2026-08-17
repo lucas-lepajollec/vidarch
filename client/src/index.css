@@ -1,0 +1,86 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --yt-bg-primary: #0f0f0f;
+    --yt-bg-secondary: #181818;
+    --yt-bg-tertiary: #272727;
+    --yt-bg-elevated: #212121;
+    --yt-bg-hover: #383838;
+    --yt-border: rgba(255, 255, 255, 0.1);
+    --yt-border-subtle: rgba(255, 255, 255, 0.06);
+    --yt-red: #ff0033;
+    --yt-red-hover: #cc0029;
+    --yt-text-primary: #f1f1f1;
+    --yt-text-secondary: #aaaaaa;
+    --yt-text-muted: #717171;
+    --yt-blue: #3ea6ff;
+  }
+
+  body {
+    background-color: var(--yt-bg-primary);
+    color: var(--yt-text-primary);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+    overflow-x: hidden;
+    color-scheme: dark;
+  }
+
+  /* Custom scrollbar matching YouTube dark mode */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #444;
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #666;
+  }
+}
+
+/* Glassmorphism helpers */
+.glass-panel {
+  background: rgba(24, 24, 24, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-dropdown {
+  background: rgba(33, 33, 33, 0.95);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6);
+}
+
+/* Truncate multi-line */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-1 {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Pulse animation for downloads */
+@keyframes pulse-subtle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
