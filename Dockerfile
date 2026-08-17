@@ -14,30 +14,27 @@ RUN npm run build
 # Stage 2: Production Runtime
 FROM node:22-bookworm-slim
 
-# Install system dependencies: python3, pip, ffmpeg, ca-certificates, curl
+# Install system dependencies: python3, ffmpeg, ca-certificates, curl
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 \
-    python3-pip \
-    python3-venv \
     ffmpeg \
     ca-certificates \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Install yt-dlp via pip in a virtualenv or with break-system-packages
-RUN pip3 install --no-cache-dir --break-system-packages yt-dlp
+# Install standalone yt-dlp binary (fast, lightweight & self-contained)
+RUN curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp \
+    && chmod a+rx /usr/local/bin/yt-dlp
 
 WORKDIR /app
 
-# Copy root & server configuration
+# Copy root configuration & server source
 COPY package*.json ./
 COPY server/ ./server/
 
-# Install server production & build dependencies
-RUN npm install
-
-# Build TypeScript server
-RUN npx tsc -p server/tsconfig.json
+# Install dependencies and build TypeScript server
+RUN npm install \
+    && npx tsc -p server/tsconfig.json
 
 # Copy built frontend from Stage 1
 COPY --from=client-builder /app/client/dist ./client/dist
@@ -50,7 +47,7 @@ ENV NODE_ENV=production
 ENV PORT=2499
 ENV DATA_DIR=/app/data
 ENV DOWNLOADS_DIR=/app/downloads
-ENV YT_DLP_PATH=yt-dlp
+ENV YT_DLP_PATH=/usr/local/bin/yt-dlp
 
 EXPOSE 2499
 
