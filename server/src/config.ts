@@ -5,8 +5,8 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Project root is 2 levels up from server/src
-export const ROOT_DIR = path.resolve(__dirname, '../../');
+// Project root is 2 levels up from server/src or /app in Docker
+export const ROOT_DIR = process.env.ROOT_DIR || (fs.existsSync('/app/package.json') ? '/app' : path.resolve(__dirname, '../../'));
 export const DATA_DIR = process.env.DATA_DIR || path.join(ROOT_DIR, 'data');
 export const DOWNLOADS_DIR = process.env.DOWNLOADS_DIR || path.join(ROOT_DIR, 'downloads');
 export const COOKIES_FILE = path.join(DATA_DIR, 'cookies.txt');

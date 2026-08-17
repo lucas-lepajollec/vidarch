@@ -54,7 +54,7 @@ app.use(helmet({
         "https://www.youtube.com"
       ],
       objectSrc: ["'none'"],
-      upgradeInsecureRequests: [],
+      upgradeInsecureRequests: null,
     },
   },
   crossOriginResourcePolicy: { policy: "cross-origin" },
@@ -130,8 +130,24 @@ app.get('/api/health', (_req, res) => {
 });
 
 // Production: serve static React build from client/dist
-const clientDistPath = path.join(ROOT_DIR, 'client/dist');
-if (fs.existsSync(clientDistPath)) {
+const possibleDistPaths = [
+  path.join(ROOT_DIR, 'client/dist'),
+  path.join(__dirname, '../../client/dist'),
+  path.join(__dirname, '../client/dist'),
+  path.resolve(process.cwd(), 'client/dist'),
+  path.resolve('/app/client/dist'),
+];
+
+let clientDistPath = '';
+for (const p of possibleDistPaths) {
+  if (fs.existsSync(p) && fs.existsSync(path.join(p, 'index.html'))) {
+    clientDistPath = p;
+    break;
+  }
+}
+
+if (clientDistPath) {
+  console.log(`🌐 Serving static client from: ${clientDistPath}`);
   app.use(express.static(clientDistPath));
   app.use((req, res, next) => {
     if (!req.path.startsWith('/api') && !req.path.startsWith('/media')) {
@@ -139,6 +155,8 @@ if (fs.existsSync(clientDistPath)) {
     }
     next();
   });
+} else {
+  console.warn('⚠️ No static client dist found at standard paths');
 }
 
 // Centralized safe error handling middleware
