@@ -1,16 +1,15 @@
 # ==========================================
-# VidArch — Docker Compose Configuration
+# VidArch — Docker Compose Configuration (Example)
+# Production Deployment via GHCR Image
 # ==========================================
 
 services:
   vidarch:
-    build:
-      context: .
-      dockerfile: Dockerfile
     image: ghcr.io/lucas-lepajollec/vidarch:latest
     container_name: vidarch
     restart: unless-stopped
     ports:
+      # Port mapped on host machine : internal container port
       - "2499:2499"
     environment:
       - PORT=2499
@@ -18,7 +17,7 @@ services:
       - DATA_DIR=/app/data
       - DOWNLOADS_DIR=/app/downloads
     volumes:
-      # Persistent SQLite database & cookies.txt
+      # Persistent SQLite database (vidarch.db) and optional cookies.txt
       - ./data:/app/data
-      # Downloaded videos and channel archives
+      # Downloaded videos, channel folders, thumbnails, and info.json
       - ./downloads:/app/downloads

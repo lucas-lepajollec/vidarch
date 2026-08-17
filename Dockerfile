@@ -1,6 +1,6 @@
 # ==========================================
-# Multi-stage Dockerfile for MyTube
-# Self-hosted YouTube Archiver & Player
+# Multi-stage Dockerfile for VidArch
+# Self-hosted Video Archiver & Player
 # ==========================================
 
 # Stage 1: Build React Client
