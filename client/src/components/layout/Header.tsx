@@ -217,10 +217,12 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
           <button
             onClick={() => goTo('downloads')}
             title="Téléchargement en cours - Voir la file"
-            className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-full text-xs font-semibold bg-[#ff0033]/20 text-[#ff0033] border border-[#ff0033]/30 animate-pulse-subtle cursor-pointer"
+            className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full text-xs font-semibold bg-[#ff0033]/20 text-[#ff0033] border border-[#ff0033]/30 animate-pulse cursor-pointer shadow-sm"
           >
             <DownloadCloud className="w-3.5 h-3.5 animate-bounce text-[#ff0033]" />
-            <span className="hidden sm:inline">{Math.round(activeTask.progress)}%</span>
+            <span className="text-[11px] font-bold">
+              {activeTask.status === 'queued' ? 'En file' : activeTask.status === 'processing' ? 'Finalisation' : `${Math.round(activeTask.progress)}%`}
+            </span>
           </button>
         )}
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Trash2, 
   RotateCcw, 
@@ -13,33 +13,44 @@ import {
   Clock,
   Sparkles
 } from 'lucide-react';
-import { useMyTube } from '../context/MyTubeContext';
+import { useVidArch } from '../context/VidArchContext';
 
 export const Downloads: React.FC = () => {
-  const { queue, goTo, systemStatus } = useMyTube();
+  const { queue, refreshQueue, goTo, systemStatus } = useVidArch();
   const [filter, setFilter] = useState<'all' | 'active' | 'completed' | 'error'>('all');
+
+  // Immediately refresh queue when entering the downloads page
+  useEffect(() => {
+    refreshQueue();
+    const interval = setInterval(refreshQueue, 2000);
+    return () => clearInterval(interval);
+  }, [refreshQueue]);
 
   const handleCancel = async (id: string) => {
     try {
       await fetch(`/api/downloads/${id}/cancel`, { method: 'POST' });
+      await refreshQueue();
     } catch (_) {}
   };
 
   const handleRetry = async (id: string) => {
     try {
       await fetch(`/api/downloads/${id}/retry`, { method: 'POST' });
+      await refreshQueue();
     } catch (_) {}
   };
 
   const handleDelete = async (id: string) => {
     try {
       await fetch(`/api/downloads/${id}`, { method: 'DELETE' });
+      await refreshQueue();
     } catch (_) {}
   };
 
   const handleClearCompleted = async () => {
     try {
       await fetch('/api/downloads/clear', { method: 'POST' });
+      await refreshQueue();
     } catch (_) {}
   };
 
@@ -137,16 +148,18 @@ export const Downloads: React.FC = () => {
           <div className="space-y-3">
             {activeTasks.map((task) => {
               const percent = Math.round(task.progress || 0);
+              const isQueued = task.status === 'queued';
+              const isProcessing = task.status === 'processing';
 
               return (
                 <div
                   key={task.id}
-                  className="bg-[#181818] rounded-2xl p-4 space-y-3 shadow-md"
+                  className="bg-[#181818] border border-[#272727] hover:border-[#383838] rounded-2xl p-4 space-y-3 shadow-md transition"
                 >
                   <div className="flex flex-col sm:flex-row gap-4 items-start justify-between">
                     {/* Left: Thumbnail & Details */}
                     <div className="flex gap-4 min-w-0 w-full sm:w-auto flex-1">
-                      <div className="relative w-36 sm:w-44 aspect-video rounded-xl overflow-hidden bg-black flex-shrink-0">
+                      <div className="relative w-36 sm:w-44 aspect-video rounded-xl overflow-hidden bg-black flex-shrink-0 border border-white/5">
                         {task.thumbnail_url ? (
                           <img src={task.thumbnail_url} alt={task.title} className="w-full h-full object-cover" />
                         ) : (
@@ -163,15 +176,29 @@ export const Downloads: React.FC = () => {
                         <h3 className="font-semibold text-sm sm:text-base text-white truncate">
                           {task.title}
                         </h3>
-                        <p className="text-xs text-[#aaa]">{task.channel_title}</p>
+                        <p className="text-xs text-[#aaa] truncate">{task.channel_title}</p>
                         
-                        <div className="flex flex-wrap items-center gap-2 text-xs text-[#888] pt-1">
-                          <span className="text-[#3ea6ff] font-bold">{percent}%</span>
-                          {task.speed && <span>• {task.speed}</span>}
-                          {task.eta && <span>• Restant : {task.eta}</span>}
-                          {task.total_bytes ? (
-                            <span>• {((task.downloaded_bytes || 0) / (1024 * 1024)).toFixed(1)} / {((task.total_bytes || 0) / (1024 * 1024)).toFixed(1)} Mo</span>
-                          ) : null}
+                        <div className="flex flex-wrap items-center gap-2 text-xs pt-1">
+                          {isQueued ? (
+                            <span className="text-amber-400 font-semibold flex items-center gap-1.5">
+                              <Clock className="w-3.5 h-3.5 animate-pulse" />
+                              <span>En file d'attente (démarrage imminent...)</span>
+                            </span>
+                          ) : isProcessing ? (
+                            <span className="text-purple-400 font-semibold flex items-center gap-1.5">
+                              <Sparkles className="w-3.5 h-3.5 animate-spin" />
+                              <span>Traitement audio/vidéo & métadonnées...</span>
+                            </span>
+                          ) : (
+                            <>
+                              <span className="text-[#3ea6ff] font-bold">{percent}%</span>
+                              {task.speed && <span className="text-[#888]">• {task.speed}</span>}
+                              {task.eta && <span className="text-[#888]">• Restant : {task.eta}</span>}
+                              {task.total_bytes ? (
+                                <span className="text-[#888]">• {((task.downloaded_bytes || 0) / (1024 * 1024)).toFixed(1)} / {((task.total_bytes || 0) / (1024 * 1024)).toFixed(1)} Mo</span>
+                              ) : null}
+                            </>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -191,8 +218,14 @@ export const Downloads: React.FC = () => {
                   {/* Animated Progress Bar */}
                   <div className="w-full h-2 bg-[#272727] rounded-full overflow-hidden">
                     <div 
-                      className="h-full bg-gradient-to-r from-[#ff0033] to-[#ff5e00] rounded-full transition-all duration-300 relative"
-                      style={{ width: `${Math.max(3, percent)}%` }}
+                      className={`h-full rounded-full transition-all duration-300 relative ${
+                        isQueued 
+                          ? 'bg-amber-400/50 w-full animate-pulse' 
+                          : isProcessing 
+                            ? 'bg-gradient-to-r from-purple-500 to-indigo-500 w-full animate-pulse' 
+                            : 'bg-gradient-to-r from-[#ff0033] to-[#ff5e00]'
+                      }`}
+                      style={{ width: isQueued || isProcessing ? '100%' : `${Math.max(3, percent)}%` }}
                     />
                   </div>
                 </div>
@@ -220,121 +253,105 @@ export const Downloads: React.FC = () => {
                 return (
                   <div
                     key={task.id}
-                    onClick={() => isSuccess && goTo('watch', { videoId: task.video_id })}
-                    className="flex flex-col sm:flex-row gap-4 p-3 rounded-2xl hover:bg-[#181818] transition group cursor-pointer"
+                    className="bg-[#181818] border border-[#272727] hover:border-[#383838] rounded-2xl p-4 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between shadow-sm transition"
                   >
-                    {/* Thumbnail */}
-                    <div className="relative w-full sm:w-56 aspect-video rounded-xl overflow-hidden bg-[#222] flex-shrink-0 shadow-sm">
-                      {task.thumbnail_url ? (
-                        <img src={task.thumbnail_url} alt={task.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200" />
-                      ) : (
-                        <div className="w-full h-full bg-[#272727] flex items-center justify-center text-white/40">
-                          <DownloadCloud className="w-6 h-6" />
-                        </div>
-                      )}
-                      
-                      {isSuccess && (
-                        <span className="absolute top-1.5 left-1.5 bg-emerald-600/90 text-white text-[9px] font-bold px-1.5 py-0.5 rounded flex items-center gap-1 shadow">
-                          <HardDrive className="w-2.5 h-2.5" />
-                          <span>Stocké</span>
+                    <div className="flex gap-4 min-w-0 flex-1 items-center">
+                      <div className="relative w-28 sm:w-36 aspect-video rounded-xl overflow-hidden bg-black flex-shrink-0 border border-white/5">
+                        {task.thumbnail_url ? (
+                          <img src={task.thumbnail_url} alt={task.title} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full bg-[#272727] flex items-center justify-center text-white/40">
+                            <DownloadCloud className="w-5 h-5" />
+                          </div>
+                        )}
+                        <span className="absolute bottom-1 right-1 bg-black/80 text-white text-[9px] font-bold px-1 rounded">
+                          {task.resolution || '1080p'}
                         </span>
-                      )}
-                      {isError && (
-                        <span className="absolute top-1.5 left-1.5 bg-rose-600/90 text-white text-[9px] font-bold px-1.5 py-0.5 rounded flex items-center gap-1 shadow">
-                          <AlertCircle className="w-2.5 h-2.5" />
-                          <span>Échec</span>
-                        </span>
-                      )}
-                    </div>
+                      </div>
 
-                    {/* Info */}
-                    <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
-                      <div>
-                        <h3 className="font-semibold text-sm sm:text-base text-white group-hover:text-[#3ea6ff] line-clamp-2 leading-snug">
+                      <div className="min-w-0 flex-1 space-y-1">
+                        <h3 className="font-semibold text-xs sm:text-sm text-white truncate">
                           {task.title}
                         </h3>
-
-                        <div className="flex items-center gap-2 mt-1.5">
-                          <span className="text-xs text-[#aaa] font-medium">{task.channel_title}</span>
-                          {task.resolution && (
-                            <>
-                              <span className="text-xs text-[#666]">•</span>
-                              <span className="text-[10px] bg-[#272727] text-white px-1.5 py-0.2 rounded font-mono font-bold">
-                                {task.resolution}
-                              </span>
-                            </>
-                          )}
-                        </div>
-
-                        {isError && task.error_message && (
-                          <p className="text-xs text-rose-400 mt-2 bg-rose-950/30 p-2 rounded-xl border border-rose-900/30 line-clamp-2">
-                            {task.error_message}
-                          </p>
-                        )}
-                      </div>
-
-                      {/* Status & Actions Row */}
-                      <div className="flex flex-wrap items-center justify-between gap-3 mt-3 pt-1">
-                        <div className="flex items-center gap-2 text-xs text-[#888]">
-                          {isSuccess ? (
-                            <span className="flex items-center gap-1 text-emerald-400 font-medium">
-                              <CheckCircle2 className="w-3.5 h-3.5" />
-                              <span>Terminé {task.completed_at ? `le ${formatDate(task.completed_at)}` : ''}</span>
-                            </span>
-                          ) : (
-                            <span className="flex items-center gap-1 text-rose-400 font-medium">
-                              <AlertCircle className="w-3.5 h-3.5" />
-                              <span>Échoué</span>
-                            </span>
-                          )}
-                        </div>
-
-                        <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                        <p className="text-[11px] text-[#aaa] truncate">{task.channel_title}</p>
+                        
+                        <div className="flex flex-wrap items-center gap-2 text-[11px]">
                           {isSuccess && (
-                            <button
-                              onClick={() => goTo('watch', { videoId: task.video_id })}
-                              className="bg-white hover:bg-white/90 text-black text-xs font-bold px-3.5 py-1.5 rounded-full flex items-center gap-1.5 shadow transition cursor-pointer"
-                            >
-                              <Play className="w-3 h-3 fill-current" />
-                              <span>Regarder</span>
-                            </button>
+                            <span className="text-emerald-400 flex items-center gap-1 font-medium">
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              <span>Téléchargé avec succès</span>
+                            </span>
                           )}
-
                           {isError && (
-                            <button
-                              onClick={() => handleRetry(task.id)}
-                              className="bg-[#ff0033] hover:bg-[#cc0029] text-white text-xs font-semibold px-3.5 py-1.5 rounded-full flex items-center gap-1.5 shadow transition cursor-pointer"
-                            >
-                              <RotateCcw className="w-3 h-3" />
-                              <span>Réessayer</span>
-                            </button>
+                            <span className="text-rose-400 flex items-center gap-1 font-medium">
+                              <AlertCircle className="w-3.5 h-3.5" />
+                              <span>{task.error_message || 'Échec du téléchargement'}</span>
+                            </span>
                           )}
-
-                          <button
-                            onClick={() => handleDelete(task.id)}
-                            className="p-1.5 text-[#aaa] hover:text-rose-400 rounded-full hover:bg-[#272727] transition cursor-pointer"
-                            title="Supprimer de la liste"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                          {task.status === 'canceled' && (
+                            <span className="text-[#888] flex items-center gap-1 font-medium">
+                              <XCircle className="w-3.5 h-3.5" />
+                              <span>Annulé</span>
+                            </span>
+                          )}
+                          <span className="text-[#666]">• {formatDate(task.completed_at || task.created_at)}</span>
                         </div>
                       </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 self-end sm:self-center flex-shrink-0">
+                      {isSuccess && task.video_id && (
+                        <button
+                          onClick={() => goTo('watch', { videoId: task.video_id })}
+                          className="px-3.5 py-1.5 rounded-full text-xs font-semibold text-white bg-[#272727] hover:bg-[#ff0033] transition cursor-pointer flex items-center gap-1.5"
+                        >
+                          <Play className="w-3.5 h-3.5 fill-current" />
+                          <span>Regarder</span>
+                        </button>
+                      )}
+
+                      {isError && (
+                        <button
+                          onClick={() => handleRetry(task.id)}
+                          className="px-3.5 py-1.5 rounded-full text-xs font-semibold text-white bg-[#272727] hover:bg-[#333] transition cursor-pointer flex items-center gap-1.5"
+                        >
+                          <RotateCcw className="w-3.5 h-3.5" />
+                          <span>Réessayer</span>
+                        </button>
+                      )}
+
+                      <button
+                        onClick={() => handleDelete(task.id)}
+                        className="p-2 text-[#aaa] hover:text-white rounded-full hover:bg-white/10 transition cursor-pointer"
+                        title="Supprimer de l'historique"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
                     </div>
                   </div>
                 );
               })}
             </div>
           ) : (
-            <div className="py-16 text-center max-w-md mx-auto space-y-3">
-              <div className="w-16 h-16 rounded-full bg-[#272727] flex items-center justify-center text-[#aaa] mx-auto">
-                <DownloadCloud className="w-8 h-8" />
-              </div>
-              <h3 className="font-bold text-base text-white">Aucun téléchargement dans cette catégorie</h3>
-              <p className="text-xs text-[#aaa]">
-                Les vidéos que vous téléchargez apparaîtront ici avec leur progression et leur statut.
-              </p>
+            <div className="py-8 text-center text-xs text-[#888]">
+              Aucun téléchargement dans cette catégorie.
             </div>
           )}
+        </div>
+      )}
+
+      {/* Empty State */}
+      {queue.length === 0 && (
+        <div className="py-20 flex flex-col items-center justify-center text-center max-w-md mx-auto space-y-4">
+          <div className="w-20 h-20 rounded-full bg-[#272727] flex items-center justify-center text-[#aaa]">
+            <DownloadCloud className="w-10 h-10" />
+          </div>
+          <div>
+            <h2 className="font-bold text-lg text-white">Aucun téléchargement</h2>
+            <p className="text-xs text-[#aaa] mt-1">
+              Recherchez une vidéo ou collez un lien pour lancer votre premier téléchargement hors-ligne.
+            </p>
+          </div>
         </div>
       )}
     </div>

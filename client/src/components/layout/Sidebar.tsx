@@ -32,7 +32,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isOverlay = false, onC
     isScanning, 
     triggerScan, 
     myChannel, 
-    openCreateChannelModal 
+    openCreateChannelModal,
+    activeTask,
   } = useMyTube();
 
   const navItems: Array<{ id: PageRoute; label: string; icon: React.FC<{ className?: string }> }> = [
@@ -115,7 +116,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isOverlay = false, onC
                     }`}
                   >
                     <Icon className={`w-5 h-5 ${isActive ? 'text-[#ff0033]' : 'text-[#f1f1f1]'}`} />
-                    <span>{item.label}</span>
+                    <span className="flex-1 truncate">{item.label}</span>
+                    {item.id === 'downloads' && activeTask && (
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#ff0033]/20 text-[#ff0033] border border-[#ff0033]/30 animate-pulse">
+                        {Math.round(activeTask.progress)}%
+                      </span>
+                    )}
                   </button>
                 );
               })}
@@ -281,7 +287,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isOverlay = false, onC
               }`}
             >
               <Icon className={`w-5 h-5 ${isActive ? 'text-[#ff0033]' : 'text-[#f1f1f1]'}`} />
-              <span>{item.label}</span>
+              <span className="flex-1 truncate">{item.label}</span>
+              {item.id === 'downloads' && activeTask && (
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#ff0033]/20 text-[#ff0033] border border-[#ff0033]/30 animate-pulse">
+                  {Math.round(activeTask.progress)}%
+                </span>
+              )}
             </button>
           );
         })}

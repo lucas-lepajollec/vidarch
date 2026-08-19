@@ -11,7 +11,11 @@ const sseClients = new Set<Response>();
 function broadcast(event: string, data: any) {
   const payload = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
   for (const client of sseClients) {
-    client.write(payload);
+    try {
+      client.write(payload);
+    } catch (_) {
+      sseClients.delete(client);
+    }
   }
 }
 
@@ -32,20 +36,38 @@ downloadQueue.on('task_failed', (data) => {
   broadcast('failed', data);
 });
 
-// SSE endpoint
+// SSE endpoint with reverse-proxy buffering disabled and keep-alive ping
 router.get('/events', (req, res) => {
   res.writeHead(200, {
     'Content-Type': 'text/event-stream',
-    'Cache-Control': 'no-cache',
+    'Cache-Control': 'no-cache, no-transform',
     'Connection': 'keep-alive',
+    'X-Accel-Buffering': 'no', // Critical for Nginx / Docker / Reverse proxies
   });
+
+  if (res.flushHeaders) {
+    res.flushHeaders();
+  }
 
   sseClients.add(res);
 
   // Send current queue immediately
-  res.write(`event: queue\ndata: ${JSON.stringify(downloadQueue.getQueue())}\n\n`);
+  try {
+    res.write(`event: queue\ndata: ${JSON.stringify(downloadQueue.getQueue())}\n\n`);
+  } catch (_) {}
+
+  // Keep-alive heartbeat ping every 15 seconds
+  const pingInterval = setInterval(() => {
+    try {
+      res.write(': keepalive\n\n');
+    } catch (_) {
+      clearInterval(pingInterval);
+      sseClients.delete(res);
+    }
+  }, 15000);
 
   req.on('close', () => {
+    clearInterval(pingInterval);
     sseClients.delete(res);
   });
 });
@@ -53,6 +75,18 @@ router.get('/events', (req, res) => {
 // GET current download queue
 router.get('/queue', (req, res) => {
   res.json(downloadQueue.getQueue());
+});
+
+// GET download tasks (alias for compatibility)
+router.get('/tasks', (req, res) => {
+  res.json(downloadQueue.getQueue());
+});
+
+// GET active download tasks
+router.get('/active', (req, res) => {
+  const all = downloadQueue.getQueue();
+  const active = all.filter(t => t.status === 'downloading' || t.status === 'processing' || t.status === 'queued');
+  res.json(active);
 });
 
 // POST add video to queue
@@ -82,7 +116,7 @@ router.post('/', async (req, res) => {
 
     const item = downloadQueue.addToQueue({
       id: videoId || url,
-      url: url || `https://www.youtube.com/watch?v=${videoId}`,
+      url: url || (videoId?.startsWith('http') ? videoId : `https://www.youtube.com/watch?v=${videoId}`),
       title: videoTitle || 'Téléchargement YouTube',
       channelTitle: videoChannel,
       channelId: videoChannelId,
