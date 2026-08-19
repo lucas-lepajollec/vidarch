@@ -433,6 +433,10 @@ export const SearchPage: React.FC = () => {
                       <img
                         src={item.thumbnailUrl || `https://i.ytimg.com/vi/${item.id}/hqdefault.jpg`}
                         alt={item.title}
+                        referrerPolicy="no-referrer"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = `https://i.ytimg.com/vi/${item.id}/hqdefault.jpg`;
+                        }}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
                         loading="lazy"
                       />

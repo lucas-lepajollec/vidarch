@@ -357,6 +357,10 @@ export const Watch: React.FC = () => {
                     <img
                       src={thumbSrc}
                       alt={item.title}
+                      referrerPolicy="no-referrer"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = `https://i.ytimg.com/vi/${item.id}/hqdefault.jpg`;
+                      }}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
                     />
                     {item.duration_string && (

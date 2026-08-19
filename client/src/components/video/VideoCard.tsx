@@ -8,7 +8,7 @@ import {
   HardDrive
 } from 'lucide-react';
 import type { Video } from '../../types';
-import { useMyTube } from '../../context/MyTubeContext';
+import { useVidArch } from '../../context/VidArchContext';
 import { formatViews } from '../../utils/format';
 
 interface VideoCardProps {
@@ -18,7 +18,7 @@ interface VideoCardProps {
 }
 
 export const VideoCard: React.FC<VideoCardProps> = ({ video, layout = 'grid', onDelete }) => {
-  const { goTo, openDownloadModal, subscriptions } = useMyTube();
+  const { goTo, openDownloadModal, subscriptions } = useVidArch();
   const [showMenu, setShowMenu] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -38,9 +38,33 @@ export const VideoCard: React.FC<VideoCardProps> = ({ video, layout = 'grid', on
   const channel = subscriptions.find(s => s.id === video.channel_id);
 
   // Compute thumbnail src (local media path if downloaded and exists, else web thumbnail_url)
-  const thumbSrc = (isDownloaded && video.local_thumbnail_path)
+  const initialThumb = (isDownloaded && video.local_thumbnail_path)
     ? `/media/downloads/${encodeURIComponent(video.local_thumbnail_path).replace(/%2F/g, '/')}`
     : video.thumbnail_url || `https://i.ytimg.com/vi/${video.id}/hqdefault.jpg`;
+
+  const [currentThumb, setCurrentThumb] = useState(initialThumb);
+  const [fallbackStep, setFallbackStep] = useState(0);
+
+  useEffect(() => {
+    setCurrentThumb(initialThumb);
+    setFallbackStep(0);
+  }, [initialThumb, video.id]);
+
+  const handleImageError = () => {
+    if (fallbackStep === 0) {
+      // 1st fallback: hqdefault.jpg (always exists on YouTube CDN for all videos)
+      setFallbackStep(1);
+      setCurrentThumb(`https://i.ytimg.com/vi/${video.id}/hqdefault.jpg`);
+    } else if (fallbackStep === 1) {
+      // 2nd fallback: mqdefault.jpg
+      setFallbackStep(2);
+      setCurrentThumb(`https://i.ytimg.com/vi/${video.id}/mqdefault.jpg`);
+    } else if (fallbackStep === 2) {
+      // 3rd fallback: 0.jpg
+      setFallbackStep(3);
+      setCurrentThumb(`https://i.ytimg.com/vi/${video.id}/0.jpg`);
+    }
+  };
 
   const handleCardClick = () => {
     goTo('watch', { videoId: video.id });
@@ -53,7 +77,7 @@ export const VideoCard: React.FC<VideoCardProps> = ({ video, layout = 'grid', on
       title: video.title,
       channelTitle: video.channel_title,
       channelId: video.channel_id,
-      thumbnailUrl: video.thumbnail_url,
+      thumbnailUrl: currentThumb || video.thumbnail_url,
       durationString: video.duration_string,
     });
   };
@@ -87,9 +111,11 @@ export const VideoCard: React.FC<VideoCardProps> = ({ video, layout = 'grid', on
       >
         <div className="relative w-40 aspect-video rounded-lg overflow-hidden bg-[#222] flex-shrink-0">
           <img
-            src={thumbSrc}
+            src={currentThumb}
             alt={video.title}
             loading="lazy"
+            referrerPolicy="no-referrer"
+            onError={handleImageError}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           />
           {video.duration_string && (
@@ -132,9 +158,11 @@ export const VideoCard: React.FC<VideoCardProps> = ({ video, layout = 'grid', on
         className="relative w-full aspect-video rounded-xl overflow-hidden bg-[#222] shadow-md border border-white/5 group-hover:border-white/20 transition duration-200"
       >
         <img
-          src={thumbSrc}
+          src={currentThumb}
           alt={video.title}
           loading="lazy"
+          referrerPolicy="no-referrer"
+          onError={handleImageError}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
         />
 
@@ -188,7 +216,13 @@ export const VideoCard: React.FC<VideoCardProps> = ({ video, layout = 'grid', on
           className="w-9 h-9 rounded-full overflow-hidden bg-[#333] flex-shrink-0 flex items-center justify-center hover:ring-2 hover:ring-white/20 transition cursor-pointer"
         >
           {(channel?.avatar_url || (video as any).channel_avatar) ? (
-            <img src={channel?.avatar_url || (video as any).channel_avatar} alt={video.channel_title} className="w-full h-full object-cover" />
+            <img 
+              src={channel?.avatar_url || (video as any).channel_avatar} 
+              alt={video.channel_title} 
+              loading="lazy"
+              referrerPolicy="no-referrer"
+              className="w-full h-full object-cover" 
+            />
           ) : (
             <div className="w-full h-full bg-gradient-to-tr from-[#333] to-[#555] flex items-center justify-center text-white font-bold text-xs">
               {video.channel_title ? video.channel_title.charAt(0).toUpperCase() : 'Y'}
@@ -218,23 +252,17 @@ export const VideoCard: React.FC<VideoCardProps> = ({ video, layout = 'grid', on
               </>
             )}
             {video.upload_date && <span>{video.upload_date}</span>}
-            {isDownloaded && video.file_size ? (
-              <>
-                <span>•</span>
-                <span>{(video.file_size / (1024 * 1024)).toFixed(1)} Mo</span>
-              </>
-            ) : null}
           </div>
         </div>
 
-        {/* 3-Dots Action Menu */}
+        {/* Context Menu (3 dots) */}
         <div className="relative" ref={menuRef}>
           <button
             onClick={(e) => {
               e.stopPropagation();
               setShowMenu(!showMenu);
             }}
-            className="p-1.5 text-[#aaa] hover:text-white rounded-full hover:bg-[#272727] transition cursor-pointer flex items-center justify-center"
+            className="p-1.5 text-[#aaa] hover:text-white rounded-full hover:bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
             title="Options"
           >
             <MoreVertical className="w-4 h-4" />
@@ -242,32 +270,33 @@ export const VideoCard: React.FC<VideoCardProps> = ({ video, layout = 'grid', on
 
           {showMenu && (
             <div 
+              className="absolute right-0 bottom-full sm:bottom-auto sm:top-full mb-2 sm:mb-0 sm:mt-1 w-52 bg-[#212121] border border-[#303030] rounded-xl shadow-2xl py-1.5 z-30 animate-in fade-in zoom-in-95 duration-100"
               onClick={(e) => e.stopPropagation()}
-              className="absolute right-0 top-6 w-48 glass-dropdown rounded-xl py-1 z-30 shadow-2xl border border-white/10"
             >
               {!isDownloaded ? (
                 <button
                   onClick={handleDownloadClick}
-                  className="w-full px-3 py-2 text-left text-xs text-[#f1f1f1] hover:bg-white/10 flex items-center gap-2 cursor-pointer"
+                  className="w-full flex items-center gap-3 px-4 py-2.5 text-xs text-[#f1f1f1] hover:bg-[#333] transition cursor-pointer text-left"
                 >
-                  <Download className="w-4 h-4 text-[#3ea6ff]" />
-                  <span>Télécharger en local</span>
+                  <Download className="w-4 h-4 text-[#ff0033]" />
+                  <span>Télécharger la vidéo</span>
                 </button>
               ) : (
                 <button
                   onClick={handleDeleteClick}
                   disabled={isDeleting}
-                  className="w-full px-3 py-2 text-left text-xs text-rose-400 hover:bg-white/10 flex items-center gap-2 cursor-pointer"
+                  className="w-full flex items-center gap-3 px-4 py-2.5 text-xs text-rose-400 hover:bg-rose-500/10 transition cursor-pointer text-left disabled:opacity-50"
                 >
                   <Trash2 className="w-4 h-4" />
-                  <span>Supprimer le fichier</span>
+                  <span>{isDeleting ? 'Suppression...' : 'Supprimer le fichier'}</span>
                 </button>
               )}
+
               <a
-                href={`https://www.youtube.com/watch?v=${video.id}`}
+                href={(video as any).url || `https://www.youtube.com/watch?v=${video.id}`}
                 target="_blank"
-                rel="noreferrer"
-                className="w-full px-3 py-2 text-left text-xs text-[#aaa] hover:bg-white/10 flex items-center gap-2 cursor-pointer"
+                rel="noopener noreferrer"
+                className="w-full flex items-center gap-3 px-4 py-2.5 text-xs text-[#aaa] hover:text-white hover:bg-[#333] transition cursor-pointer"
               >
                 <ExternalLink className="w-4 h-4" />
                 <span>Ouvrir sur YouTube</span>
