@@ -33,8 +33,8 @@ It runs locally or on your home server / NAS using Docker, keeping your media, s
 - 🔍 **Unified Live & Local Search**: Instant search through locally archived videos, subscribed channels, and live YouTube results with instant metadata extraction.
 - 👤 **Creator Studio & Custom Channel Spaces**: Claim existing YouTube channels or create custom spaces with banners, logos, and descriptions to organize imported MP4/WebM videos.
 - 🔄 **Account & Channel Switcher**: 1-click channel switching dropdown to manage multiple owned creator channels or dissociate unclaimed spaces.
-- 🛡️ **Production-Ready & Hardened Security**: Helmet Content Security Policy, multi-tier rate limiting, command injection prevention, path traversal defense, and reverse proxy compatibility (`trust proxy`).
-- 🍪 **YouTube Authentication (Cookies)**: Easy `cookies.txt` import to bypass age restrictions and access private/unlisted videos.
+- 🛡️ **Hardened self-hosting**: Optional password lock, Helmet CSP, rate limiting, YouTube-only yt-dlp targets, path confinement, cookies/DB never served as static files.
+- 🍪 **YouTube Authentication (Cookies)**: `cookies.txt` import (stored privately in `data/`, not exposed over HTTP).
 
 ---
 
@@ -138,12 +138,18 @@ npm start
 | `DATA_DIR` | `./data` | Directory for SQLite database (`vidarch.db`) and `cookies.txt` |
 | `DOWNLOADS_DIR` | `./downloads` | Directory for archived videos, thumbnails, and JSON metadata |
 | `YT_DLP_PATH` | Auto-detected | Custom absolute path to the `yt-dlp` binary |
+| `AUTH_PASSWORD` | _unset_ | If set, the UI and API require this password (session cookie, 30 days). You can also set it in **Settings → Sécurité**. |
+| `SESSION_SECRET` | auto-generated | HMAC secret for session cookies (otherwise stored in `data/.session_secret`) |
+
+yt-dlp is kept **in the same process/container**. On startup (and every Sunday 04:15) VidArch runs `yt-dlp -U` when `auto_update_ytdlp` is enabled (default). A sidecar container is unnecessary for a homelab install.
+
+When exposing VidArch beyond localhost, set `AUTH_PASSWORD` (or a password in Settings) **and** put the app behind HTTPS.
 
 ---
 
-## 🔒 Reverse Proxy Configuration (Nginx / Caddy)
+## 🔒 Reverse Proxy & Authentication
 
-When exposing VidArch to the internet, place it behind a reverse proxy with HTTPS.
+Set `AUTH_PASSWORD` (or a password in Settings → Sécurité) before exposing VidArch on a network. Place it behind a reverse proxy with HTTPS.
 
 ### Caddy Example
 ```caddyfile

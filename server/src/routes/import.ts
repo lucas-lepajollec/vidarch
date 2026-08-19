@@ -6,8 +6,10 @@ import { execFile } from 'child_process';
 import { promisify } from 'util';
 import { v4 as uuidv4 } from 'uuid';
 import { db } from '../db/database.js';
-import { DOWNLOADS_DIR, DATA_DIR, isSafePath } from '../config.js';
+import { DOWNLOADS_DIR, DATA_DIR } from '../config.js';
 import { getVideoDetails, getChannelDetails, formatDuration, sanitizeFilename } from '../services/ytdlp.js';
+import { isAllowedYouTubeTarget, looksLikeUrl, extractYouTubeVideoId } from '../utils/youtube.js';
+import { isLocalOnly } from '../utils/settings.js';
 
 const execFileAsync = promisify(execFile);
 const router = Router();
@@ -105,12 +107,17 @@ router.post('/inspect-url', async (req, res) => {
   }
 
   const trimmed = url.trim();
+  if (looksLikeUrl(trimmed) && !isAllowedYouTubeTarget(trimmed)) {
+    return res.status(400).json({ error: 'Seuls les liens YouTube sont acceptés.' });
+  }
 
-  // 1. Check if it is a video URL
-  let videoId = '';
-  const watchMatch = trimmed.match(/(?:v=|\/embed\/|\/shorts\/|youtu\.be\/|\/v\/)([a-zA-Z0-9_-]{11})/);
-  if (watchMatch) {
-    videoId = watchMatch[1];
+  let videoId = extractYouTubeVideoId(trimmed) || '';
+
+  if (isLocalOnly() && !videoId) {
+    return res.status(400).json({
+      error: 'Local mode only accepts a direct video link, not a channel.',
+      code: 'CHANNEL_NOT_ALLOWED',
+    });
   }
 
   if (videoId) {
@@ -131,6 +138,7 @@ router.post('/inspect-url', async (req, res) => {
             viewCount: vDetails.viewCount || 0,
             uploadDate: vDetails.uploadDate || '',
             url: `https://www.youtube.com/watch?v=${vDetails.id}`,
+            language: vDetails.language || '',
           },
         });
       }
@@ -154,6 +162,7 @@ router.post('/inspect-url', async (req, res) => {
           description: details.description || '',
           subscriberCount: details.subscriberCount || '',
           videoCount: details.videoCount || 0,
+          language: details.language || '',
           url: `https://www.youtube.com/channel/${details.id}`,
         },
       });
@@ -335,7 +344,7 @@ router.post('/file', upload.fields([
       description,
       duration,
       durationStr,
-      hasThumb ? `/media/downloads/${encodeURIComponent(relativeThumbPath).replace(/%2F/g, '/')}` : '',
+      hasThumb ? `/media/downloads/${relativeThumbPath.replace(/\\/g, '/')}` : '',
       relativeVideoPath,
       hasThumb ? relativeThumbPath : null,
       fileSize

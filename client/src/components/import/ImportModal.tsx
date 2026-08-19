@@ -17,18 +17,23 @@ import {
 } from 'lucide-react';
 import { useMyTube } from '../../context/MyTubeContext';
 import { ImageUploadField } from '../channel/ImageUploadField';
+import { MediaThumb } from '../common/MediaThumb';
+import { ChannelAvatar } from '../common/ChannelAvatar';
+import { useI18n } from '../../i18n/I18nProvider';
 
 export const ImportModal: React.FC = () => {
   const { 
     isImportModalOpen, 
     closeImportModal, 
-    enqueueDownload, 
+    openDownloadModal, 
     subscribeChannel, 
     subscriptions, 
     refreshSubscriptions, 
     goTo, 
-    notifyDataChanged 
+    notifyDataChanged,
+    localOnly,
   } = useMyTube();
+  const { t } = useI18n();
   
   const [activeTab, setActiveTab] = useState<'url' | 'file'>('url');
   
@@ -37,7 +42,6 @@ export const ImportModal: React.FC = () => {
   const [isInspectingUrl, setIsInspectingUrl] = useState(false);
   const [urlError, setUrlError] = useState<string | null>(null);
   const [inspectedData, setInspectedData] = useState<{ type: 'video' | 'channel'; video?: any; channel?: any } | null>(null);
-  const [selectedResolution, setSelectedResolution] = useState('1080p');
   const [autoDownloadChannel, setAutoDownloadChannel] = useState(false);
   const [isSubmittingUrl, setIsSubmittingUrl] = useState(false);
 
@@ -101,13 +105,31 @@ export const ImportModal: React.FC = () => {
 
       if (res.ok) {
         const data = await res.json();
+        if (localOnly && data.type === 'channel') {
+          setUrlError(t('import.channelBlocked'));
+          return;
+        }
+        if (data.type === 'video' && data.video) {
+          const v = data.video;
+          closeImportModal();
+          openDownloadModal({
+            videoId: v.id,
+            url: v.url || urlInput.trim(),
+            title: v.title,
+            channelTitle: v.channelTitle,
+            channelId: v.channelId,
+            thumbnailUrl: v.thumbnailUrl,
+            durationString: v.durationString,
+          });
+          return;
+        }
         setInspectedData(data);
       } else {
         const err = await res.json();
-        setUrlError(err.error || 'Impossible d\'analyser ce lien');
+        setUrlError(err.error || t('import.channelBlocked'));
       }
     } catch (err: any) {
-      setUrlError('Erreur de connexion au serveur');
+      setUrlError(t('common.connectionError'));
     } finally {
       setIsInspectingUrl(false);
     }
@@ -120,18 +142,18 @@ export const ImportModal: React.FC = () => {
     try {
       if (inspectedData.type === 'video' && inspectedData.video) {
         const v = inspectedData.video;
-        await enqueueDownload({
+        closeImportModal();
+        openDownloadModal({
           videoId: v.id,
           url: v.url,
           title: v.title,
           channelTitle: v.channelTitle,
           channelId: v.channelId,
           thumbnailUrl: v.thumbnailUrl,
-          resolution: selectedResolution,
+          durationString: v.durationString,
         });
-        closeImportModal();
-        goTo('downloads');
-      } else if (inspectedData.type === 'channel' && inspectedData.channel) {
+        return;
+      } else if (!localOnly && inspectedData.type === 'channel' && inspectedData.channel) {
         const ch = inspectedData.channel;
         await subscribeChannel(ch.url || `https://www.youtube.com/channel/${ch.id}`, autoDownloadChannel);
         closeImportModal();
@@ -235,29 +257,29 @@ export const ImportModal: React.FC = () => {
         } else {
           try {
             const err = JSON.parse(xhr.responseText);
-            setUploadError(err.error || 'Erreur lors de l\'importation');
+            setUploadError(err.error || t('common.genericError'));
           } catch (_) {
-            setUploadError('Erreur serveur');
+            setUploadError(t('common.error'));
           }
         }
         setIsUploading(false);
       };
 
       xhr.onerror = () => {
-        setUploadError('Erreur réseau lors de l\'envoi du fichier');
+        setUploadError(t('import.uploadError'));
         setIsUploading(false);
       };
 
       xhr.send(formData);
     } catch (err: any) {
-      setUploadError(err.message || 'Erreur d\'envoi');
+      setUploadError(err.message || t('import.sendError'));
       setIsUploading(false);
     }
   };
 
   return createPortal(
     <div 
-      className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs animate-in fade-in duration-150"
+      className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs animate-in fade-in duration-300"
       onClick={(e) => {
         if (e.target === e.currentTarget && !isUploading) closeImportModal();
       }}
@@ -268,10 +290,10 @@ export const ImportModal: React.FC = () => {
         <div className="flex items-center justify-between px-6 py-5 border-b border-[#303030]">
           <div>
             <h2 className="text-lg font-bold text-white tracking-tight">
-              Importer du contenu
+              {t('import.title')}
             </h2>
             <p className="text-xs text-[#aaa] mt-0.5">
-              Ajoutez une vidéo YouTube, une chaîne entière ou un fichier vidéo local
+              {localOnly ? t('import.subtitleLocal') : t('import.subtitle')}
             </p>
           </div>
           <button
@@ -294,7 +316,7 @@ export const ImportModal: React.FC = () => {
               }`}
             >
               <Link className="w-3.5 h-3.5" />
-              <span>Lien URL YouTube</span>
+              <span>{t('import.tabUrlLabel')}</span>
             </button>
 
             <button
@@ -306,7 +328,7 @@ export const ImportModal: React.FC = () => {
               }`}
             >
               <UploadCloud className="w-3.5 h-3.5" />
-              <span>Fichier vidéo local</span>
+              <span>{t('import.tabFileLabel')}</span>
             </button>
           </div>
         </div>
@@ -321,14 +343,14 @@ export const ImportModal: React.FC = () => {
             <div className="space-y-4">
               <form onSubmit={handleInspectUrl} className="space-y-2">
                 <label className="block text-xs font-semibold text-[#aaa]">
-                  Lien de la vidéo ou de la chaîne
+                  {t('import.urlLabel')}
                 </label>
                 <div className="flex items-center gap-2">
                   <input
                     type="text"
                     value={urlInput}
                     onChange={(e) => setUrlInput(e.target.value)}
-                    placeholder="https://www.youtube.com/watch?v=... ou @chaine"
+                    placeholder={localOnly ? t('import.urlPlaceholderLocal') : t('import.urlPlaceholder')}
                     className="flex-1 bg-[#121212] border border-[#383838] focus:border-white text-white text-xs rounded-xl px-4 py-3 outline-none transition"
                   />
                   <button
@@ -336,7 +358,7 @@ export const ImportModal: React.FC = () => {
                     disabled={isInspectingUrl || !urlInput.trim()}
                     className="bg-white hover:bg-white/90 text-black text-xs font-bold px-5 py-3 rounded-xl transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50 shadow"
                   >
-                    {isInspectingUrl ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <span>Analyser</span>}
+                    {isInspectingUrl ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <span>{t('import.inspectBtn')}</span>}
                   </button>
                 </div>
               </form>
@@ -353,7 +375,11 @@ export const ImportModal: React.FC = () => {
                 <div className="p-4 bg-[#141414] border border-[#333] rounded-2xl space-y-4 animate-in fade-in duration-150">
                   <div className="flex gap-3.5">
                     <div className="relative w-36 aspect-video rounded-xl overflow-hidden bg-[#272727] flex-shrink-0 shadow-md">
-                      <img src={inspectedData.video.thumbnailUrl} alt={inspectedData.video.title} className="w-full h-full object-cover" />
+                      <MediaThumb
+                        video={{ id: inspectedData.video.id, thumbnailUrl: inspectedData.video.thumbnailUrl }}
+                        alt={inspectedData.video.title}
+                        className="w-full h-full object-cover"
+                      />
                       {inspectedData.video.durationString && (
                         <span className="absolute bottom-1.5 right-1.5 bg-black/85 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">
                           {inspectedData.video.durationString}
@@ -361,34 +387,19 @@ export const ImportModal: React.FC = () => {
                       )}
                     </div>
                     <div className="flex-1 min-w-0 flex flex-col justify-center">
-                      <span className="text-[10px] font-semibold text-[#3ea6ff] uppercase tracking-wider block">Vidéo YouTube</span>
+                      <span className="text-[10px] font-semibold text-[#3ea6ff] uppercase tracking-wider block">{t('import.ytVideo')}</span>
                       <h4 className="font-bold text-xs text-white line-clamp-2 mt-0.5 leading-snug">{inspectedData.video.title}</h4>
                       <p className="text-xs text-[#aaa] mt-1 truncate">{inspectedData.video.channelTitle}</p>
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between pt-3 border-t border-[#272727]">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-[#aaa]">Qualité :</span>
-                      <select
-                        value={selectedResolution}
-                        onChange={(e) => setSelectedResolution(e.target.value)}
-                        className="bg-[#272727] text-white text-xs font-medium px-3 py-1.5 rounded-lg border border-[#383838] outline-none cursor-pointer"
-                      >
-                        <option value="2160p">4K (2160p)</option>
-                        <option value="1440p">2K (1440p)</option>
-                        <option value="1080p">1080p (Full HD)</option>
-                        <option value="720p">720p (HD)</option>
-                      </select>
-                    </div>
-
+                  <div className="flex items-center justify-end pt-3 border-t border-[#272727]">
                     <button
                       onClick={handleActionUrl}
-                      disabled={isSubmittingUrl}
                       className="bg-white hover:bg-white/90 text-black text-xs font-bold px-5 py-2.5 rounded-full transition cursor-pointer flex items-center gap-1.5 shadow"
                     >
-                      {isSubmittingUrl ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <DownloadCloud className="w-3.5 h-3.5" />}
-                      <span>Télécharger & Archiver</span>
+                      <DownloadCloud className="w-3.5 h-3.5" />
+                      <span>{t('import.downloadArchive')}</span>
                     </button>
                   </div>
                 </div>
@@ -399,16 +410,16 @@ export const ImportModal: React.FC = () => {
                 <div className="p-4 bg-[#141414] border border-[#333] rounded-2xl space-y-4 animate-in fade-in duration-150">
                   <div className="flex items-center gap-4">
                     <div className="w-14 h-14 rounded-full overflow-hidden bg-[#272727] flex-shrink-0 shadow-md">
-                      {inspectedData.channel.avatarUrl ? (
-                        <img src={inspectedData.channel.avatarUrl} alt={inspectedData.channel.title} className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="w-full h-full bg-gradient-to-tr from-[#ff0033] to-[#ff5e00] flex items-center justify-center text-white font-bold text-lg">
-                          {inspectedData.channel.title?.charAt(0)}
-                        </div>
-                      )}
+                      <ChannelAvatar
+                        channelId={inspectedData.channel.id}
+                        url={inspectedData.channel.avatarUrl}
+                        title={inspectedData.channel.title}
+                        className="w-full h-full rounded-full"
+                        textClassName="text-lg"
+                      />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <span className="text-[10px] font-semibold text-emerald-400 uppercase tracking-wider block">Chaîne YouTube</span>
+                      <span className="text-[10px] font-semibold text-emerald-400 uppercase tracking-wider block">{t('import.ytChannel')}</span>
                       <h4 className="font-bold text-sm text-white truncate">{inspectedData.channel.title}</h4>
                       <p className="text-xs text-[#aaa]">{inspectedData.channel.handle} • {inspectedData.channel.subscriberCount}</p>
                     </div>
@@ -422,7 +433,7 @@ export const ImportModal: React.FC = () => {
                         onChange={(e) => setAutoDownloadChannel(e.target.checked)}
                         className="w-4 h-4 accent-[#ff0033] rounded"
                       />
-                      <span>Auto-téléchargement</span>
+                      <span>{t('import.autoDownload')}</span>
                     </label>
 
                     <button
@@ -431,7 +442,7 @@ export const ImportModal: React.FC = () => {
                       className="bg-white hover:bg-white/90 text-black text-xs font-bold px-5 py-2.5 rounded-full transition cursor-pointer flex items-center gap-1.5 shadow"
                     >
                       {isSubmittingUrl ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
-                      <span>S'abonner & Importer</span>
+                      <span>{t('import.subscribeImport')}</span>
                     </button>
                   </div>
                 </div>
@@ -463,11 +474,11 @@ export const ImportModal: React.FC = () => {
                       <UploadCloud className="w-6 h-6 text-[#ff0033]" />
                     </div>
                     <div className="space-y-1">
-                      <span className="text-xs font-bold text-white block">Sélectionnez un fichier vidéo sur votre ordinateur</span>
-                      <span className="text-[11px] text-[#aaa] block">MP4, MKV, WEBM jusqu'à 10 Go</span>
+                      <span className="text-xs font-bold text-white block">{t('import.pickFile')}</span>
+                      <span className="text-[11px] text-[#aaa] block">{t('import.fileHint')}</span>
                     </div>
                     <span className="bg-white/10 hover:bg-white/20 text-white text-xs font-semibold px-4 py-1.5 rounded-full transition mt-1">
-                      Parcourir les fichiers
+                      {t('import.browseFiles')}
                     </span>
                   </div>
                 ) : (
@@ -478,7 +489,7 @@ export const ImportModal: React.FC = () => {
                       </div>
                       <div className="min-w-0">
                         <span className="text-xs font-bold text-white block truncate">{selectedFile.name}</span>
-                        <span className="text-[11px] text-[#aaa]">{(selectedFile.size / (1024 * 1024)).toFixed(1)} Mo</span>
+                        <span className="text-[11px] text-[#aaa]">{t('common.mb', { n: (selectedFile.size / (1024 * 1024)).toFixed(1) })}</span>
                       </div>
                     </div>
                     <button
@@ -486,7 +497,7 @@ export const ImportModal: React.FC = () => {
                       onClick={() => setSelectedFile(null)}
                       className="text-xs text-[#aaa] hover:text-white px-3 py-1.5 rounded-lg hover:bg-white/5 transition"
                     >
-                      Changer
+                      {t('common.change')}
                     </button>
                   </div>
                 )}
@@ -495,7 +506,7 @@ export const ImportModal: React.FC = () => {
               {/* Optional YouTube pairing */}
               <div className="space-y-1.5">
                 <label className="block text-[11px] font-semibold text-[#aaa]">
-                  Lien YouTube d'origine (Optionnel pour auto-remplir les métadonnées)
+                  {t('import.originUrl')}
                 </label>
                 <div className="flex items-center gap-2">
                   <input
@@ -511,7 +522,7 @@ export const ImportModal: React.FC = () => {
                     disabled={isFetchingYtMeta || !originalYtUrl.trim()}
                     className="bg-[#2a2a2a] hover:bg-[#383838] text-white text-xs font-semibold px-4 py-2.5 rounded-xl transition cursor-pointer disabled:opacity-40"
                   >
-                    {isFetchingYtMeta ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <span>Remplir</span>}
+                    {isFetchingYtMeta ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <span>{t('import.fillMeta')}</span>}
                   </button>
                 </div>
               </div>
@@ -519,24 +530,24 @@ export const ImportModal: React.FC = () => {
               {/* Title & Description */}
               <div className="space-y-3 pt-1">
                 <div>
-                  <label className="block text-xs font-semibold text-white mb-1.5">Titre de la vidéo *</label>
+                  <label className="block text-xs font-semibold text-white mb-1.5">{t('import.videoTitle')}</label>
                   <input
                     type="text"
                     value={customTitle}
                     onChange={(e) => setCustomTitle(e.target.value)}
-                    placeholder="Titre de votre vidéo"
+                    placeholder={t('import.videoTitlePh')}
                     required
                     className="w-full bg-[#121212] border border-[#383838] text-white text-xs rounded-xl px-4 py-2.5 outline-none focus:border-white"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-[#aaa] mb-1.5">Description (Optionnel)</label>
+                  <label className="block text-xs font-semibold text-[#aaa] mb-1.5">{t('import.description')}</label>
                   <textarea
                     rows={2}
                     value={customDescription}
                     onChange={(e) => setCustomDescription(e.target.value)}
-                    placeholder="Description de la vidéo..."
+                    placeholder={t('import.descriptionPh')}
                     className="w-full bg-[#121212] border border-[#383838] text-white text-xs rounded-xl p-3 outline-none focus:border-white"
                   />
                 </div>
@@ -545,13 +556,13 @@ export const ImportModal: React.FC = () => {
               {/* Channel Association / Dedicated Space */}
               <div className="p-4 bg-[#141414] border border-[#303030] rounded-2xl space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-white">Chaîne / Espace de destination</span>
+                  <span className="text-xs font-bold text-white">{t('import.destChannel')}</span>
                   <button
                     type="button"
                     onClick={() => setIsCreatingNewChannel(!isCreatingNewChannel)}
                     className="text-xs font-semibold text-[#3ea6ff] hover:underline cursor-pointer"
                   >
-                    {isCreatingNewChannel ? 'Choisir une chaîne existante' : '+ Créer un espace dédié'}
+                    {isCreatingNewChannel ? t('import.chooseExisting') : t('import.createSpace')}
                   </button>
                 </div>
 
@@ -561,7 +572,7 @@ export const ImportModal: React.FC = () => {
                     onChange={(e) => setSelectedChannelId(e.target.value)}
                     className="w-full bg-[#1e1e1e] border border-[#383838] text-white text-xs rounded-xl px-3.5 py-2.5 outline-none cursor-pointer"
                   >
-                    <option value="">Vidéos Importées (Espace par défaut)</option>
+                    <option value="">{t('import.defaultSpace')}</option>
                     {subscriptions.map((s) => (
                       <option key={s.id} value={s.id}>
                         {s.title} ({s.handle || s.id})
@@ -575,7 +586,7 @@ export const ImportModal: React.FC = () => {
                         type="text"
                         value={newChannelTitle}
                         onChange={(e) => setNewChannelTitle(e.target.value)}
-                        placeholder="Nom de l'espace *"
+                        placeholder={t('import.spaceName')}
                         required={isCreatingNewChannel}
                         className="bg-[#1e1e1e] border border-[#383838] text-white text-xs rounded-xl px-3 py-2 outline-none focus:border-white"
                       />
@@ -583,13 +594,13 @@ export const ImportModal: React.FC = () => {
                         type="text"
                         value={newChannelHandle}
                         onChange={(e) => setNewChannelHandle(e.target.value)}
-                        placeholder="@identifiant"
+                        placeholder={t('import.spaceHandle')}
                         className="bg-[#1e1e1e] border border-[#383838] text-white text-xs rounded-xl px-3 py-2 outline-none focus:border-white"
                       />
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
                       <ImageUploadField
-                        label="Logo / Avatar de l'espace"
+                        label={t('import.spaceAvatar')}
                         value={newChannelAvatarUrl}
                         onChange={setNewChannelAvatarUrl}
                         type="avatar"
@@ -597,7 +608,7 @@ export const ImportModal: React.FC = () => {
                       />
 
                       <ImageUploadField
-                        label="Bannière de l'espace"
+                        label={t('import.spaceBanner')}
                         value={newChannelBannerUrl}
                         onChange={setNewChannelBannerUrl}
                         type="banner"
@@ -612,7 +623,7 @@ export const ImportModal: React.FC = () => {
               {isUploading && (
                 <div className="space-y-1.5 p-3 bg-[#141414] border border-[#303030] rounded-2xl">
                   <div className="flex justify-between text-xs text-[#aaa]">
-                    <span>Importation en cours...</span>
+                    <span>{t('import.uploading')}</span>
                     <span className="font-bold text-white">{uploadProgress}%</span>
                   </div>
                   <div className="w-full h-2 bg-[#272727] rounded-full overflow-hidden">
@@ -634,7 +645,7 @@ export const ImportModal: React.FC = () => {
               {uploadSuccess && (
                 <div className="p-3.5 bg-emerald-500/10 text-emerald-400 text-xs rounded-2xl flex items-center gap-2 border border-emerald-500/20">
                   <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
-                  <span>Vidéo importée et prête dans votre bibliothèque !</span>
+                  <span>{t('import.success')}</span>
                 </div>
               )}
 
@@ -648,12 +659,12 @@ export const ImportModal: React.FC = () => {
                   {isUploading ? (
                     <>
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      <span>Envoi en cours...</span>
+                      <span>{t('import.sending')}</span>
                     </>
                   ) : (
                     <>
                       <UploadCloud className="w-3.5 h-3.5" />
-                      <span>Importer dans la bibliothèque</span>
+                      <span>{t('import.intoLibrary')}</span>
                     </>
                   )}
                 </button>

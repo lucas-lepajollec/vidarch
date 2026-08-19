@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { Upload, Link, X, Image as ImageIcon, Trash2 } from 'lucide-react';
+import { useI18n } from '../../i18n/I18nProvider';
 
 interface ImageUploadFieldProps {
   label: string;
@@ -16,6 +17,7 @@ export const ImageUploadField: React.FC<ImageUploadFieldProps> = ({
   type,
   placeholderUrl = 'https://.../image.png'
 }) => {
+  const { t } = useI18n();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showUrlInput, setShowUrlInput] = useState(false);
 
@@ -51,7 +53,7 @@ export const ImageUploadField: React.FC<ImageUploadFieldProps> = ({
           className="text-[10px] text-[#3ea6ff] hover:underline cursor-pointer flex items-center gap-1"
         >
           <Link className="w-3 h-3" />
-          <span>{showUrlInput ? 'Parcourir fichier' : 'Coller lien URL'}</span>
+          <span>{showUrlInput ? t('img.browseFile') : t('img.pasteUrl')}</span>
         </button>
       </div>
 
@@ -69,7 +71,7 @@ export const ImageUploadField: React.FC<ImageUploadFieldProps> = ({
               type="button"
               onClick={() => onChange('')}
               className="p-2 text-[#aaa] hover:text-white rounded-lg hover:bg-white/5 cursor-pointer"
-              title="Effacer"
+              title={t('img.clear')}
             >
               <X className="w-4 h-4" />
             </button>
@@ -84,7 +86,7 @@ export const ImageUploadField: React.FC<ImageUploadFieldProps> = ({
             }`}
           >
             {value ? (
-              <img src={value} alt="Preview" className="w-full h-full object-cover" />
+              <img src={value} alt={t('img.preview')} className="w-full h-full object-cover" />
             ) : (
               <ImageIcon className="w-4 h-4 text-[#666]" />
             )}
@@ -98,7 +100,7 @@ export const ImageUploadField: React.FC<ImageUploadFieldProps> = ({
               className="flex-1 w-full bg-[#272727] hover:bg-[#383838] text-white text-xs font-semibold py-2.5 px-3 rounded-xl transition cursor-pointer flex items-center justify-center gap-2 border border-white/5 shadow-sm active:scale-98"
             >
               <Upload className="w-3.5 h-3.5" />
-              <span>{value ? 'Changer' : 'Parcourir'}</span>
+              <span>{value ? t('common.change') : t('common.browse')}</span>
             </button>
 
             {value && (
@@ -106,7 +108,7 @@ export const ImageUploadField: React.FC<ImageUploadFieldProps> = ({
                 type="button"
                 onClick={() => onChange('')}
                 className="p-2 text-[#aaa] hover:text-red-400 hover:bg-white/5 rounded-xl transition cursor-pointer"
-                title="Supprimer l'image"
+                title={t('img.remove')}
               >
                 <Trash2 className="w-3.5 h-3.5" />
               </button>

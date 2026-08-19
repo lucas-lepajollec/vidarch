@@ -3,20 +3,21 @@ import {
   Search as SearchIcon, 
   DownloadCloud, 
   ExternalLink, 
-  HardDrive, 
-  Film, 
   Loader2, 
   CheckCircle2, 
   Check, 
   Play, 
   Trash2, 
-  Tv2,
   ChevronDown,
   UserMinus
 } from 'lucide-react';
-import type { Video, Channel, SearchResultItem } from '../types';
+import type { Video, SearchResultItem } from '../types';
 import { useMyTube } from '../context/MyTubeContext';
 import { formatViews, formatSubscriberCount } from '../utils/format';
+import { MediaThumb } from '../components/common/MediaThumb';
+import { ChannelAvatar } from '../components/common/ChannelAvatar';
+import { ExpandableText } from '../components/common/ExpandableText';
+import { useI18n } from '../i18n/I18nProvider';
 
 interface ChannelResult {
   id: string;
@@ -29,36 +30,12 @@ interface ChannelResult {
   downloadedCount?: number;
   isSubscribed?: boolean;
   url?: string;
+  language?: string;
 }
 
-const ChannelAvatar: React.FC<{ url?: string; title: string; sizeClass?: string; textClass?: string }> = ({
-  url,
-  title,
-  sizeClass = "w-28 h-28 sm:w-36 sm:h-36",
-  textClass = "text-4xl"
-}) => {
-  const [hasError, setHasError] = useState(false);
-
-  return (
-    <div className={`${sizeClass} rounded-full overflow-hidden bg-[#272727] border-2 border-[#272727] flex-shrink-0 shadow-lg flex items-center justify-center group-hover:scale-105 transition-transform duration-200`}>
-      {url && !hasError ? (
-        <img
-          src={url}
-          alt={title}
-          className="w-full h-full object-cover"
-          onError={() => setHasError(true)}
-        />
-      ) : (
-        <div className={`w-full h-full bg-gradient-to-tr from-[#ff0033] to-[#ff5e00] flex items-center justify-center text-white font-bold ${textClass}`}>
-          {title.charAt(0).toUpperCase()}
-        </div>
-      )}
-    </div>
-  );
-};
-
 export const SearchPage: React.FC = () => {
-  const { nav, goTo, openDownloadModal, subscribeChannel, unsubscribeChannel, subscriptions } = useMyTube();
+  const { nav, goTo, openDownloadModal, subscribeChannel, unsubscribeChannel, subscriptions, localOnly } = useMyTube();
+  const { t, locale } = useI18n();
   const [channels, setChannels] = useState<ChannelResult[]>([]);
   const [localVideos, setLocalVideos] = useState<Video[]>([]);
   const [youtubeVideos, setYoutubeVideos] = useState<SearchResultItem[]>([]);
@@ -75,14 +52,15 @@ export const SearchPage: React.FC = () => {
     if (!query.trim()) return;
     setIsLoading(true);
     try {
-      const res = await fetch(`/api/search?q=${encodeURIComponent(query)}&type=all&offset=0&limit=15`);
+      const searchType = localOnly ? 'local' : 'all';
+      const res = await fetch(`/api/search?q=${encodeURIComponent(query)}&type=${searchType}&offset=0&limit=15`);
       if (res.ok) {
         const data = await res.json();
         setChannels(data.channels || []);
         setLocalVideos(data.localVideos || []);
         const ytVids = data.youtubeVideos || data.youtubeResults || [];
-        setYoutubeVideos(ytVids);
-        setHasMore(ytVids.length >= 10);
+        setYoutubeVideos(localOnly ? [] : ytVids);
+        setHasMore(!localOnly && ytVids.length >= 10);
       }
     } catch (err) {
       console.error('Search error:', err);
@@ -93,10 +71,10 @@ export const SearchPage: React.FC = () => {
 
   useEffect(() => {
     performSearch();
-  }, [query]);
+  }, [query, localOnly]);
 
   const handleLoadMore = async () => {
-    if (!query.trim() || isLoadingMore || !hasMore) return;
+    if (!query.trim() || isLoadingMore || !hasMore || localOnly) return;
     setIsLoadingMore(true);
     try {
       const res = await fetch(`/api/search?q=${encodeURIComponent(query)}&type=all&offset=${youtubeVideos.length}&limit=15`);
@@ -141,7 +119,7 @@ export const SearchPage: React.FC = () => {
 
   const handleDeleteLocalVideo = async (videoId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!confirm('Supprimer cette vidéo locale du disque ?')) return;
+    if (!confirm(t('search.deleteConfirm'))) return;
     try {
       await fetch(`/api/videos/${videoId}`, { method: 'DELETE' });
       setLocalVideos(prev => prev.filter(v => v.id !== videoId));
@@ -153,20 +131,27 @@ export const SearchPage: React.FC = () => {
   // Filter items
   const showChannels = (selectedFilter === 'all' || selectedFilter === 'channels') && channels.length > 0;
   const showLocalVideos = (selectedFilter === 'all' || selectedFilter === 'local') && localVideos.length > 0;
-  const showYoutubeVideos = (selectedFilter === 'all' || selectedFilter === 'videos');
+  const showYoutubeVideos = !localOnly && (selectedFilter === 'all' || selectedFilter === 'videos') && youtubeVideos.length > 0;
 
   const hasAnyResults = channels.length > 0 || localVideos.length > 0 || youtubeVideos.length > 0;
 
   return (
-    <div className="flex-1 w-full px-3 sm:px-6 pt-3 pb-8 space-y-6">
+    <div className="flex-1 w-full px-4 sm:px-6 pt-6 pb-8 space-y-6">
       {/* Category Chips Bar for Search Filters */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar select-none">
-        {[
-          { id: 'all', label: 'Tout' },
-          { id: 'channels', label: `Chaînes (${channels.length})` },
-          { id: 'videos', label: `Vidéos en ligne (${youtubeVideos.length})` },
-          { id: 'local', label: `Stockées localement (${localVideos.length})` },
-        ].map((filter) => (
+        {(localOnly
+          ? [
+              { id: 'all', label: t('search.filterAll') },
+              { id: 'channels', label: `${t('search.filterChannels')} (${channels.length})` },
+              { id: 'local', label: t('search.filterLocal', { count: localVideos.length }) },
+            ]
+          : [
+              { id: 'all', label: t('search.filterAll') },
+              { id: 'channels', label: `${t('search.filterChannels')} (${channels.length})` },
+              { id: 'videos', label: `${t('search.filterVideos')} (${youtubeVideos.length})` },
+              { id: 'local', label: t('search.filterLocal', { count: localVideos.length }) },
+            ]
+        ).map((filter) => (
           <button
             key={filter.id}
             onClick={() => setSelectedFilter(filter.id as any)}
@@ -185,16 +170,15 @@ export const SearchPage: React.FC = () => {
       {isLoading && (
         <div className="flex flex-col items-center justify-center py-24 gap-3">
           <Loader2 className="w-8 h-8 text-[#ff0033] animate-spin" />
-          <span className="text-xs text-[#aaa]">Recherche sur YouTube et dans votre archive locale...</span>
         </div>
       )}
 
       {!isLoading && !hasAnyResults && (
         <div className="py-24 text-center max-w-md mx-auto space-y-2">
           <SearchIcon className="w-12 h-12 text-[#717171] mx-auto mb-2" />
-          <h3 className="font-bold text-base text-white">Aucun résultat trouvé pour "{query}"</h3>
+          <h3 className="font-bold text-base text-white">{t('search.empty')} “{query}”</h3>
           <p className="text-xs text-[#aaa]">
-            Vérifiez l'orthographe ou essayez d'autres mots-clés ou l'URL complète de la vidéo.
+            {localOnly ? t('search.emptyLocal') : t('search.empty')}
           </p>
         </div>
       )}
@@ -220,7 +204,13 @@ export const SearchPage: React.FC = () => {
                     {/* Left: Big Circular Logo Avatar + Channel Info */}
                     <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 text-center sm:text-left min-w-0">
                       {/* Big Round Avatar */}
-                      <ChannelAvatar url={ch.avatarUrl} title={ch.title} />
+                      <ChannelAvatar
+                        channelId={ch.id}
+                        url={ch.avatarUrl}
+                        title={ch.title}
+                        className="w-28 h-28 sm:w-36 sm:h-36 rounded-full border-2 border-[#272727] shadow-lg group-hover:scale-105 transition-transform duration-200"
+                        textClassName="text-4xl"
+                      />
 
                       {/* Info */}
                       <div className="space-y-1.5 my-auto">
@@ -246,20 +236,19 @@ export const SearchPage: React.FC = () => {
                           {ch.downloadedCount !== undefined && ch.downloadedCount > 0 && (
                             <>
                               <span>•</span>
-                              <span className="text-emerald-400 font-medium">{ch.downloadedCount} vidéo{ch.downloadedCount > 1 ? 's' : ''} archivée{ch.downloadedCount > 1 ? 's' : ''}</span>
+                              <span className="text-emerald-400 font-medium">{t('search.archivedCount', { count: ch.downloadedCount })}</span>
                             </>
                           )}
                         </div>
 
                         {ch.description && (
-                          <p className="text-xs text-[#888] line-clamp-2 max-w-xl pt-0.5 leading-relaxed">
-                            {ch.description}
-                          </p>
+                          <ExpandableText text={ch.description} className="text-xs text-[#888]" />
                         )}
                       </div>
                     </div>
 
                     {/* Right: Subscribe Button */}
+                    {!localOnly && (
                     <div className="flex-shrink-0" onClick={(e) => e.stopPropagation()}>
                       <button
                         onClick={(e) => handleSubscribeToggle(ch, e)}
@@ -279,25 +268,26 @@ export const SearchPage: React.FC = () => {
                         {isThisSubscribing ? (
                           <>
                             <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                            <span>Récupération des vidéos...</span>
+                            <span>{t('search.fetching')}</span>
                           </>
                         ) : isSub ? (
                           isThisHovered ? (
                             <>
                               <UserMinus className="w-3.5 h-3.5 text-red-400" />
-                              <span>Se désabonner</span>
+                              <span>{t('search.unsubscribe')}</span>
                             </>
                           ) : (
                             <>
                               <Check className="w-3.5 h-3.5 text-[#3ea6ff]" />
-                              <span>Abonné</span>
+                              <span>{t('search.subscribed')}</span>
                             </>
                           )
                         ) : (
-                          <span>S'abonner</span>
+                          <span>{t('search.subscribe')}</span>
                         )}
                       </button>
                     </div>
+                    )}
                   </div>
                 );
               })}
@@ -309,17 +299,12 @@ export const SearchPage: React.FC = () => {
           {/* ========================================================================= */}
           {showLocalVideos && (
             <div className="space-y-3">
-              <h3 className="text-xs font-bold text-[#aaa] uppercase tracking-wider flex items-center gap-2 px-1">
-                <HardDrive className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Vidéos dans votre bibliothèque locale ({localVideos.length})</span>
+              <h3 className="text-sm font-medium text-[#aaa] px-1">
+                {t('search.libraryTitle', { count: localVideos.length })}
               </h3>
 
               <div className="space-y-3">
                 {localVideos.map((video) => {
-                  const thumb = video.local_thumbnail_path
-                    ? `/media/downloads/${encodeURIComponent(video.local_thumbnail_path).replace(/%2F/g, '/')}`
-                    : video.thumbnail_url || `https://i.ytimg.com/vi/${video.id}/hqdefault.jpg`;
-
                   return (
                     <div
                       key={video.id}
@@ -328,14 +313,7 @@ export const SearchPage: React.FC = () => {
                     >
                       {/* Thumbnail */}
                       <div className="relative w-full sm:w-64 aspect-video rounded-xl overflow-hidden bg-[#272727] flex-shrink-0">
-                        <img src={thumb} alt={video.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200" />
-                        
-                        {/* Downloaded Badge */}
-                        <div className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-emerald-500/90 text-black font-bold text-[10px] flex items-center gap-1 shadow">
-                          <HardDrive className="w-3 h-3" />
-                          <span>Stockée</span>
-                        </div>
-
+                        <MediaThumb video={video} alt={video.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200" />
                         {video.duration_string && (
                           <span className="absolute bottom-2 right-2 bg-black/80 text-white text-[11px] font-semibold px-2 py-0.5 rounded-md">
                             {video.duration_string}
@@ -353,7 +331,7 @@ export const SearchPage: React.FC = () => {
                           {/* Stats */}
                           <div className="text-xs text-[#aaa] mt-1 flex items-center gap-1.5">
                             {video.view_count !== undefined && video.view_count !== null && (
-                              <span>{formatViews(video.view_count)}</span>
+                              <span>{formatViews(video.view_count, locale)}</span>
                             )}
                             {video.view_count && video.upload_date && <span>•</span>}
                             {video.upload_date && <span>{video.upload_date}</span>}
@@ -369,15 +347,13 @@ export const SearchPage: React.FC = () => {
                               }
                             }}
                           >
-                            <div className="w-6 h-6 rounded-full bg-[#272727] overflow-hidden flex-shrink-0 flex items-center justify-center">
-                              {(video as any).channel_avatar ? (
-                                <img src={(video as any).channel_avatar} alt={video.channel_title} className="w-full h-full object-cover" />
-                              ) : (
-                                <div className="w-full h-full bg-gradient-to-tr from-[#ff0033] to-[#ff5e00] text-white text-[10px] flex items-center justify-center font-bold">
-                                  {video.channel_title?.charAt(0).toUpperCase() || 'Y'}
-                                </div>
-                              )}
-                            </div>
+                            <ChannelAvatar
+                              channelId={video.channel_id}
+                              url={video.channel_avatar}
+                              title={video.channel_title}
+                              className="w-6 h-6 rounded-full"
+                              textClassName="text-[10px]"
+                            />
                             <span className="text-xs text-[#aaa] group-hover/ch:text-white font-medium">
                               {video.channel_title}
                             </span>
@@ -392,13 +368,13 @@ export const SearchPage: React.FC = () => {
                             className="bg-white text-black font-semibold text-xs px-4 py-1.5 rounded-full hover:bg-white/90 transition flex items-center gap-1.5 cursor-pointer"
                           >
                             <Play className="w-3.5 h-3.5 fill-current" />
-                            <span>Lire</span>
+                            <span>{t('search.play')}</span>
                           </button>
 
                           <button
                             onClick={(e) => handleDeleteLocalVideo(video.id, e)}
                             className="p-1.5 text-[#aaa] hover:text-rose-400 rounded-full hover:bg-[#272727] transition cursor-pointer"
-                            title="Supprimer du disque"
+                            title={t('card.delete')}
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -416,9 +392,8 @@ export const SearchPage: React.FC = () => {
           {/* ========================================================================= */}
           {showYoutubeVideos && youtubeVideos.length > 0 && (
             <div className="space-y-4 pt-2">
-              <h3 className="text-xs font-bold text-[#aaa] uppercase tracking-wider flex items-center gap-2 px-1">
-                <Film className="w-3.5 h-3.5 text-[#ff0033]" />
-                <span>Vidéos YouTube ({youtubeVideos.length})</span>
+              <h3 className="text-sm font-medium text-[#aaa] px-1">
+                {t('search.youtubeVideos', { count: youtubeVideos.length })}
               </h3>
 
               <div className="space-y-4">
@@ -429,17 +404,15 @@ export const SearchPage: React.FC = () => {
                     className="flex flex-col sm:flex-row gap-4 p-3 rounded-2xl hover:bg-[#181818] transition cursor-pointer group"
                   >
                     {/* Big YouTube Video Thumbnail */}
-                    <div className="relative w-full sm:w-80 md:w-96 aspect-video rounded-xl overflow-hidden bg-[#272727] flex-shrink-0 shadow-sm">
-                      <img
-                        src={item.thumbnailUrl || `https://i.ytimg.com/vi/${item.id}/hqdefault.jpg`}
-                        alt={item.title}
-                        referrerPolicy="no-referrer"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src = `https://i.ytimg.com/vi/${item.id}/hqdefault.jpg`;
-                        }}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-                        loading="lazy"
-                      />
+                      <div className="relative w-full sm:w-80 md:w-96 aspect-video rounded-xl overflow-hidden bg-[#272727] flex-shrink-0 shadow-sm">
+                        <MediaThumb
+                          video={{ id: item.id, thumbnail_url: item.thumbnailUrl }}
+                          alt={item.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                        />
+                      <span className="absolute top-2 left-2 bg-black/70 text-[#aaa] text-[10px] font-medium px-2 py-0.5 rounded-full">
+                        {t('card.online')}
+                      </span>
                       {item.durationString && (
                         <span className="absolute bottom-2 right-2 bg-black/85 text-white text-[11px] font-semibold px-2 py-0.5 rounded-md">
                           {item.durationString}
@@ -458,10 +431,10 @@ export const SearchPage: React.FC = () => {
                         {/* Views & Date */}
                         <div className="text-xs text-[#aaa] mt-1 flex items-center gap-1.5">
                           {item.viewCount !== undefined && item.viewCount !== null && (
-                            <span>{formatViews(item.viewCount)}</span>
+                            <span>{formatViews(item.viewCount, locale)}</span>
                           )}
                           {item.viewCount && item.uploadDate && <span>•</span>}
-                          {item.uploadDate && <span>Il y a {item.uploadDate}</span>}
+                          {item.uploadDate && <span>{t('search.ago', { date: item.uploadDate })}</span>}
                         </div>
 
                         {/* Channel Row with Avatar */}
@@ -474,15 +447,13 @@ export const SearchPage: React.FC = () => {
                             }
                           }}
                         >
-                          <div className="w-6 h-6 rounded-full bg-[#272727] overflow-hidden flex-shrink-0 flex items-center justify-center">
-                            {(item as any).channelAvatar ? (
-                              <img src={(item as any).channelAvatar} alt={item.channelTitle} className="w-full h-full object-cover" />
-                            ) : (
-                              <div className="w-full h-full bg-gradient-to-tr from-[#ff0033] to-[#ff5e00] text-white text-[10px] flex items-center justify-center font-bold">
-                                {item.channelTitle?.charAt(0).toUpperCase() || 'Y'}
-                              </div>
-                            )}
-                          </div>
+                          <ChannelAvatar
+                            channelId={item.channelId}
+                            url={item.channelAvatar}
+                            title={item.channelTitle || ''}
+                            className="w-6 h-6 rounded-full"
+                            textClassName="text-[10px]"
+                          />
                           <span className="text-xs text-[#aaa] group-hover/ch:text-white font-medium">
                             {item.channelTitle}
                           </span>
@@ -491,9 +462,7 @@ export const SearchPage: React.FC = () => {
 
                         {/* Description Preview */}
                         {item.description && (
-                          <p className="text-xs text-[#717171] mt-2 line-clamp-2 leading-relaxed">
-                            {item.description}
-                          </p>
+                          <ExpandableText text={item.description} className="text-xs text-[#717171]" />
                         )}
                       </div>
 
@@ -512,7 +481,7 @@ export const SearchPage: React.FC = () => {
                           className="bg-[#ff0033] hover:bg-[#cc0029] text-white text-xs font-semibold px-4 py-1.5 rounded-full flex items-center gap-1.5 shadow transition cursor-pointer"
                         >
                           <DownloadCloud className="w-3.5 h-3.5" />
-                          <span>Télécharger</span>
+                          <span>{t('search.download')}</span>
                         </button>
 
                         <button
@@ -520,7 +489,7 @@ export const SearchPage: React.FC = () => {
                           className="bg-[#272727] hover:bg-[#383838] text-white text-xs font-medium px-3.5 py-1.5 rounded-full flex items-center gap-1.5 transition cursor-pointer"
                         >
                           <Play className="w-3.5 h-3.5" />
-                          <span>Regarder</span>
+                          <span>{t('common.watch')}</span>
                         </button>
 
                         <a
@@ -528,7 +497,7 @@ export const SearchPage: React.FC = () => {
                           target="_blank"
                           rel="noreferrer"
                           className="p-1.5 text-[#aaa] hover:text-white rounded-full hover:bg-[#272727] transition"
-                          title="Ouvrir sur YouTube"
+                          title={t('card.openYoutube')}
                         >
                           <ExternalLink className="w-4 h-4" />
                         </a>
@@ -548,17 +517,17 @@ export const SearchPage: React.FC = () => {
                       {isLoadingMore ? (
                         <>
                           <Loader2 className="w-4 h-4 text-[#ff0033] animate-spin" />
-                          <span>Recherche des vidéos suivantes...</span>
+                          <span>{t('search.loadingMore')}</span>
                         </>
                       ) : (
                         <>
                           <ChevronDown className="w-4 h-4" />
-                          <span>Afficher la suite</span>
+                          <span>{t('search.showMore')}</span>
                         </>
                       )}
                     </button>
                     <span className="text-[11px] text-[#717171]">
-                      {youtubeVideos.length} vidéos en ligne affichées
+                      {t('search.onlineShown', { count: youtubeVideos.length })}
                     </span>
                   </div>
                 )}

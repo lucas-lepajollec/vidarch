@@ -16,6 +16,7 @@ services:
       - NODE_ENV=production
       - DATA_DIR=/app/data
       - DOWNLOADS_DIR=/app/downloads
+      # - AUTH_PASSWORD=change-me
     volumes:
       # Persistent SQLite database (vidarch.db) and optional cookies.txt
       - ./data:/app/data

@@ -11,10 +11,11 @@ import {
   DownloadCloud, 
   Tv, 
   PictureInPicture,
-  HardDrive
 } from 'lucide-react';
 import type { Video } from '../../types';
 import { useMyTube } from '../../context/MyTubeContext';
+import { useI18n } from '../../i18n/I18nProvider';
+import { resolveThumbnail } from '../../utils/media';
 
 interface CustomVideoPlayerProps {
   video: Video;
@@ -27,7 +28,8 @@ export const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = ({
   isTheatre = false,
   onToggleTheatre,
 }) => {
-  const { enqueueDownload } = useMyTube();
+  const { openDownloadModal } = useMyTube();
+  const { t } = useI18n();
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -41,13 +43,18 @@ export const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = ({
   const [showControls, setShowControls] = useState(true);
   const [showSpeedMenu, setShowSpeedMenu] = useState(false);
   const [bufferedEnd, setBufferedEnd] = useState(0);
+  const [playbackQuality, setPlaybackQuality] = useState('');
 
   const isDownloaded = video.is_downloaded === 1 && !!video.local_video_path;
 
   // Stream URL or YouTube embed fallback
   const videoSrc = isDownloaded ? `/api/videos/${video.id}/stream` : '';
 
-  // Format time (mm:ss or hh:mm:ss)
+  const refreshPlaybackQuality = () => {
+    const el = videoRef.current;
+    if (!el || !el.videoHeight) return;
+    setPlaybackQuality(`${el.videoHeight}p`);
+  };
   const formatTime = (secs: number) => {
     if (isNaN(secs)) return '0:00';
     const hrs = Math.floor(secs / 3600);
@@ -148,11 +155,16 @@ export const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = ({
     } catch (_) {}
   }, [video.id, duration]);
 
-  // Keyboard Shortcuts (YouTube-style)
+  // Keyboard Shortcuts (YouTube-style) — only while the player is focused
   useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Don't trigger if typing in an input
       if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName)) return;
+      if (!container.contains(document.activeElement) && document.activeElement !== container) {
+        if (!container.matches(':hover')) return;
+      }
 
       switch (e.key.toLowerCase()) {
         case ' ':
@@ -234,37 +246,41 @@ export const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = ({
   if (!isDownloaded) {
     // Non-downloaded view: show sleek download invite or YouTube iframe
     return (
-      <div className="relative w-full aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl flex flex-col items-center justify-center p-6 border border-white/10 text-center">
-        <div className="absolute inset-0 opacity-20 bg-cover bg-center" style={{ backgroundImage: `url(${video.thumbnail_url})` }} />
-        <div className="relative z-10 max-w-md flex flex-col items-center">
-          <div className="w-16 h-16 rounded-full bg-[#ff0033]/20 border border-[#ff0033]/40 flex items-center justify-center text-[#ff0033] mb-4 shadow-xl shadow-red-500/10">
-            <DownloadCloud className="w-8 h-8 animate-bounce" />
-          </div>
-          <h2 className="text-lg font-bold text-white mb-2">Vidéo non stockée en local</h2>
-          <p className="text-xs text-[#aaa] mb-5">
-            Pour regarder cette vidéo avec le lecteur VidArch haute performance et sans publicité, téléchargez-la dans votre bibliothèque locale.
+      <div className="relative w-full h-full bg-black overflow-hidden flex flex-col items-center justify-center p-8 text-center">
+        <img
+          src={resolveThumbnail(video)}
+          alt=""
+          className="absolute inset-0 w-full h-full object-cover opacity-25"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/70 to-black/40" />
+        <div className="relative z-10 max-w-sm flex flex-col items-center">
+          <p className="text-sm font-medium text-white mb-1">{t('player.notLocal')}</p>
+          <p className="text-xs text-[#aaa] mb-5 leading-relaxed">
+            {t('player.notLocalBody')}
           </p>
-          <div className="flex gap-3">
+          <div className="flex items-center gap-2">
             <button
-              onClick={() => enqueueDownload({
+              onClick={() => openDownloadModal({
                 videoId: video.id,
+                url: `https://www.youtube.com/watch?v=${video.id}`,
                 title: video.title,
                 channelTitle: video.channel_title,
                 channelId: video.channel_id,
                 thumbnailUrl: video.thumbnail_url,
+                durationString: video.duration_string,
               })}
-              className="bg-[#ff0033] hover:bg-[#cc0029] text-white text-xs font-semibold px-5 py-2.5 rounded-full flex items-center gap-2 shadow-lg shadow-red-600/30 transition cursor-pointer"
+              className="bg-white hover:bg-white/90 text-black text-xs font-semibold px-4 py-2 rounded-full flex items-center gap-1.5 transition-colors duration-200 cursor-pointer"
             >
-              <DownloadCloud className="w-4 h-4" />
-              <span>Télécharger maintenant</span>
+              <DownloadCloud className="w-3.5 h-3.5" />
+              <span>{t('player.downloadNow')}</span>
             </button>
             <a
               href={`https://www.youtube.com/watch?v=${video.id}`}
               target="_blank"
               rel="noreferrer"
-              className="bg-white/10 hover:bg-white/20 text-white text-xs font-medium px-4 py-2.5 rounded-full transition cursor-pointer"
+              className="bg-white/10 hover:bg-white/15 text-white text-xs font-medium px-4 py-2 rounded-full transition-colors duration-200 cursor-pointer"
             >
-              Regarder sur YouTube
+              {t('player.watchYt')}
             </a>
           </div>
         </div>
@@ -275,9 +291,10 @@ export const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = ({
   return (
     <div
       ref={containerRef}
-      className={`relative w-full aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl group select-none ${
+      className={`relative w-full h-full bg-black overflow-hidden group select-none ${
         isFullscreen ? 'rounded-none' : ''
       }`}
+      tabIndex={0}
     >
       {/* Video Element */}
       <video
@@ -312,11 +329,13 @@ export const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = ({
         onLoadedMetadata={() => {
           if (videoRef.current) {
             setDuration(videoRef.current.duration);
+            refreshPlaybackQuality();
             if (video.watch_progress) {
               videoRef.current.currentTime = video.watch_progress;
             }
           }
         }}
+        onLoadedData={refreshPlaybackQuality}
         onEnded={() => {
           setIsPlaying(false);
           saveProgress(duration);
@@ -386,7 +405,7 @@ export const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = ({
             <button
               onClick={togglePlay}
               className="hover:text-[#ff0033] transition p-1 cursor-pointer"
-              title={isPlaying ? "Pause (k/espace)" : "Lecture (k/espace)"}
+              title={isPlaying ? t('player.pause') : t('player.play')}
             >
               {isPlaying ? <Pause className="w-5 h-5 fill-current" /> : <Play className="w-5 h-5 fill-current" />}
             </button>
@@ -394,7 +413,7 @@ export const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = ({
             <button
               onClick={() => skip(-10)}
               className="hover:text-white/80 transition p-1 cursor-pointer"
-              title="Reculer de 10s (j)"
+              title={t('player.rewind')}
             >
               <RotateCcw className="w-4 h-4" />
             </button>
@@ -402,14 +421,14 @@ export const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = ({
             <button
               onClick={() => skip(10)}
               className="hover:text-white/80 transition p-1 cursor-pointer"
-              title="Avancer de 10s (l)"
+              title={t('player.forward')}
             >
               <RotateCw className="w-4 h-4" />
             </button>
 
             {/* Volume */}
             <div className="flex items-center gap-1.5 group/vol">
-              <button onClick={toggleMute} className="hover:text-white/80 transition p-1 cursor-pointer" title="Muet (m)">
+              <button onClick={toggleMute} className="hover:text-white/80 transition p-1 cursor-pointer" title={t('player.mute')}>
                 {isMuted || volume === 0 ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
               </button>
               <input
@@ -431,18 +450,18 @@ export const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = ({
 
           {/* Right Controls */}
           <div className="flex items-center gap-3 relative">
-            {/* Local file badge */}
-            <span className="hidden sm:flex items-center gap-1 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-medium px-2 py-0.5 rounded-full">
-              <HardDrive className="w-3 h-3" />
-              <span>Direct Stream</span>
-            </span>
+            {(playbackQuality || video.resolution) && (
+              <span className="text-[11px] font-medium text-[#ddd] tabular-nums">
+                {playbackQuality || video.resolution}
+              </span>
+            )}
 
             {/* Speed Selector */}
             <div className="relative">
               <button
                 onClick={() => setShowSpeedMenu(!showSpeedMenu)}
                 className="hover:text-white/80 font-bold px-2 py-1 rounded hover:bg-white/10 transition cursor-pointer text-xs"
-                title="Vitesse de lecture"
+                title={t('player.speed')}
               >
                 {playbackRate}x
               </button>
@@ -457,7 +476,7 @@ export const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = ({
                         playbackRate === rate ? 'text-[#ff0033] font-bold bg-white/10' : 'text-[#ddd] hover:bg-white/5'
                       }`}
                     >
-                      {rate}x {rate === 1 ? '(Normal)' : ''}
+                      {rate}x {rate === 1 ? `(${t('player.normal')})` : ''}
                     </button>
                   ))}
                 </div>
@@ -468,7 +487,7 @@ export const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = ({
             <button
               onClick={togglePiP}
               className="hover:text-white/80 p-1 rounded hover:bg-white/10 transition cursor-pointer"
-              title="Mini-lecteur (p)"
+              title={t('player.pip')}
             >
               <PictureInPicture className="w-4 h-4" />
             </button>
@@ -477,8 +496,10 @@ export const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = ({
             {onToggleTheatre && (
               <button
                 onClick={onToggleTheatre}
-                className="hover:text-white/80 p-1 rounded hover:bg-white/10 transition cursor-pointer"
-                title="Mode cinéma (t)"
+                className={`p-1 rounded hover:bg-white/10 transition cursor-pointer ${
+                  isTheatre ? 'text-white' : 'text-[#ddd] hover:text-white'
+                }`}
+                title={t('player.theatre')}
               >
                 <Tv className="w-4 h-4" />
               </button>
@@ -488,7 +509,7 @@ export const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = ({
             <button
               onClick={toggleFullscreen}
               className="hover:text-white/80 p-1 rounded hover:bg-white/10 transition cursor-pointer"
-              title="Plein écran (f)"
+              title={t('player.fullscreen')}
             >
               {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
             </button>

@@ -4,9 +4,6 @@ import {
   DownloadCloud, 
   Trash2, 
   ExternalLink, 
-  ChevronDown, 
-  ChevronUp, 
-  HardDrive,
   CheckCircle2,
   Share2,
   Check,
@@ -16,13 +13,17 @@ import {
 import type { Video } from '../types';
 import { CustomVideoPlayer } from '../components/video/CustomVideoPlayer';
 import { useMyTube } from '../context/MyTubeContext';
-import { formatViews, formatUploadDate } from '../utils/format';
+import { formatViews, formatUploadDate, formatFileSize } from '../utils/format';
+import { MediaThumb } from '../components/common/MediaThumb';
+import { ChannelAvatar } from '../components/common/ChannelAvatar';
+import { useI18n } from '../i18n/I18nProvider';
+import { ExpandableText } from '../components/common/ExpandableText';
 
 export const Watch: React.FC = () => {
-  const { nav, goTo, subscriptions, subscribeChannel, unsubscribeChannel, openDownloadModal, dataVersion } = useMyTube();
+  const { nav, goTo, subscriptions, subscribeChannel, unsubscribeChannel, openDownloadModal, dataVersion, localOnly } = useMyTube();
+  const { t, locale } = useI18n();
   const [video, setVideo] = useState<Video | null>(null);
   const [related, setRelated] = useState<Video[]>([]);
-  const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
   const [isTheatre, setIsTheatre] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubscribing, setIsSubscribing] = useState(false);
@@ -69,7 +70,7 @@ export const Watch: React.FC = () => {
       <div className="flex-1 p-6 w-full max-w-[1800px] mx-auto flex items-center justify-center min-h-[70vh]">
         <div className="flex flex-col items-center gap-3">
           <div className="w-10 h-10 border-3 border-[#ff0033] border-t-transparent rounded-full animate-spin" />
-          <span className="text-xs text-[#aaa]">Chargement de la vidéo...</span>
+          <span className="text-xs text-[#aaa]">{t('watch.loading')}</span>
         </div>
       </div>
     );
@@ -100,7 +101,7 @@ export const Watch: React.FC = () => {
   };
 
   const handleDelete = async () => {
-    if (!confirm(`Supprimer le fichier local de "${video.title}" ?`)) return;
+    if (!confirm(t('card.deleteConfirm', { title: video.title }))) return;
     try {
       await fetch(`/api/videos/${video.id}`, { method: 'DELETE' });
       await loadVideo();
@@ -117,30 +118,25 @@ export const Watch: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 w-full px-0 sm:px-6 pt-0 sm:pt-3 pb-8 space-y-4">
-      {/* Theatre Mode Full Width Video Container */}
+    <div className="flex-1 w-full px-0 sm:px-6 pt-0 sm:pt-6 pb-8 space-y-4">
       {isTheatre && (
-        <div className="w-full aspect-video max-h-[78vh] bg-black rounded-none sm:rounded-2xl overflow-hidden shadow-2xl mb-4">
-          <CustomVideoPlayer 
-            video={video} 
-            isTheatre={isTheatre} 
-            onToggleTheatre={() => setIsTheatre(!isTheatre)} 
+        <div className="w-full aspect-video bg-black overflow-hidden">
+          <CustomVideoPlayer
+            video={video}
+            isTheatre={isTheatre}
+            onToggleTheatre={() => setIsTheatre((open) => !open)}
           />
         </div>
       )}
 
-      {/* Main Grid: Left Video Details / Right Recommendations */}
-      <div className="flex flex-col lg:flex-row gap-6">
-        {/* ========================================================================= */}
-        {/* Left Column: Player (if not theatre) + Video Metadata & Actions           */}
-        {/* ========================================================================= */}
-        <div className="flex-1 min-w-0 space-y-4">
+      <div className="flex flex-col lg:flex-row gap-6 items-start">
+        <div className="flex-1 min-w-0 w-full space-y-4">
           {!isTheatre && (
-            <div className="w-full shadow-2xl rounded-none sm:rounded-2xl overflow-hidden bg-black">
-              <CustomVideoPlayer 
-                video={video} 
-                isTheatre={isTheatre} 
-                onToggleTheatre={() => setIsTheatre(!isTheatre)} 
+            <div className="w-full aspect-video bg-black overflow-hidden rounded-none sm:rounded-2xl shadow-2xl">
+              <CustomVideoPlayer
+                video={video}
+                isTheatre={isTheatre}
+                onToggleTheatre={() => setIsTheatre((open) => !open)}
               />
             </div>
           )}
@@ -160,13 +156,13 @@ export const Watch: React.FC = () => {
                     onClick={() => video.channel_id && goTo('channel', { channelId: video.channel_id })}
                     className="w-9 h-9 sm:w-10 sm:h-10 rounded-full overflow-hidden bg-[#2a2a2a] flex items-center justify-center hover:opacity-85 transition cursor-pointer flex-shrink-0"
                   >
-                    {(video as any).channel_avatar ? (
-                      <img src={(video as any).channel_avatar} alt={video.channel_title} className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full bg-gradient-to-tr from-[#ff0033] to-[#ff5e00] flex items-center justify-center text-white font-bold text-sm">
-                        {video.channel_title?.charAt(0).toUpperCase() || 'Y'}
-                      </div>
-                    )}
+                    <ChannelAvatar
+                      channelId={video.channel_id}
+                      url={video.channel_avatar}
+                      title={video.channel_title}
+                      className="w-9 h-9 sm:w-10 sm:h-10 rounded-full"
+                      textClassName="text-sm"
+                    />
                   </button>
 
                   <div className="min-w-0">
@@ -178,13 +174,13 @@ export const Watch: React.FC = () => {
                       <CheckCircle2 className="w-3.5 h-3.5 text-[#aaa] fill-current flex-shrink-0" />
                     </button>
                     <span className="text-[11px] text-[#aaa] block truncate">
-                      {isDownloaded ? 'Stockée dans votre archive' : 'Chaîne YouTube'}
+                      {isDownloaded ? t('watch.stored') : t('watch.youtubeChannel')}
                     </span>
                   </div>
                 </div>
 
                 {/* Subscribe pill button */}
-                {video.channel_id && (
+                {video.channel_id && !localOnly && (
                   <button
                     onClick={handleSubscribeToggle}
                     onMouseEnter={() => setIsHoveredSub(true)}
@@ -203,22 +199,22 @@ export const Watch: React.FC = () => {
                     {isSubscribing ? (
                       <>
                         <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        <span className="hidden sm:inline">Récupération...</span>
+                        <span className="hidden sm:inline">{t('watch.fetching')}</span>
                       </>
                     ) : isSubscribed ? (
                       isHoveredSub ? (
                         <>
                           <UserMinus className="w-3.5 h-3.5 text-red-400" />
-                          <span>Se désabonner</span>
+                          <span>{t('channel.unsubscribe')}</span>
                         </>
                       ) : (
                         <>
                           <Check className="w-3.5 h-3.5 text-[#3ea6ff]" />
-                          <span>Abonné</span>
+                          <span>{t('channel.subscribed')}</span>
                         </>
                       )
                     ) : (
-                      <span>S'abonner</span>
+                      <span>{t('channel.subscribe')}</span>
                     )}
                   </button>
                 )}
@@ -236,7 +232,7 @@ export const Watch: React.FC = () => {
                   }`}
                 >
                   <ThumbsUp className={`w-3.5 sm:w-4 h-3.5 sm:h-4 ${video.liked === 1 ? 'fill-current' : ''}`} />
-                  <span>J'aime</span>
+                  <span>{t('watch.like')}</span>
                 </button>
 
                 {/* Download / Local Status */}
@@ -244,12 +240,12 @@ export const Watch: React.FC = () => {
                   <button
                     onClick={handleDelete}
                     className="flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs font-semibold bg-[#272727] hover:bg-rose-900/40 text-rose-400 transition cursor-pointer flex-shrink-0"
-                    title="Supprimer le fichier local"
+                    title={t('watch.deleteLocal')}
                   >
                     <Trash2 className="w-3.5 sm:w-4 h-3.5 sm:h-4" />
-                    <span>Supprimer</span>
+                    <span>{t('watch.delete')}</span>
                   </button>
-                ) : (
+                ) : !localOnly ? (
                   <button
                     onClick={() => openDownloadModal({
                       videoId: video.id,
@@ -260,12 +256,12 @@ export const Watch: React.FC = () => {
                       thumbnailUrl: video.thumbnail_url,
                       durationString: video.duration_string,
                     })}
-                    className="flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs font-semibold bg-[#ff0033] hover:bg-[#cc0029] text-white shadow-lg shadow-red-600/30 transition cursor-pointer flex-shrink-0"
+                    className="flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs font-semibold bg-[#272727] hover:bg-[#383838] text-[#f1f1f1] transition-colors duration-200 cursor-pointer flex-shrink-0"
                   >
                     <DownloadCloud className="w-3.5 sm:w-4 h-3.5 sm:h-4" />
-                    <span>Télécharger</span>
+                    <span>{t('watch.download')}</span>
                   </button>
-                )}
+                ) : null}
 
                 {/* Share */}
                 <button
@@ -273,7 +269,7 @@ export const Watch: React.FC = () => {
                   className="flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs font-semibold bg-[#272727] hover:bg-[#383838] text-[#f1f1f1] transition cursor-pointer flex-shrink-0"
                 >
                   <Share2 className="w-3.5 sm:w-4 h-3.5 sm:h-4" />
-                  <span>{copiedLink ? 'Copié !' : 'Partager'}</span>
+                  <span>{copiedLink ? t('common.copied') : t('common.share')}</span>
                 </button>
 
                 {/* Open on YouTube */}
@@ -282,7 +278,7 @@ export const Watch: React.FC = () => {
                   target="_blank"
                   rel="noreferrer"
                   className="p-1.5 sm:p-2 bg-[#272727] hover:bg-[#383838] text-[#aaa] hover:text-white rounded-full transition flex-shrink-0"
-                  title="Ouvrir sur YouTube"
+                  title={t('card.openYoutube')}
                 >
                   <ExternalLink className="w-3.5 sm:w-4 h-3.5 sm:h-4" />
                 </a>
@@ -291,61 +287,40 @@ export const Watch: React.FC = () => {
 
             {/* Description & Stats Box */}
             <div className="bg-[#272727]/60 hover:bg-[#272727] rounded-2xl p-3.5 sm:p-4 text-xs transition space-y-2">
-            <div className="flex flex-wrap items-center gap-3 font-semibold text-white">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[#aaa]">
               {video.view_count !== undefined && video.view_count !== null && (
-                <span>{formatViews(video.view_count)}</span>
+                <span className="font-semibold text-white">{formatViews(video.view_count, locale)}</span>
               )}
               {video.upload_date && (
-                <span>{formatUploadDate(video.upload_date)}</span>
+                <>
+                  <span className="text-[#717171]">•</span>
+                  <span>{formatUploadDate(video.upload_date, locale)}</span>
+                </>
               )}
-              {isDownloaded && video.file_size && (
-                <span className="flex items-center gap-1.5 text-emerald-400 font-mono">
-                  <HardDrive className="w-3.5 h-3.5" />
-                  <span>{((video.file_size || 0) / (1024 * 1024)).toFixed(1)} Mo ({video.resolution || '1080p'})</span>
-                </span>
-              )}
+              {isDownloaded && video.file_size ? (
+                <>
+                  <span className="text-[#717171]">•</span>
+                  <span>{formatFileSize(video.file_size, locale)}</span>
+                </>
+              ) : null}
             </div>
 
-            <div className="text-[#ddd] whitespace-pre-wrap leading-relaxed">
-              {video.description ? (
-                isDescriptionExpanded ? (
-                  video.description
-                ) : (
-                  video.description.length > 200 ? `${video.description.substring(0, 200)}...` : video.description
-                )
-              ) : (
-                <span className="text-[#888] italic">Aucune description fournie pour cette vidéo.</span>
-              )}
-            </div>
-
-            {video.description && video.description.length > 200 && (
-              <button
-                onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
-                className="font-bold text-white hover:text-[#3ea6ff] flex items-center gap-1 pt-1 cursor-pointer"
-              >
-                <span>{isDescriptionExpanded ? 'Moins' : 'Plus'}</span>
-                {isDescriptionExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-              </button>
+            {video.description ? (
+              <ExpandableText text={video.description} className="text-sm text-[#ddd]" />
+            ) : (
+              <p className="text-[#888] italic text-sm">{t('watch.noDescription')}</p>
             )}
           </div>
         </div>
-      </div>
+        </div>
 
-        {/* ========================================================================= */}
-        {/* Right Column: Recommendations Sidebar (YouTube style)                      */}
-        {/* ========================================================================= */}
-        <div className="w-full lg:w-[380px] xl:w-[400px] 2xl:w-[420px] flex-shrink-0 space-y-3">
+        <div className="w-full lg:w-[400px] flex-shrink-0 space-y-3 px-3 sm:px-0">
           <h2 className="text-sm font-bold text-white px-1">
-            Autres vidéos recommandées
+            {t('watch.related')}
           </h2>
 
           <div className="space-y-3">
             {related.map((item) => {
-              const isItemDownloaded = item.is_downloaded === 1;
-              const thumbSrc = (isItemDownloaded && item.local_thumbnail_path)
-                ? `/media/downloads/${encodeURIComponent(item.local_thumbnail_path).replace(/%2F/g, '/')}`
-                : item.thumbnail_url || `https://i.ytimg.com/vi/${item.id}/hqdefault.jpg`;
-
               return (
                 <div
                   key={item.id}
@@ -354,13 +329,9 @@ export const Watch: React.FC = () => {
                 >
                   {/* Compact 16:9 Thumbnail */}
                   <div className="relative w-40 sm:w-44 aspect-video rounded-xl overflow-hidden bg-[#222] flex-shrink-0 shadow-sm">
-                    <img
-                      src={thumbSrc}
+                    <MediaThumb
+                      video={item}
                       alt={item.title}
-                      referrerPolicy="no-referrer"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src = `https://i.ytimg.com/vi/${item.id}/hqdefault.jpg`;
-                      }}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
                     />
                     {item.duration_string && (
@@ -368,10 +339,9 @@ export const Watch: React.FC = () => {
                         {item.duration_string}
                       </span>
                     )}
-                    {isItemDownloaded && (
-                      <span className="absolute top-1 left-1 bg-emerald-600/90 text-white text-[8px] font-bold px-1 py-0.2 rounded flex items-center gap-0.5 shadow">
-                        <HardDrive className="w-2 h-2" />
-                        <span>Stocké</span>
+                    {item.is_downloaded !== 1 && !localOnly && (
+                      <span className="absolute top-1 left-1 bg-black/70 text-[#aaa] text-[8px] font-medium px-1.5 py-0.5 rounded">
+                        {t('card.online')}
                       </span>
                     )}
                   </div>
@@ -388,7 +358,7 @@ export const Watch: React.FC = () => {
                       {item.view_count !== undefined && item.view_count !== null ? (
                         <span>{formatViews(item.view_count)}</span>
                       ) : (
-                        <span>Stockée localement</span>
+                        <span>{formatViews(item.view_count, locale)}</span>
                       )}
                       {item.upload_date && (
                         <>

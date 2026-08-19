@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { db } from '../db/database.js';
+import { applyVideoLocales } from '../utils/contentLocale.js';
 
 const router = Router();
 
@@ -15,7 +16,7 @@ router.get('/videos', (req, res) => {
       LIMIT 100
     `).all();
 
-    res.json(videos);
+    res.json(applyVideoLocales(videos as any[]));
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }

@@ -1,40 +1,71 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { 
-  X, 
-  DownloadCloud, 
-  Check, 
-  Loader2, 
-  Film
+import {
+  X,
+  DownloadCloud,
+  Check,
+  Loader2,
+  Film,
 } from 'lucide-react';
 import { useMyTube } from '../../context/MyTubeContext';
+import { MediaThumb } from '../common/MediaThumb';
+import { useI18n } from '../../i18n/I18nProvider';
 
 export const DownloadModal: React.FC = () => {
   const { downloadModal, closeDownloadModal, enqueueDownload } = useMyTube();
-  
+  const { t } = useI18n();
+
   const [resolution, setResolution] = useState('1080p');
+  const [defaultResolution, setDefaultResolution] = useState('1080p');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [statusMessage, setStatusMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
   useEffect(() => {
-    if (downloadModal.isOpen) {
-      setResolution('1080p');
-      setStatusMessage(null);
-    }
+    if (!downloadModal.isOpen) return;
+    setStatusMessage(null);
+    setIsSubmitting(false);
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch('/api/system/settings');
+        if (!res.ok) return;
+        const data = await res.json();
+        const next = typeof data.default_max_resolution === 'string' ? data.default_max_resolution : '1080p';
+        if (!cancelled) {
+          setDefaultResolution(next);
+          setResolution(next);
+        }
+      } catch {
+        if (!cancelled) {
+          setDefaultResolution('1080p');
+          setResolution('1080p');
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [downloadModal.isOpen]);
 
-  // Close on Escape
   useEffect(() => {
+    if (!downloadModal.isOpen) return;
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && downloadModal.isOpen) {
-        closeDownloadModal();
-      }
+      if (e.key === 'Escape' && !isSubmitting) closeDownloadModal();
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [downloadModal.isOpen, closeDownloadModal]);
+  }, [downloadModal.isOpen, isSubmitting, closeDownloadModal]);
 
   if (!downloadModal.isOpen) return null;
+
+  const qualityOptions = [
+    { id: '2160p', label: t('dl.q2160'), desc: t('dl.q2160d') },
+    { id: '1440p', label: t('dl.q1440'), desc: t('dl.q1440d') },
+    { id: '1080p', label: t('dl.q1080'), desc: t('dl.q1080d') },
+    { id: '720p', label: t('dl.q720'), desc: t('dl.q720d') },
+  ];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,190 +85,168 @@ export const DownloadModal: React.FC = () => {
         resolution,
       });
 
-      setStatusMessage({ text: 'Ajouté à la file de téléchargement !', type: 'success' });
-      setTimeout(() => {
-        closeDownloadModal();
-      }, 700);
+      setStatusMessage({ text: t('dl.queued'), type: 'success' });
+      setTimeout(() => closeDownloadModal(), 650);
     } catch (err: any) {
-      setStatusMessage({ text: err.message || 'Une erreur est survenue', type: 'error' });
-    } finally {
+      setStatusMessage({ text: err.message || t('common.genericError'), type: 'error' });
       setIsSubmitting(false);
     }
   };
 
-  const qualityOptions = [
-    { id: '1080p', label: '1080p (Full HD)', desc: 'Recommandé • Qualité optimale', badge: 'Populaire' },
-    { id: '2160p', label: '2160p (4K Ultra HD)', desc: 'Qualité maximale • Gros fichier', badge: '4K UHD' },
-    { id: '1440p', label: '1440p (2K QHD)', desc: 'Très haute résolution', badge: '2K' },
-    { id: '720p', label: '720p (HD)', desc: 'Fichier léger et rapide', badge: 'Éco' },
-  ];
+  const close = () => {
+    if (!isSubmitting) closeDownloadModal();
+  };
 
-  const modalContent = (
-    <div 
-      className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in"
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        width: '100vw',
-        height: '100vh',
-        zIndex: 99999,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs animate-in fade-in duration-300"
       onClick={(e) => {
-        if (e.target === e.currentTarget) closeDownloadModal();
+        if (e.target === e.currentTarget) close();
       }}
     >
-      <div 
-        className="relative w-full max-w-lg bg-[#181818] border border-white/15 rounded-3xl p-6 shadow-2xl text-[#f1f1f1] overflow-hidden transform transition-all"
-        style={{
-          backgroundColor: '#181818',
-          maxWidth: '32rem',
-          width: '100%',
-        }}
+      <div
+        className="w-full max-w-md bg-[#212121] border border-[#383838] rounded-3xl shadow-2xl overflow-hidden text-[#f1f1f1]"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Glowing subtle accent */}
-        <div className="absolute top-0 right-0 w-48 h-48 bg-[#ff0033]/15 rounded-full blur-3xl pointer-events-none" />
-
-        {/* Header */}
-        <div className="flex items-center justify-between pb-4 border-b border-white/10 relative z-10">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#ff0033]/20 border border-[#ff0033]/30 flex items-center justify-center text-[#ff0033] shadow-lg shadow-red-600/20">
-              <DownloadCloud className="w-5 h-5" />
-            </div>
-            <div>
-              <h3 className="font-bold text-base text-white">Télécharger la vidéo</h3>
-              <p className="text-xs text-[#aaa]">Enregistrement direct dans votre bibliothèque locale</p>
-            </div>
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[#303030]">
+          <div>
+            <h3 className="text-base font-bold text-white tracking-tight">{t('dl.title')}</h3>
+            <p className="text-xs text-[#aaa] mt-0.5">{t('dl.subtitle')}</p>
           </div>
           <button
-            onClick={closeDownloadModal}
-            className="p-2 text-[#aaa] hover:text-white rounded-full hover:bg-white/10 transition cursor-pointer"
-            title="Fermer"
+            type="button"
+            onClick={close}
+            disabled={isSubmitting}
+            className="w-9 h-9 rounded-full bg-white/5 hover:bg-white/10 text-[#aaa] hover:text-white flex items-center justify-center transition cursor-pointer disabled:opacity-40"
+            title={t('common.close')}
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Video Preview Card */}
-        <div className="mt-4 p-3 bg-black/40 border border-white/10 rounded-2xl flex gap-3.5 items-center relative z-10">
-          <div className="relative w-28 aspect-video rounded-xl overflow-hidden bg-[#222] flex-shrink-0 shadow-md">
-            {downloadModal.thumbnailUrl ? (
-              <img 
-                src={downloadModal.thumbnailUrl} 
-                alt={downloadModal.title || 'Vignette'} 
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-white/40">
-                <Film className="w-6 h-6" />
-              </div>
-            )}
-            {downloadModal.durationString && (
-              <span className="absolute bottom-1 right-1 bg-black/85 text-white text-[9px] font-bold px-1 rounded">
-                {downloadModal.durationString}
-              </span>
-            )}
-          </div>
-
-          <div className="min-w-0 flex-1">
-            <h4 className="font-semibold text-xs text-white line-clamp-2 leading-snug">
-              {downloadModal.title || 'Vidéo YouTube'}
-            </h4>
-            <p className="text-[11px] text-[#aaa] mt-1 truncate">
-              {downloadModal.channelTitle || 'Chaîne YouTube'}
-            </p>
+        <div className="px-5 pt-4">
+          <div className="flex gap-3.5 items-center">
+            <div className="relative w-[7.5rem] aspect-video rounded-xl overflow-hidden bg-[#121212] flex-shrink-0">
+              {downloadModal.videoId ? (
+                <MediaThumb
+                  video={{ id: downloadModal.videoId, thumbnailUrl: downloadModal.thumbnailUrl }}
+                  alt={downloadModal.title || t('dl.thumb')}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-[#717171]">
+                  <Film className="w-6 h-6" />
+                </div>
+              )}
+              {downloadModal.durationString && (
+                <span className="absolute bottom-1 right-1 bg-black/85 text-white text-[9px] font-bold px-1 rounded">
+                  {downloadModal.durationString}
+                </span>
+              )}
+            </div>
+            <div className="min-w-0 flex-1">
+              <h4 className="font-semibold text-sm text-white line-clamp-2 leading-snug">
+                {downloadModal.title || t('dl.fallbackTitle')}
+              </h4>
+              <p className="text-xs text-[#aaa] mt-1 truncate">
+                {downloadModal.channelTitle || t('watch.youtubeChannel')}
+              </p>
+            </div>
           </div>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="mt-5 space-y-4 relative z-10">
-          <div>
-            <label className="block text-xs font-semibold text-[#ddd] mb-2">
-              Choisir la qualité vidéo :
-            </label>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+        <form onSubmit={handleSubmit}>
+          <div className="px-5 pt-5">
+            <p className="text-xs font-semibold text-[#aaa] mb-2">{t('dl.quality')}</p>
+            <p className="text-[11px] text-[#717171] mb-2.5 leading-relaxed">{t('dl.qualityHint')}</p>
+            <div className="rounded-2xl border border-[#303030] overflow-hidden divide-y divide-[#303030]">
               {qualityOptions.map((opt) => {
                 const isSelected = resolution === opt.id;
+                const isDefault = opt.id === defaultResolution;
                 return (
                   <button
                     key={opt.id}
                     type="button"
                     onClick={() => setResolution(opt.id)}
-                    className={`p-3 rounded-2xl border text-left transition flex flex-col justify-between cursor-pointer ${
-                      isSelected
-                        ? 'bg-[#ff0033]/15 border-[#ff0033] shadow-lg shadow-red-600/15'
-                        : 'bg-[#121212] border-white/5 hover:border-white/20 hover:bg-white/5'
+                    className={`w-full flex items-center gap-3 px-3.5 py-3 text-left transition cursor-pointer ${
+                      isSelected ? 'bg-[#3d3d3d]' : 'bg-[#181818] hover:bg-[#272727]'
                     }`}
                   >
-                    <div className="flex items-center justify-between mb-1">
-                      <span className={`text-xs font-bold ${isSelected ? 'text-white' : 'text-[#ddd]'}`}>
-                        {opt.label}
+                    <span
+                      className={`w-[18px] h-[18px] rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
+                        isSelected ? 'border-white' : 'border-[#717171]'
+                      }`}
+                    >
+                      {isSelected ? <span className="w-2 h-2 rounded-full bg-white" /> : null}
+                    </span>
+                    <span className="flex-1 min-w-0">
+                      <span className="flex items-center gap-2">
+                        <span className={`text-sm font-medium ${isSelected ? 'text-white' : 'text-[#f1f1f1]'}`}>
+                          {opt.label}
+                        </span>
+                        {isDefault && (
+                          <span className="text-[10px] font-semibold text-[#aaa] bg-white/10 px-1.5 py-0.5 rounded">
+                            {t('common.recommended')}
+                          </span>
+                        )}
                       </span>
-                      <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${
-                        isSelected ? 'bg-[#ff0033] text-white' : 'bg-white/10 text-[#aaa]'
-                      }`}>
-                        {opt.badge}
-                      </span>
-                    </div>
-                    <span className="text-[10px] text-[#888]">{opt.desc}</span>
+                      <span className="block text-[11px] text-[#888] mt-0.5">{opt.desc}</span>
+                    </span>
                   </button>
                 );
               })}
             </div>
           </div>
 
-          {/* Status Message */}
           {statusMessage && (
-            <div
-              className={`p-3 rounded-xl text-xs flex items-center gap-2 ${
-                statusMessage.type === 'success'
-                  ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                  : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
-              }`}
-            >
-              {statusMessage.type === 'success' ? <Check className="w-4 h-4 text-emerald-400" /> : <X className="w-4 h-4" />}
-              <span>{statusMessage.text}</span>
+            <div className="px-5 pt-4">
+              <div
+                className={`px-3 py-2.5 rounded-xl text-xs flex items-center gap-2 ${
+                  statusMessage.type === 'success'
+                    ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/25'
+                    : 'bg-rose-500/15 text-rose-300 border border-rose-500/25'
+                }`}
+              >
+                {statusMessage.type === 'success' ? (
+                  <Check className="w-4 h-4 text-emerald-400" />
+                ) : (
+                  <X className="w-4 h-4" />
+                )}
+                <span>{statusMessage.text}</span>
+              </div>
             </div>
           )}
 
-          {/* Actions */}
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-white/10">
+          <div className="flex items-center justify-end gap-2 px-5 py-4 mt-4 border-t border-[#303030]">
             <button
               type="button"
-              onClick={closeDownloadModal}
-              className="px-4 py-2.5 text-xs font-medium text-[#aaa] hover:text-white rounded-xl hover:bg-white/5 transition cursor-pointer"
+              onClick={close}
+              disabled={isSubmitting}
+              className="px-4 py-2 text-xs font-medium text-[#aaa] hover:text-white rounded-full hover:bg-white/5 transition cursor-pointer disabled:opacity-40"
             >
-              Annuler
+              {t('common.cancel')}
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="bg-[#ff0033] hover:bg-[#cc0029] text-white text-xs font-bold px-6 py-2.5 rounded-xl flex items-center gap-2 shadow-lg shadow-red-600/30 transition disabled:opacity-50 cursor-pointer"
+              className="bg-white hover:bg-white/90 text-black text-xs font-bold px-5 py-2.5 rounded-full flex items-center gap-1.5 shadow transition disabled:opacity-50 cursor-pointer"
             >
               {isSubmitting ? (
                 <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Ajout en cours...</span>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <span>{t('dl.adding')}</span>
                 </>
               ) : (
                 <>
-                  <DownloadCloud className="w-4 h-4" />
-                  <span>Démarrer le téléchargement</span>
+                  <DownloadCloud className="w-3.5 h-3.5" />
+                  <span>{t('dl.start')}</span>
                 </>
               )}
             </button>
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
-
-  return createPortal(modalContent, document.body);
 };

@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { X, Loader2, Check, AlertCircle, Sparkles } from 'lucide-react';
 import { useMyTube } from '../../context/MyTubeContext';
 import { ImageUploadField } from './ImageUploadField';
+import { useI18n } from '../../i18n/I18nProvider';
 
 export const EditChannelModal: React.FC = () => {
   const { 
@@ -13,6 +14,7 @@ export const EditChannelModal: React.FC = () => {
     refreshSubscriptions, 
     notifyDataChanged 
   } = useMyTube();
+  const { t } = useI18n();
 
   const [title, setTitle] = useState('');
   const [handle, setHandle] = useState('');
@@ -62,10 +64,10 @@ export const EditChannelModal: React.FC = () => {
         notifyDataChanged();
         closeEditChannelModal();
       } else {
-        setError(data.error || 'Erreur lors de la mise à jour');
+        setError(data.error || t('edit.updateError'));
       }
     } catch (err: any) {
-      setError(err.message || 'Erreur réseau');
+      setError(err.message || t('common.networkError'));
     } finally {
       setIsSaving(false);
     }
@@ -73,7 +75,7 @@ export const EditChannelModal: React.FC = () => {
 
   return createPortal(
     <div 
-      className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs animate-in fade-in duration-150"
+      className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs animate-in fade-in duration-300"
       onClick={(e) => {
         if (e.target === e.currentTarget && !isSaving) closeEditChannelModal();
       }}
@@ -84,10 +86,10 @@ export const EditChannelModal: React.FC = () => {
         <div className="flex items-center justify-between px-6 py-5 border-b border-[#303030]">
           <div>
             <h2 className="text-lg font-bold text-white tracking-tight">
-              Personnaliser la chaîne
+              {t('edit.title')}
             </h2>
             <p className="text-xs text-[#aaa] mt-0.5">
-              Modifiez l'apparence et les informations de votre espace créateur
+              {t('edit.subtitle')}
             </p>
           </div>
           <button
@@ -102,7 +104,7 @@ export const EditChannelModal: React.FC = () => {
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
           <div>
             <label className="block text-xs font-semibold text-white mb-1.5">
-              Nom de la chaîne *
+              {t('edit.name')}
             </label>
             <input
               type="text"
@@ -115,7 +117,7 @@ export const EditChannelModal: React.FC = () => {
 
           <div>
             <label className="block text-xs font-semibold text-white mb-1.5">
-              Identifiant (@handle)
+              {t('edit.handle')}
             </label>
             <input
               type="text"
@@ -127,7 +129,7 @@ export const EditChannelModal: React.FC = () => {
 
           <div>
             <label className="block text-xs font-semibold text-white mb-1.5">
-              Description / Bio
+              {t('edit.bio')}
             </label>
             <textarea
               rows={3}
@@ -139,7 +141,7 @@ export const EditChannelModal: React.FC = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
             <ImageUploadField
-              label="Logo / Avatar de la chaîne"
+              label={t('edit.avatar')}
               value={avatarUrl}
               onChange={setAvatarUrl}
               type="avatar"
@@ -147,7 +149,7 @@ export const EditChannelModal: React.FC = () => {
             />
 
             <ImageUploadField
-              label="Bannière de la chaîne"
+              label={t('edit.banner')}
               value={bannerUrl}
               onChange={setBannerUrl}
               type="banner"
@@ -168,7 +170,7 @@ export const EditChannelModal: React.FC = () => {
               onClick={closeEditChannelModal}
               className="px-5 py-2.5 rounded-full text-xs font-semibold text-[#aaa] hover:text-white hover:bg-white/5 transition"
             >
-              Annuler
+              {t('common.cancel')}
             </button>
             <button
               type="submit"
@@ -176,7 +178,7 @@ export const EditChannelModal: React.FC = () => {
               className="bg-white hover:bg-white/90 text-black text-xs font-bold px-6 py-2.5 rounded-full transition cursor-pointer disabled:opacity-40 flex items-center gap-2 shadow"
             >
               {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
-              <span>Enregistrer</span>
+              <span>{t('common.save')}</span>
             </button>
           </div>
         </form>

@@ -1,19 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  FolderHeart, 
   HardDrive, 
   LayoutGrid, 
   Folder, 
   FolderOpen,
   ChevronDown, 
   ArrowLeft,
-  Film, 
-  Search,
-  Play
+  Search
 } from 'lucide-react';
 import type { Video } from '../types';
 import { VideoCard } from '../components/video/VideoCard';
 import { useMyTube } from '../context/MyTubeContext';
+import { ChannelAvatar } from '../components/common/ChannelAvatar';
+import { MediaThumb } from '../components/common/MediaThumb';
+import { useI18n } from '../i18n/I18nProvider';
+import { formatFileSize } from '../utils/format';
 
 interface DiskFile {
   name: string;
@@ -42,7 +43,8 @@ interface DiskFoldersResponse {
 }
 
 export const Library: React.FC = () => {
-  const { subscriptions, dataVersion } = useMyTube();
+  const { subscriptions, dataVersion, localOnly } = useMyTube();
+  const { t, locale } = useI18n();
   const [viewMode, setViewMode] = useState<'grid' | 'folders'>('grid');
   const [videos, setVideos] = useState<Video[]>([]);
   const [channelFilter, setChannelFilter] = useState<string>('all');
@@ -92,16 +94,7 @@ export const Library: React.FC = () => {
     }
   }, [dataVersion, viewMode]);
 
-  const formatBytes = (bytes: number): string => {
-    if (!bytes || bytes === 0) return '0 Mo';
-    const mb = bytes / (1024 * 1024);
-    if (mb >= 1024) {
-      return `${(mb / 1024).toFixed(2)} Go`;
-    }
-    return `${mb.toFixed(1)} Mo`;
-  };
-
-  // Filter & Sort for Standard Grid View
+  const totalSize = videos.reduce((acc, v) => acc + (v.file_size || 0), 0);
   const filteredVideos = videos
     .filter(v => channelFilter === 'all' || v.channel_id === channelFilter)
     .sort((a, b) => {
@@ -116,8 +109,6 @@ export const Library: React.FC = () => {
       }
     });
 
-  const totalSize = videos.reduce((acc, v) => acc + (v.file_size || 0), 0);
-
   // Active folder data
   const currentFolderData = diskData?.folders.find(f => f.folderName === selectedFolder);
 
@@ -129,15 +120,15 @@ export const Library: React.FC = () => {
   });
 
   return (
-    <div className="flex-1 w-full px-4 sm:px-6 pt-3 pb-8 space-y-5 select-none">
+    <div className="flex-1 w-full px-4 sm:px-6 pt-6 pb-8 space-y-5 select-none">
       {/* Header bar */}
       <div className="flex flex-wrap items-center justify-between gap-4 pb-2 border-b border-white/5">
         <div>
           <h1 className="text-xl font-bold text-white flex items-center gap-2">
-            <span>Bibliothèque locale</span>
+            <span>{t('library.title')}</span>
           </h1>
           <p className="text-xs text-[#aaa] mt-0.5">
-            {videos.length} vidéo{videos.length > 1 ? 's' : ''} archivée{videos.length > 1 ? 's' : ''} • {formatBytes(totalSize)} occupés sur le disque
+            {t('library.stats', { count: videos.length, size: formatFileSize(totalSize, locale) || t('common.mb', { n: 0 }) })}
           </p>
         </div>
 
@@ -156,10 +147,10 @@ export const Library: React.FC = () => {
                   ? 'bg-[#2a2a2a] text-white shadow font-bold'
                   : 'text-[#aaa] hover:text-white'
               }`}
-              title="Affichage en grille de vidéos"
+              title={t('library.grid')}
             >
               <LayoutGrid className="w-3.5 h-3.5" />
-              <span>Grille</span>
+              <span>{t('library.gridLabel')}</span>
             </button>
 
             <button
@@ -169,10 +160,10 @@ export const Library: React.FC = () => {
                   ? 'bg-[#2a2a2a] text-white shadow font-bold'
                   : 'text-[#aaa] hover:text-white'
               }`}
-              title="Affichage par dossiers disque"
+              title={t('library.foldersTitle')}
             >
               <Folder className="w-3.5 h-3.5" />
-              <span>Dossiers</span>
+              <span>{t('library.folders')}</span>
             </button>
           </div>
 
@@ -186,7 +177,7 @@ export const Library: React.FC = () => {
                   onChange={(e) => setChannelFilter(e.target.value)}
                   className="appearance-none bg-[#181818] hover:bg-[#202020] text-xs font-medium text-[#f1f1f1] border border-[#303030] hover:border-[#444] rounded-xl pl-3.5 pr-9 py-2 focus:outline-none focus:border-white transition cursor-pointer shadow-sm"
                 >
-                  <option value="all">Toutes les chaînes</option>
+                  <option value="all">{t('library.allChannels')}</option>
                   {subscriptions.map(s => (
                     <option key={s.id} value={s.id}>{s.title}</option>
                   ))}
@@ -201,10 +192,10 @@ export const Library: React.FC = () => {
                   onChange={(e) => setSortBy(e.target.value as any)}
                   className="appearance-none bg-[#181818] hover:bg-[#202020] text-xs font-medium text-[#f1f1f1] border border-[#303030] hover:border-[#444] rounded-xl pl-3.5 pr-9 py-2 focus:outline-none focus:border-white transition cursor-pointer shadow-sm"
                 >
-                  <option value="date">Date d'ajout</option>
-                  <option value="size">Taille de fichier</option>
-                  <option value="duration">Durée</option>
-                  <option value="title">Titre (A-Z)</option>
+                  <option value="date">{t('library.sortDate')}</option>
+                  <option value="size">{t('library.sortSize')}</option>
+                  <option value="duration">{t('library.duration')}</option>
+                  <option value="title">{t('library.sortTitle')}</option>
                 </select>
                 <ChevronDown className="w-3.5 h-3.5 text-[#aaa] pointer-events-none absolute right-3 top-1/2 -translate-y-1/2" />
               </div>
@@ -218,7 +209,7 @@ export const Library: React.FC = () => {
                 type="text"
                 value={folderSearchQuery}
                 onChange={(e) => setFolderSearchQuery(e.target.value)}
-                placeholder="Rechercher un dossier..."
+                placeholder={t('library.searchFolder')}
                 className="bg-[#181818] border border-[#303030] hover:border-[#444] focus:border-white text-xs text-white rounded-xl pl-8 pr-3.5 py-2 outline-none transition w-44 sm:w-56"
               />
               <Search className="w-3.5 h-3.5 text-[#aaa] absolute left-2.5 top-1/2 -translate-y-1/2" />
@@ -236,7 +227,7 @@ export const Library: React.FC = () => {
           {filteredVideos.length > 0 && (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-6 sm:gap-y-8">
               {filteredVideos.map((video) => (
-                <VideoCard key={video.id} video={video} onDelete={loadLibraryVideos} />
+                <VideoCard key={video.id} video={video} showFileSize hideProgress hideMeta onDelete={loadLibraryVideos} />
               ))}
             </div>
           )}
@@ -246,9 +237,9 @@ export const Library: React.FC = () => {
               <div className="w-16 h-16 rounded-full bg-[#272727] flex items-center justify-center text-[#aaa] mx-auto">
                 <HardDrive className="w-8 h-8" />
               </div>
-              <h3 className="font-bold text-base text-white">Aucun fichier dans votre bibliothèque</h3>
+              <h3 className="font-bold text-base text-white">{t('library.emptyTitle')}</h3>
               <p className="text-xs text-[#aaa]">
-                Recherchez une vidéo pour la télécharger et l'archiver hors-ligne.
+                {localOnly ? t('library.emptyBodyLocal') : t('library.emptyBody')}
               </p>
             </div>
           )}
@@ -268,7 +259,6 @@ export const Library: React.FC = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-6">
                 {filteredFolders.map((folder) => {
                   const latestVideo = folder.videos[0];
-                  const coverThumbnail = latestVideo?.thumbnail_url || (latestVideo?.id ? `/api/videos/${latestVideo.id}/thumbnail` : '');
 
                   return (
                     <div
@@ -277,42 +267,54 @@ export const Library: React.FC = () => {
                       className="group cursor-pointer flex flex-col select-none"
                     >
                       {/* Top: 16:9 Cover Thumbnail with YouTube Playlist Style Overlay */}
-                      <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-[#181818] border border-[#272727] group-hover:border-[#444] transition-all duration-200 group-hover:scale-[1.02] shadow-md">
-                        {coverThumbnail ? (
-                          <img
-                            src={coverThumbnail}
+                      <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-[#161616] border border-[#272727] group-hover:border-[#3a3a3a] transition-colors">
+                        {latestVideo ? (
+                          <MediaThumb
+                            video={latestVideo}
                             alt={folder.folderName}
                             className="w-full h-full object-cover"
                           />
                         ) : (
-                          <div className="w-full h-full bg-gradient-to-tr from-[#1f1f1f] to-[#141414] flex flex-col items-center justify-center text-[#717171] gap-2">
-                            <Folder className="w-10 h-10 text-[#444] group-hover:text-[#ff0033] transition-colors" />
-                            <span className="text-[11px] font-medium">Dossier vide</span>
+                          <div className="relative w-full h-full bg-[#171717]">
+                            <div className="absolute inset-0 bg-gradient-to-b from-white/[0.04] to-transparent" />
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <div className="w-11 h-11 rounded-full bg-white/[0.05] flex items-center justify-center">
+                                <Folder className="w-5 h-5 text-[#5a5a5a]" strokeWidth={1.5} />
+                              </div>
+                            </div>
                           </div>
                         )}
 
-                        {/* Right-Side / Bottom Badge Overlay (YouTube Playlist Style) */}
+                        {latestVideo && (
                         <div className="absolute inset-y-0 right-0 w-2/5 bg-gradient-to-l from-black/85 via-black/60 to-transparent flex flex-col items-center justify-center text-white px-2 gap-1 pointer-events-none">
                           <Folder className="w-5 h-5 text-white drop-shadow" />
                           <span className="text-xs font-black tracking-tight">
                             {folder.videoCount}
                           </span>
                           <span className="text-[9px] uppercase tracking-wider text-white/80 font-bold">
-                            vidéo{folder.videoCount > 1 ? 's' : ''}
+                            {t('library.videos', { count: folder.videoCount })}
                           </span>
                         </div>
+                        )}
 
-                        {/* Top Left Weight Pill */}
-                        <div className="absolute top-2 left-2 bg-black/75 backdrop-blur-xs text-white text-[10px] font-mono font-bold px-2 py-0.5 rounded-md border border-white/10 pointer-events-none">
-                          {formatBytes(folder.folderSize)}
-                        </div>
+                        {folder.folderSize > 0 && (
+                          <span className="absolute top-1.5 left-1.5 bg-black/70 backdrop-blur-md text-[#aaa] text-[10px] font-medium px-2 py-0.5 rounded-full pointer-events-none">
+                            {formatFileSize(folder.folderSize, locale)}
+                          </span>
+                        )}
                       </div>
 
                       {/* Bottom Info Row (Channel Avatar + Title + Path) */}
                       <div className="flex items-start gap-3 mt-3 px-0.5">
                         <div className="w-9 h-9 rounded-full bg-[#272727] flex items-center justify-center flex-shrink-0 overflow-hidden border border-white/10 mt-0.5">
                           {folder.channelAvatar ? (
-                            <img src={folder.channelAvatar} alt={folder.folderName} className="w-full h-full object-cover" />
+                            <ChannelAvatar
+                              channelId={folder.videos.find((v) => v.channel_id)?.channel_id}
+                              url={folder.channelAvatar}
+                              title={folder.folderName}
+                              className="w-full h-full rounded-full"
+                              textClassName="text-lg"
+                            />
                           ) : (
                             <Folder className="w-4 h-4 text-[#ff0033]" />
                           )}
@@ -323,9 +325,7 @@ export const Library: React.FC = () => {
                             {folder.folderName}
                           </h3>
                           <div className="text-[11px] text-[#aaa] flex items-center gap-1.5 mt-0.5">
-                            <span>{folder.videoCount} vidéo{folder.videoCount > 1 ? 's' : ''}</span>
-                            <span>•</span>
-                            <span className="font-mono text-emerald-400 font-medium">{formatBytes(folder.folderSize)}</span>
+                            <span>{t('library.videos', { count: folder.videoCount })}</span>
                           </div>
                           <span className="text-[10px] text-[#717171] font-mono block truncate mt-0.5">
                             downloads/{folder.folderName}/
@@ -342,9 +342,9 @@ export const Library: React.FC = () => {
                   <div className="w-16 h-16 rounded-full bg-[#272727] flex items-center justify-center text-[#aaa] mx-auto">
                     <Folder className="w-8 h-8" />
                   </div>
-                  <h3 className="font-bold text-base text-white">Aucun dossier trouvé</h3>
+                  <h3 className="font-bold text-base text-white">{t('library.noFolder')}</h3>
                   <p className="text-xs text-[#aaa]">
-                    Aucun dossier ne correspond à votre recherche.
+                    {t('library.noFolderBody')}
                   </p>
                 </div>
               )}
@@ -361,7 +361,7 @@ export const Library: React.FC = () => {
                   <button
                     onClick={() => setSelectedFolder(null)}
                     className="p-2.5 rounded-full bg-[#272727] hover:bg-[#383838] text-white transition cursor-pointer flex-shrink-0 flex items-center justify-center"
-                    title="Retourner à la liste des dossiers"
+                    title={t('library.backFolders')}
                   >
                     <ArrowLeft className="w-4 h-4" />
                   </button>
@@ -369,7 +369,12 @@ export const Library: React.FC = () => {
                   {/* Channel avatar or folder badge */}
                   <div className="w-10 h-10 rounded-2xl bg-[#222] border border-white/10 flex items-center justify-center overflow-hidden flex-shrink-0">
                     {currentFolderData?.channelAvatar ? (
-                      <img src={currentFolderData.channelAvatar} alt={currentFolderData.folderName} className="w-full h-full object-cover" />
+                      <ChannelAvatar
+                        channelId={currentFolderData.videos.find((v) => v.channel_id)?.channel_id}
+                        url={currentFolderData.channelAvatar}
+                        title={currentFolderData.folderName}
+                        className="w-full h-full rounded-2xl"
+                      />
                     ) : (
                       <FolderOpen className="w-5 h-5 text-[#ff0033]" />
                     )}
@@ -381,11 +386,11 @@ export const Library: React.FC = () => {
                         {currentFolderData?.folderName}
                       </h2>
                       <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-white/10 text-white font-semibold">
-                        {currentFolderData?.videoCount || 0} vidéo{(currentFolderData?.videoCount || 0) > 1 ? 's' : ''}
+                        {t('library.videos', { count: currentFolderData?.videoCount || 0 })}
                       </span>
                     </div>
                     <span className="text-xs text-[#aaa] font-mono block truncate mt-0.5">
-                      downloads/{currentFolderData?.folderName}/ • {formatBytes(currentFolderData?.folderSize || 0)}
+                      downloads/{currentFolderData?.folderName}/ • {formatFileSize(currentFolderData?.folderSize || 0, locale) || t('common.mb', { n: 0 })}
                     </span>
                   </div>
                 </div>
@@ -395,7 +400,7 @@ export const Library: React.FC = () => {
                     onClick={() => setSelectedFolder(null)}
                     className="text-xs font-semibold text-[#aaa] hover:text-white px-4 py-2 rounded-xl hover:bg-white/5 transition cursor-pointer"
                   >
-                    Tous les dossiers
+                    {t('library.backFolders')}
                   </button>
                 </div>
               </div>
@@ -406,7 +411,10 @@ export const Library: React.FC = () => {
                   {currentFolderData.videos.map((video) => (
                     <VideoCard 
                       key={video.id} 
-                      video={video} 
+                      video={video}
+                      showFileSize
+                      hideProgress
+                      hideMeta
                       onDelete={() => {
                         loadDiskFolders();
                         loadLibraryVideos();
@@ -415,14 +423,11 @@ export const Library: React.FC = () => {
                   ))}
                 </div>
               ) : (
-                <div className="py-20 text-center max-w-md mx-auto space-y-3">
-                  <div className="w-16 h-16 rounded-full bg-[#272727] flex items-center justify-center text-[#aaa] mx-auto">
-                    <Film className="w-8 h-8" />
+                <div className="py-24 flex flex-col items-center text-center">
+                  <div className="w-14 h-14 rounded-full bg-white/[0.04] flex items-center justify-center mb-4">
+                    <FolderOpen className="w-6 h-6 text-[#555]" strokeWidth={1.5} />
                   </div>
-                  <h3 className="font-bold text-base text-white">Ce dossier ne contient aucune vidéo</h3>
-                  <p className="text-xs text-[#aaa]">
-                    Téléchargez des vidéos ou déplacez des fichiers dans ce dossier.
-                  </p>
+                  <p className="text-sm text-[#aaa]">{t('library.emptyFolder')}</p>
                 </div>
               )}
 

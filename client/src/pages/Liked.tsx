@@ -3,14 +3,16 @@ import {
   ThumbsUp, 
   Play, 
   Shuffle, 
-  Trash2, 
-  HardDrive
+  Trash2
 } from 'lucide-react';
 import type { Video } from '../types';
 import { useMyTube } from '../context/MyTubeContext';
+import { MediaThumb } from '../components/common/MediaThumb';
+import { useI18n } from '../i18n/I18nProvider';
 
 export const LikedPage: React.FC = () => {
   const { goTo, dataVersion } = useMyTube();
+  const { t } = useI18n();
   const [videos, setVideos] = useState<Video[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -50,16 +52,16 @@ export const LikedPage: React.FC = () => {
   const firstVideo = videos[0];
 
   return (
-    <div className="flex-1 w-full px-3 sm:px-6 pt-3 pb-8 flex flex-col lg:flex-row gap-8 text-[#f1f1f1]">
+    <div className="flex-1 w-full px-4 sm:px-6 pt-6 pb-8 flex flex-col lg:flex-row gap-8 text-[#f1f1f1]">
       {/* Left Column: YouTube Playlist Header Card */}
       <div className="w-full lg:w-88 flex-shrink-0">
         <div className="bg-gradient-to-b from-[#2a1a1a] via-[#1c1818] to-[#121212] border border-[#272727] p-6 rounded-3xl shadow-xl lg:sticky lg:top-18 space-y-4">
           {/* Cover Thumbnail */}
           <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-[#222] shadow-lg border border-white/10">
             {firstVideo ? (
-              <img
-                src={firstVideo.thumbnail_url || `https://i.ytimg.com/vi/${firstVideo.id}/hqdefault.jpg`}
-                alt="Couverture"
+              <MediaThumb
+                video={firstVideo}
+                alt={t('liked.title')}
                 className="w-full h-full object-cover"
               />
             ) : (
@@ -76,10 +78,10 @@ export const LikedPage: React.FC = () => {
 
           <div>
             <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
-              Vidéos « J'aime »
+              {t('liked.title')}
             </h1>
             <p className="text-xs text-[#aaa] mt-1 font-medium">
-              Bibliothèque locale • {videos.length} vidéo{videos.length > 1 ? 's' : ''}
+              {t('liked.stats', { count: videos.length })}
             </p>
           </div>
 
@@ -91,7 +93,7 @@ export const LikedPage: React.FC = () => {
                 className="flex-1 bg-white hover:bg-white/90 text-black text-xs font-bold py-2.5 px-4 rounded-full flex items-center justify-center gap-2 shadow-md transition cursor-pointer"
               >
                 <Play className="w-4 h-4 fill-current" />
-                <span>Tout regarder</span>
+                <span>{t('liked.watchAll')}</span>
               </button>
 
               <button
@@ -100,7 +102,7 @@ export const LikedPage: React.FC = () => {
                   if (random) goTo('watch', { videoId: random.id });
                 }}
                 className="bg-[#272727] hover:bg-[#383838] text-white p-2.5 rounded-full transition cursor-pointer"
-                title="Lecture aléatoire"
+                title={t('liked.shuffle')}
               >
                 <Shuffle className="w-4 h-4" />
               </button>
@@ -114,11 +116,6 @@ export const LikedPage: React.FC = () => {
         {videos.length > 0 ? (
           <div className="space-y-1">
             {videos.map((video, idx) => {
-              const isDownloaded = video.is_downloaded === 1;
-              const thumbSrc = (isDownloaded && video.local_thumbnail_path)
-                ? `/media/downloads/${encodeURIComponent(video.local_thumbnail_path).replace(/%2F/g, '/')}`
-                : video.thumbnail_url || `https://i.ytimg.com/vi/${video.id}/hqdefault.jpg`;
-
               return (
                 <div
                   key={video.id}
@@ -132,19 +129,14 @@ export const LikedPage: React.FC = () => {
 
                   {/* Thumbnail */}
                   <div className="relative w-36 aspect-video rounded-xl overflow-hidden bg-[#222] flex-shrink-0">
-                    <img
-                      src={thumbSrc}
+                    <MediaThumb
+                      video={video}
                       alt={video.title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
                     {video.duration_string && (
                       <span className="absolute bottom-1 right-1 bg-black/85 text-white text-[10px] font-bold px-1 rounded">
                         {video.duration_string}
-                      </span>
-                    )}
-                    {isDownloaded && (
-                      <span className="absolute top-1 left-1 bg-emerald-600/90 text-white text-[9px] font-semibold px-1 rounded flex items-center gap-1">
-                        <HardDrive className="w-2.5 h-2.5" />
                       </span>
                     )}
                   </div>
@@ -163,7 +155,7 @@ export const LikedPage: React.FC = () => {
                   <button
                     onClick={(e) => handleUnlike(video.id, e)}
                     className="p-2 text-[#888] hover:text-rose-400 rounded-full hover:bg-white/10 opacity-0 group-hover:opacity-100 transition cursor-pointer flex-shrink-0"
-                    title="Retirer des vidéos J'aime"
+                    title={t('liked.remove')}
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -176,9 +168,9 @@ export const LikedPage: React.FC = () => {
             <div className="w-16 h-16 rounded-full bg-[#272727] flex items-center justify-center text-[#aaa] mx-auto">
               <ThumbsUp className="w-8 h-8" />
             </div>
-            <h3 className="font-bold text-base text-white">Aucune vidéo aimée pour le moment</h3>
+            <h3 className="font-bold text-base text-white">{t('liked.emptyTitle')}</h3>
             <p className="text-xs text-[#aaa]">
-              Cliquez sur le bouton "J'aime" sous une vidéo pour la retrouver rapidement dans cette liste.
+              {t('liked.emptyBody')}
             </p>
           </div>
         )}

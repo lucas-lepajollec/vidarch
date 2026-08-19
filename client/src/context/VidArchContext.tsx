@@ -1,14 +1,19 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import type { Video, Channel, DownloadTask, SystemStatus } from '../types';
+import type { Video, Channel, DownloadTask, SystemStatus, PageRoute, NavigationState, AuthStatus } from '../types';
+import { navToPath, pathToNav } from '../utils/routes';
+import { parseQualityNote } from '../utils/qualityNote';
+import { useI18n } from '../i18n/I18nProvider';
+import type { UiLanguage } from '../i18n/messages';
 
-export type PageRoute = 'home' | 'subscriptions' | 'library' | 'history' | 'liked' | 'downloads' | 'settings' | 'watch' | 'channel' | 'search';
+export type { PageRoute, NavigationState };
 
-export interface NavigationState {
-  page: PageRoute;
+export type DownloadQualityNotice = {
+  title: string;
   videoId?: string;
-  channelId?: string;
-  query?: string;
-}
+  requested: string;
+  actual: string;
+  direction: 'lower' | 'higher';
+};
 
 export interface DownloadModalConfig {
   isOpen: boolean;
@@ -55,23 +60,40 @@ interface VidArchContextType {
   myChannels: Channel[];
   refreshMyChannel: () => Promise<void>;
   setActiveOwnerChannel: (channelId: string) => Promise<boolean>;
-  unclaimChannel: (channelId: string) => Promise<boolean>;
-  isCreateChannelModalOpen: boolean;
-  openCreateChannelModal: () => void;
-  closeCreateChannelModal: () => void;
   isEditChannelModalOpen: boolean;
   editingChannel: Channel | null;
   openEditChannelModal: (channel?: Channel) => void;
   closeEditChannelModal: () => void;
   dataVersion: number;
   notifyDataChanged: () => void;
+  auth: AuthStatus;
+  refreshAuth: () => Promise<void>;
+  markAuthenticated: () => void;
+  logout: () => Promise<void>;
+  localOnly: boolean;
+  scanEnabled: boolean;
+  uiLanguage: UiLanguage;
+  setLocalOnly: (value: boolean) => Promise<void>;
+  setScanEnabled: (value: boolean) => Promise<void>;
+  setUiLanguage: (lang: UiLanguage) => Promise<void>;
+  downloadNotice: DownloadQualityNotice | null;
+  dismissDownloadNotice: () => void;
 }
 
 const VidArchContext = createContext<VidArchContextType | null>(null);
 
 export const VidArchProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [nav, setNav] = useState<NavigationState>({ page: 'home' });
-  const [navHistory, setNavHistory] = useState<NavigationState[]>([{ page: 'home' }]);
+  const { language, setLanguage } = useI18n();
+  const [nav, setNav] = useState<NavigationState>(() =>
+    typeof window !== 'undefined' ? pathToNav(window.location.pathname, window.location.search) : { page: 'home' }
+  );
+  const [auth, setAuth] = useState<AuthStatus>({
+    loading: true,
+    required: false,
+    authenticated: false,
+    setupAvailable: true,
+    envLocked: false,
+  });
   const [subscriptions, setSubscriptions] = useState<Channel[]>([]);
   const [queue, setQueue] = useState<DownloadTask[]>([]);
   const [systemStatus, setSystemStatus] = useState<SystemStatus | null>(null);
@@ -80,29 +102,71 @@ export const VidArchProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [myChannel, setMyChannel] = useState<Channel | null>(null);
   const [myChannels, setMyChannels] = useState<Channel[]>([]);
-  const [isCreateChannelModalOpen, setIsCreateChannelModalOpen] = useState(false);
   const [isEditChannelModalOpen, setIsEditChannelModalOpen] = useState(false);
   const [editingChannel, setEditingChannel] = useState<Channel | null>(null);
   const [dataVersion, setDataVersion] = useState(0);
+  const [localOnly, setLocalOnlyState] = useState(false);
+  const [scanEnabled, setScanEnabledState] = useState(true);
+  const [downloadNotice, setDownloadNotice] = useState<DownloadQualityNotice | null>(null);
 
   const notifyDataChanged = useCallback(() => {
     setDataVersion(v => v + 1);
   }, []);
 
+  const persistSettings = useCallback(async (patch: Record<string, string>) => {
+    const res = await fetch('/api/system/settings', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(patch),
+    });
+    if (!res.ok) throw new Error('Failed to save settings');
+  }, []);
+
+  const setLocalOnly = useCallback(async (value: boolean) => {
+    setLocalOnlyState(value);
+    try {
+      await persistSettings({ local_only: value ? 'true' : 'false' });
+    } catch (_) {
+      setLocalOnlyState(!value);
+      return;
+    }
+    notifyDataChanged();
+  }, [persistSettings, notifyDataChanged]);
+
+  const setScanEnabled = useCallback(async (value: boolean) => {
+    setScanEnabledState(value);
+    try {
+      await persistSettings({ scan_enabled: value ? 'true' : 'false' });
+    } catch (_) {
+      setScanEnabledState(!value);
+      return;
+    }
+    notifyDataChanged();
+  }, [persistSettings, notifyDataChanged]);
+
+  const setUiLanguage = useCallback(async (lang: UiLanguage) => {
+    setLanguage(lang);
+    try {
+      await persistSettings({ ui_language: lang });
+    } catch (_) {}
+    notifyDataChanged();
+    try {
+      const [subsRes, mineRes] = await Promise.all([
+        fetch('/api/channels'),
+        fetch('/api/channels/my-channel'),
+      ]);
+      if (subsRes.ok) setSubscriptions(await subsRes.json());
+      if (mineRes.ok) setMyChannel(await mineRes.json());
+    } catch (_) {}
+  }, [persistSettings, setLanguage, notifyDataChanged]);
+
   const openImportModal = useCallback(() => {
+    setDownloadModal({ isOpen: false });
     setIsImportModalOpen(true);
   }, []);
 
   const closeImportModal = useCallback(() => {
     setIsImportModalOpen(false);
-  }, []);
-
-  const openCreateChannelModal = useCallback(() => {
-    setIsCreateChannelModalOpen(true);
-  }, []);
-
-  const closeCreateChannelModal = useCallback(() => {
-    setIsCreateChannelModalOpen(false);
   }, []);
 
   const openEditChannelModal = useCallback((channel?: Channel) => {
@@ -115,25 +179,80 @@ export const VidArchProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setEditingChannel(null);
   }, []);
 
-  // Navigation handlers
   const goTo = useCallback((page: PageRoute, params?: { videoId?: string; channelId?: string; query?: string }) => {
     const nextState: NavigationState = { page, ...params };
-    setNavHistory(prev => [...prev, nextState]);
     setNav(nextState);
+    const path = navToPath(nextState);
+    if (window.location.pathname + window.location.search !== path) {
+      window.history.pushState(nextState, '', path);
+    }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
   const goBack = useCallback(() => {
-    if (navHistory.length > 1) {
-      const newHistory = [...navHistory];
-      newHistory.pop();
-      const prev = newHistory[newHistory.length - 1];
-      setNavHistory(newHistory);
-      setNav(prev);
+    if (window.history.length > 1) {
+      window.history.back();
     } else {
-      setNav({ page: 'home' });
+      goTo('home');
     }
-  }, [navHistory]);
+  }, [goTo]);
+
+  useEffect(() => {
+    const onPop = () => {
+      setNav(pathToNav(window.location.pathname, window.location.search));
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
+
+  const refreshAuth = useCallback(async () => {
+    try {
+      const res = await fetch('/api/auth/status');
+      if (res.ok) {
+        const data = await res.json();
+        setAuth({
+          loading: false,
+          required: !!data.required,
+          authenticated: !!data.authenticated,
+          setupAvailable: !!data.setupAvailable,
+          envLocked: !!data.envLocked,
+        });
+        return;
+      }
+    } catch (_) {}
+    setAuth((prev) => ({ ...prev, loading: false }));
+  }, []);
+
+  const markAuthenticated = useCallback(() => {
+    setAuth((prev) => ({ ...prev, loading: false, required: true, authenticated: true, setupAvailable: false }));
+  }, []);
+
+  const logout = useCallback(async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+    } catch (_) {}
+    await refreshAuth();
+  }, [refreshAuth]);
+
+  useEffect(() => {
+    refreshAuth();
+  }, [refreshAuth]);
+
+  useEffect(() => {
+    if (auth.loading) return;
+    if (auth.required && !auth.authenticated) return;
+    fetch('/api/system/settings')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!data) return;
+        setLocalOnlyState(data.local_only === 'true');
+        setScanEnabledState(data.scan_enabled !== 'false');
+        if (data.ui_language === 'en' || data.ui_language === 'fr' || data.ui_language === 'es' || data.ui_language === 'de') {
+          setLanguage(data.ui_language);
+        }
+      })
+      .catch(() => {});
+  }, [auth.loading, auth.required, auth.authenticated, setLanguage]);
 
   // Load subscriptions
   const refreshSubscriptions = useCallback(async () => {
@@ -167,7 +286,7 @@ export const VidArchProvider: React.FC<{ children: React.ReactNode }> = ({ child
       const res = await fetch('/api/channels/my-channel');
       if (res.ok) {
         const data = await res.json();
-        setMyChannel(data);
+        setMyChannel(data && data.id ? data : null);
       }
       const resList = await fetch('/api/channels/my-channels');
       if (resList.ok) {
@@ -181,7 +300,7 @@ export const VidArchProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const setActiveOwnerChannel = useCallback(async (channelId: string) => {
     try {
-      const res = await fetch(`/api/channels/${channelId}/set-active-owner`, { method: 'POST' });
+      const res = await fetch(`/api/channels/${encodeURIComponent(channelId)}/set-active-owner`, { method: 'POST' });
       if (res.ok) {
         await refreshMyChannel();
         notifyDataChanged();
@@ -190,21 +309,6 @@ export const VidArchProvider: React.FC<{ children: React.ReactNode }> = ({ child
       return false;
     } catch (err) {
       console.error('Error setting active channel:', err);
-      return false;
-    }
-  }, [refreshMyChannel, notifyDataChanged]);
-
-  const unclaimChannel = useCallback(async (channelId: string) => {
-    try {
-      const res = await fetch(`/api/channels/${channelId}/unclaim`, { method: 'POST' });
-      if (res.ok) {
-        await refreshMyChannel();
-        notifyDataChanged();
-        return true;
-      }
-      return false;
-    } catch (err) {
-      console.error('Error unclaiming channel:', err);
       return false;
     }
   }, [refreshMyChannel, notifyDataChanged]);
@@ -225,6 +329,9 @@ export const VidArchProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   // Subscribe to SSE for live queue progress & live reactive updates
   useEffect(() => {
+    if (auth.loading) return;
+    if (auth.required && !auth.authenticated) return;
+
     let eventSource: EventSource | null = null;
     let reconnectTimeout: any = null;
 
@@ -252,11 +359,30 @@ export const VidArchProvider: React.FC<{ children: React.ReactNode }> = ({ child
           } catch (_) {}
         });
 
-        eventSource.addEventListener('completed', () => {
+        eventSource.addEventListener('completed', (e) => {
           refreshQueue();
           refreshSubscriptions();
           refreshSystemStatus();
           notifyDataChanged();
+          try {
+            const data = JSON.parse(e.data) as {
+              title?: string;
+              videoId?: string;
+              qualityNote?: string | null;
+            };
+            const note = parseQualityNote(data.qualityNote);
+            if (note) {
+              setDownloadNotice({
+                title: String(data.title || '').length > 48
+                  ? `${String(data.title).slice(0, 45)}…`
+                  : (data.title || ''),
+                videoId: data.videoId,
+                requested: note.requested,
+                actual: note.actual,
+                direction: note.direction,
+              });
+            }
+          } catch (_) {}
         });
 
         eventSource.addEventListener('failed', () => {
@@ -284,7 +410,7 @@ export const VidArchProvider: React.FC<{ children: React.ReactNode }> = ({ child
       clearTimeout(reconnectTimeout);
       eventSource?.close();
     };
-  }, [refreshQueue, refreshSubscriptions, refreshSystemStatus, refreshMyChannel, notifyDataChanged]);
+  }, [refreshQueue, refreshSubscriptions, refreshSystemStatus, refreshMyChannel, notifyDataChanged, auth.loading, auth.required, auth.authenticated]);
 
   // Fallback Polling: while any downloads are in progress or queued, refresh every 1.5s
   useEffect(() => {
@@ -300,6 +426,7 @@ export const VidArchProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   // Trigger manual scanner
   const triggerScan = async () => {
+    if (localOnly || !scanEnabled) return;
     setIsScanning(true);
     try {
       await fetch('/api/system/scan', { method: 'POST' });
@@ -323,26 +450,22 @@ export const VidArchProvider: React.FC<{ children: React.ReactNode }> = ({ child
     thumbnailUrl?: string;
     resolution?: string;
   }) => {
-    try {
-      const res = await fetch('/api/downloads', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(params),
-      });
+    const res = await fetch('/api/downloads', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params),
+    });
 
-      if (res.ok) {
-        const data = await res.json();
-        if (data.item) {
-          setQueue(prev => [data.item, ...prev.filter(i => i.id !== data.item.id)]);
-        }
-      }
-      
-      await refreshQueue();
-      notifyDataChanged();
-    } catch (err) {
-      console.error('Error enqueuing download:', err);
-      await refreshQueue();
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw new Error(data.error || 'Failed to queue download');
     }
+
+    if (data.item) {
+      setQueue(prev => [data.item, ...prev.filter(i => i.id !== data.item.id)]);
+    }
+    await refreshQueue();
+    notifyDataChanged();
   };
 
   // Subscribe channel
@@ -402,6 +525,7 @@ export const VidArchProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const openDownloadModal = useCallback((config: Omit<DownloadModalConfig, 'isOpen'>) => {
+    setIsImportModalOpen(false);
     setDownloadModal({
       isOpen: true,
       ...config,
@@ -410,6 +534,10 @@ export const VidArchProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const closeDownloadModal = useCallback(() => {
     setDownloadModal({ isOpen: false });
+  }, []);
+
+  const dismissDownloadNotice = useCallback(() => {
+    setDownloadNotice(null);
   }, []);
 
   // Active task matches any downloading, processing, or queued task
@@ -443,16 +571,24 @@ export const VidArchProvider: React.FC<{ children: React.ReactNode }> = ({ child
         myChannels,
         refreshMyChannel,
         setActiveOwnerChannel,
-        unclaimChannel,
-        isCreateChannelModalOpen,
-        openCreateChannelModal,
-        closeCreateChannelModal,
         isEditChannelModalOpen,
         editingChannel,
         openEditChannelModal,
         closeEditChannelModal,
         dataVersion,
         notifyDataChanged,
+        auth,
+        refreshAuth,
+        markAuthenticated,
+        logout,
+        localOnly,
+        scanEnabled,
+        uiLanguage: language,
+        setLocalOnly,
+        setScanEnabled,
+        setUiLanguage,
+        downloadNotice,
+        dismissDownloadNotice,
       }}
     >
       {children}

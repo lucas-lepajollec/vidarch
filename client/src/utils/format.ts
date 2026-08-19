@@ -1,14 +1,19 @@
-export function formatViews(count?: number | null): string | null {
+export function formatCompactNumber(count: number, locale = 'en-US'): string {
+  try {
+    return new Intl.NumberFormat(locale, { notation: 'compact', maximumFractionDigits: 1 }).format(count);
+  } catch {
+    return String(count);
+  }
+}
+
+export function formatViews(count?: number | null, locale = 'en-US'): string | null {
   if (count === undefined || count === null) return null;
-  if (count >= 1000000) {
-    const m = count / 1000000;
-    return `${m >= 10 ? Math.round(m) : m.toFixed(1)} M vues`;
-  }
-  if (count >= 1000) {
-    const k = count / 1000;
-    return `${k >= 10 ? Math.round(k) : k.toFixed(1)} k vues`;
-  }
-  return `${count} vue${count > 1 ? 's' : ''}`;
+  const compact = formatCompactNumber(count, locale);
+  const lang = locale.split('-')[0];
+  if (lang === 'fr') return `${compact} vue${count > 1 ? 's' : ''}`;
+  if (lang === 'es') return `${compact} visualizaci${count === 1 ? 'ón' : 'ones'}`;
+  if (lang === 'de') return `${compact} Aufruf${count === 1 ? '' : 'e'}`;
+  return `${compact} view${count === 1 ? '' : 's'}`;
 }
 
 export function formatDuration(seconds: number): string {
@@ -23,40 +28,35 @@ export function formatDuration(seconds: number): string {
   return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
 }
 
-export function formatUploadDate(dateStr?: string | null): string {
+export function formatUploadDate(dateStr?: string | null, locale = 'en-US'): string {
   if (!dateStr) return '';
   const trimmed = dateStr.trim();
-  
-  // Format YYYYMMDD (e.g. 20201117)
+
+  const format = (date: Date) =>
+    date.toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' });
+
   if (/^\d{8}$/.test(trimmed)) {
     const year = parseInt(trimmed.substring(0, 4), 10);
     const month = parseInt(trimmed.substring(4, 6), 10) - 1;
     const day = parseInt(trimmed.substring(6, 8), 10);
     const date = new Date(year, month, day);
-    if (!isNaN(date.getTime())) {
-      return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
-    }
+    if (!isNaN(date.getTime())) return format(date);
   }
 
-  // Format YYYY-MM-DD (e.g. 2020-11-17)
   if (/^\d{4}-\d{2}-\d{2}/.test(trimmed)) {
     const date = new Date(trimmed);
-    if (!isNaN(date.getTime())) {
-      return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
-    }
+    if (!isNaN(date.getTime())) return format(date);
   }
 
   return trimmed;
 }
 
-export function formatSubscriberCount(raw?: string | number | null): string {
+export function formatSubscriberCount(raw?: string | number | null, locale = 'en-US'): string {
   if (raw === undefined || raw === null) return '';
   const str = String(raw).trim();
   if (!str) return '';
 
   let num: number | null = null;
-
-  // Match notations like "1.05M", "1,05 M", "105k"
   const mMatch = str.match(/^([\d.,]+)\s*[Mm]/);
   const kMatch = str.match(/^([\d.,]+)\s*[Kk]/);
 
@@ -65,30 +65,30 @@ export function formatSubscriberCount(raw?: string | number | null): string {
   } else if (kMatch) {
     num = parseFloat(kMatch[1].replace(',', '.')) * 1000;
   } else {
-    // Extract raw digits: e.g. "1050000 abonnés" -> 1050000
     const digitsOnly = str.replace(/\s+/g, '').match(/\d+/);
-    if (digitsOnly) {
-      num = parseInt(digitsOnly[0], 10);
-    }
+    if (digitsOnly) num = parseInt(digitsOnly[0], 10);
   }
 
-  if (num === null || isNaN(num)) {
-    return str;
-  }
+  if (num === null || isNaN(num)) return str;
 
-  if (num >= 1000000) {
-    const m = num / 1000000;
-    const strVal = m >= 100 ? String(Math.round(m)) : m >= 10 ? m.toFixed(1) : m.toFixed(2);
-    const formatted = strVal.replace(/\.?0+$/, '').replace('.', ',');
-    return `${formatted} M d'abonnés`;
-  }
+  const compact = formatCompactNumber(num, locale);
+  const lang = locale.split('-')[0];
+  if (lang === 'fr') return `${compact} abonné${num > 1 ? 's' : ''}`;
+  if (lang === 'es') return `${compact} suscriptor${num === 1 ? '' : 'es'}`;
+  if (lang === 'de') return `${compact} Abonnent${num === 1 ? '' : 'en'}`;
+  return `${compact} subscriber${num === 1 ? '' : 's'}`;
+}
 
-  if (num >= 1000) {
-    const k = num / 1000;
-    const strVal = k >= 100 ? String(Math.round(k)) : k.toFixed(1);
-    const formatted = strVal.replace(/\.?0+$/, '').replace('.', ',');
-    return `${formatted} k abonnés`;
+export function formatFileSize(bytes?: number | null, locale = 'en'): string {
+  if (!bytes || bytes <= 0) return '';
+  const mb = bytes / (1024 * 1024);
+  const lang = locale.split('-')[0];
+  const gbLabel = lang === 'fr' ? 'Go' : 'GB';
+  const mbLabel = lang === 'fr' ? 'Mo' : 'MB';
+  if (mb >= 1024) {
+    const n = mb >= 10240 ? (mb / 1024).toFixed(0) : (mb / 1024).toFixed(1);
+    return `${n} ${gbLabel}`;
   }
-
-  return `${num} abonné${num > 1 ? 's' : ''}`;
+  const n = mb >= 100 ? mb.toFixed(0) : mb.toFixed(1);
+  return `${n} ${mbLabel}`;
 }

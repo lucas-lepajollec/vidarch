@@ -10,7 +10,8 @@
     "build:client": "npm --prefix client run build",
     "build:server": "tsc -p server/tsconfig.json",
     "build": "npm run build:client && npm run build:server",
-    "start": "node dist/server/index.js"
+    "start": "node dist/server/index.js",
+    "test": "tsx --test server/src/utils/youtube.test.ts server/src/utils/paths.test.ts server/src/utils/innertube.test.ts server/src/utils/remoteImages.test.ts server/src/utils/ytdlpDownload.test.ts"
   },
   "keywords": [
     "youtube",

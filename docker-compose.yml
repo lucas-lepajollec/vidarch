@@ -17,6 +17,8 @@ services:
       - NODE_ENV=production
       - DATA_DIR=/app/data
       - DOWNLOADS_DIR=/app/downloads
+      # Optional: lock the UI/API behind a password
+      # - AUTH_PASSWORD=change-me
     volumes:
       # Persistent SQLite database & cookies.txt
       - ./data:/app/data

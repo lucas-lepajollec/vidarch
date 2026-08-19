@@ -3,76 +3,65 @@ import React from 'react';
 interface VidArchLogoProps {
   size?: 'sm' | 'md' | 'lg';
   className?: string;
+  wordmark?: boolean;
 }
 
-export const VidArchLogo: React.FC<VidArchLogoProps> = ({ 
-  size = 'md', 
-  className = '' 
+export const VidArchMark: React.FC<{ className?: string }> = ({ className = '' }) => (
+  <svg
+    viewBox="0 0 32 32"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    className={className}
+    aria-hidden
+  >
+    {/* Vault / arch — the archive */}
+    <path
+      d="M7.25 25.75V14.1C7.25 9.15 11.05 5.6 16 5.6C20.95 5.6 24.75 9.15 24.75 14.1V25.75"
+      stroke="currentColor"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M7.25 25.75H24.75"
+      stroke="currentColor"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+    />
+    {/* Stored reels / shelves */}
+    <rect x="11.15" y="12.15" width="9.7" height="2.05" rx="0.75" fill="currentColor" />
+    <rect x="11.15" y="16.1" width="9.7" height="2.05" rx="0.75" fill="#ff0033" />
+    <rect x="11.15" y="20.05" width="9.7" height="2.05" rx="0.75" fill="currentColor" />
+  </svg>
+);
+
+export const VidArchLogo: React.FC<VidArchLogoProps> = ({
+  size = 'md',
+  className = '',
+  wordmark = true,
 }) => {
   const iconDimensions = {
     sm: 'w-6 h-6',
     md: 'w-7 h-7',
-    lg: 'w-9 h-9',
+    lg: 'w-10 h-10',
   }[size];
 
   const textDimensions = {
-    sm: 'text-base',
-    md: 'text-lg tracking-tight',
-    lg: 'text-2xl tracking-tighter',
+    sm: 'text-[15px]',
+    md: 'text-lg',
+    lg: 'text-[1.65rem]',
   }[size];
 
   return (
-    <div className={`flex items-center gap-2 select-none group cursor-pointer ${className}`}>
-      {/* Custom Distinctive VidArch Media Emblem */}
-      <div className={`relative ${iconDimensions} flex-shrink-0 flex items-center justify-center`}>
-        <svg
-          viewBox="0 0 32 32"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-          className="w-full h-full drop-shadow-[0_2px_10px_rgba(255,0,51,0.35)] transition-transform group-hover:scale-105 duration-200"
+    <div className={`flex items-center gap-2.5 select-none ${className}`}>
+      <VidArchMark className={`${iconDimensions} flex-shrink-0 text-white`} />
+      {wordmark && (
+        <span
+          className={`font-semibold text-white ${textDimensions} tracking-[-0.035em] leading-none`}
         >
-          <defs>
-            <linearGradient id="vidarch-bg" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#ff113a" />
-              <stop offset="100%" stopColor="#cc0029" />
-            </linearGradient>
-            <linearGradient id="vidarch-accent" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#ffffff" />
-              <stop offset="100%" stopColor="#e2e8f0" />
-            </linearGradient>
-          </defs>
-
-          {/* Smooth Squircle Badge Container */}
-          <rect
-            x="2"
-            y="2"
-            width="28"
-            height="28"
-            rx="8"
-            fill="url(#vidarch-bg)"
-          />
-
-          {/* Stylized Arch Cutout Line */}
-          <path
-            d="M8 8.5C8 7.67157 8.67157 7 9.5 7H22.5C23.3284 7 24 7.67157 24 8.5V9.5C24 10.3284 23.3284 11 22.5 11H9.5C8.67157 11 8 10.3284 8 9.5V8.5Z"
-            fill="white"
-            fillOpacity="0.25"
-          />
-
-          {/* Central Sharp Play / Video Archive Glyph */}
-          <path
-            d="M12.5 12.4C12.5 11.58 13.42 11.08 14.12 11.52L21.32 16.12C21.98 16.54 21.98 17.46 21.32 17.88L14.12 22.48C13.42 22.92 12.5 22.42 12.5 21.6V12.4Z"
-            fill="url(#vidarch-accent)"
-          />
-        </svg>
-      </div>
-
-      {/* Brand Wordmark (Clean, Bold, sans badge) */}
-      <div className="flex items-center">
-        <span className={`font-black text-white ${textDimensions} font-sans leading-none flex items-center`}>
-          Vid<span className="text-[#ff0033] ml-[1.5px]">Arch</span>
+          VidArch
         </span>
-      </div>
+      )}
     </div>
   );
 };

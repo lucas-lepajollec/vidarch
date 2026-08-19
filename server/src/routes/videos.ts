@@ -4,6 +4,13 @@ import path from 'path';
 import { db } from '../db/database.js';
 import { DOWNLOADS_DIR, isSafePath } from '../config.js';
 import { getVideoDetails, getChannelDetails } from '../services/ytdlp.js';
+import { isYouTubeVideoId } from '../utils/youtube.js';
+import { isLocalOnly } from '../utils/settings.js';
+import {
+  applyVideoLocale,
+  applyVideoLocales,
+} from '../utils/contentLocale.js';
+import { hydrateOriginalVideos } from '../utils/innertube.js';
 
 const router = Router();
 
@@ -32,16 +39,27 @@ router.get('/', (req, res) => {
       query += ' AND v.is_downloaded = 1';
     } else if (tab === 'subscriptions') {
       query += ' AND v.channel_id IN (SELECT channel_id FROM subscriptions)';
+      if (isLocalOnly()) query += ' AND v.is_downloaded = 1';
     } else if (tab === 'history') {
       query += ' AND v.watch_progress > 0';
     } else if (tab === 'liked') {
       query += ' AND v.liked = 1';
+    } else if (tab === 'unwatched') {
+      query += ` AND v.is_downloaded = 1 AND IFNULL(v.is_watched, 0) = 0 AND IFNULL(v.watch_progress, 0) = 0`;
+    } else if (tab === 'recent') {
+      if (isLocalOnly()) {
+        query += ' AND v.is_downloaded = 1';
+      } else {
+        query += ` AND v.id IN (SELECT video_id FROM recent_search_videos)`;
+      }
+    } else {
+      query += ' AND v.is_downloaded = 1';
     }
 
     query += ' ORDER BY CASE WHEN v.is_downloaded = 1 THEN 0 ELSE 1 END, v.upload_date DESC, v.created_at DESC LIMIT ? OFFSET ?';
     params.push(limit, offset);
 
-    const videos = db.prepare(query).all(...params);
+    const videos = applyVideoLocales(db.prepare(query).all(...params) as any[]);
     res.json(videos);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -49,7 +67,7 @@ router.get('/', (req, res) => {
 });
 
 // GET home feed with organized sections (downloaded, subscriptions un-downloaded, recent searches)
-router.get('/home-feed', (req, res) => {
+router.get('/home-feed', async (_req, res) => {
   try {
     // 1. Local downloaded videos
     const downloaded = db.prepare(`
@@ -61,8 +79,10 @@ router.get('/home-feed', (req, res) => {
       LIMIT 20
     `).all();
 
+    const localOnly = isLocalOnly();
+
     // 2. Undownloaded videos from subscribed channels
-    const subscriptionsUndownloaded = db.prepare(`
+    const subscriptionsUndownloaded = localOnly ? [] : db.prepare(`
       SELECT v.*, c.avatar_url as channel_avatar
       FROM videos v
       LEFT JOIN channels c ON v.channel_id = c.id
@@ -73,7 +93,7 @@ router.get('/home-feed', (req, res) => {
     `).all();
 
     // 3. Last 10 videos that appeared in recent searches
-    const recentSearches = db.prepare(`
+    const recentSearches = localOnly ? [] : db.prepare(`
       SELECT r.*, r.video_id as id,
              COALESCE((SELECT is_downloaded FROM videos v WHERE v.id = r.video_id), 0) as is_downloaded,
              (SELECT local_thumbnail_path FROM videos v WHERE v.id = r.video_id) as local_thumbnail_path,
@@ -84,10 +104,17 @@ router.get('/home-feed', (req, res) => {
       LIMIT 10
     `).all();
 
+    if (!localOnly) {
+      await hydrateOriginalVideos([
+        ...(subscriptionsUndownloaded as any[]),
+        ...(recentSearches as any[]),
+      ]);
+    }
+
     res.json({
-      downloaded,
-      subscriptionsUndownloaded,
-      recentSearches,
+      downloaded: applyVideoLocales(downloaded as any[]),
+      subscriptionsUndownloaded: applyVideoLocales(subscriptionsUndownloaded as any[]),
+      recentSearches: applyVideoLocales(recentSearches as any[]),
     });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -162,7 +189,7 @@ router.get('/disk-folders', (req, res) => {
           const extractedId = match ? match[1] : '';
           const dbVid = (extractedId && videoByIdMap.get(extractedId)) || dbVideos.find(v => v.local_path && path.basename(v.local_path) === f.name);
 
-          const fullVideo = dbVid ? {
+          const fullVideo = applyVideoLocale(dbVid ? {
             ...dbVid,
             file_size: stat.size,
             local_video_path: filePath,
@@ -183,13 +210,16 @@ router.get('/disk-folders', (req, res) => {
             is_watched: 0,
             liked: 0,
             created_at: stat.mtime.toISOString(),
-          };
+          });
 
           folderVideos.push(fullVideo);
         }
       }
 
-      const channelAvatar = folderVideos.find(v => v.channelAvatar)?.channelAvatar || '';
+      const channelAvatar =
+        folderVideos.find((v) => v.channel_avatar)?.channel_avatar ||
+        folderVideos.find((v) => v.channelAvatar)?.channelAvatar ||
+        '';
 
       folders.push({
         folderName,
@@ -232,61 +262,56 @@ router.get('/:id', async (req, res) => {
       WHERE v.id = ?
     `).get(id) as any;
 
-    if (!video || !video.description || !video.channel_avatar) {
-      // Fetch or backfill missing metadata live from YouTube
+    const backfillChannelAvatar = (channelId: string, fallbackTitle: string) => {
+      if (!channelId || channelId.startsWith('custom_')) return;
+      getChannelDetails(channelId, 1).then((chInfo) => {
+        if (!chInfo?.avatarUrl) return;
+        db.prepare(`
+          INSERT INTO channels (id, title, handle, description, avatar_url, banner_url, subscriber_count, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))
+          ON CONFLICT(id) DO UPDATE SET
+            avatar_url = COALESCE(NULLIF(excluded.avatar_url, ''), channels.avatar_url),
+            banner_url = COALESCE(NULLIF(excluded.banner_url, ''), channels.banner_url),
+            updated_at = datetime('now')
+        `).run(
+          chInfo.id || channelId,
+          chInfo.title || fallbackTitle,
+          chInfo.handle || '',
+          chInfo.description || '',
+          chInfo.avatarUrl,
+          chInfo.bannerUrl || '',
+          chInfo.subscriberCount || ''
+        );
+      }).catch(() => {});
+    };
+
+    if (!video && isYouTubeVideoId(id)) {
       try {
         const liveInfo = await getVideoDetails(id);
         if (liveInfo) {
-          if (!video) {
-            video = {
-              id: liveInfo.id,
-              channel_id: liveInfo.channelId,
-              channel_title: liveInfo.channelTitle,
-              title: liveInfo.title,
-              description: liveInfo.description,
-              duration: liveInfo.duration,
-              duration_string: liveInfo.durationString,
-              view_count: liveInfo.viewCount,
-              upload_date: liveInfo.uploadDate,
-              thumbnail_url: liveInfo.thumbnailUrl,
-              is_downloaded: 0,
-              chapters: liveInfo.chapters,
-            };
-          } else {
-            if (!video.description && liveInfo.description) {
-              video.description = liveInfo.description;
-              db.prepare('UPDATE videos SET description = ? WHERE id = ?').run(liveInfo.description, id);
-            }
-          }
-
-          // If channel avatar is still missing and we have channelId
-          const targetChannelId = liveInfo.channelId || video.channel_id;
-          if (targetChannelId && !video.channel_avatar) {
-            try {
-              const chInfo = await getChannelDetails(targetChannelId);
-              if (chInfo?.avatarUrl) {
-                video.channel_avatar = chInfo.avatarUrl;
-                db.prepare(`
-                  INSERT INTO channels (id, title, handle, description, avatar_url, banner_url, subscriber_count, updated_at)
-                  VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))
-                  ON CONFLICT(id) DO UPDATE SET
-                    avatar_url = COALESCE(NULLIF(excluded.avatar_url, ''), channels.avatar_url),
-                    banner_url = COALESCE(NULLIF(excluded.banner_url, ''), channels.banner_url),
-                    updated_at = datetime('now')
-                `).run(
-                  targetChannelId,
-                  chInfo.title || video.channel_title,
-                  chInfo.handle || '',
-                  chInfo.description || '',
-                  chInfo.avatarUrl,
-                  chInfo.bannerUrl || '',
-                  chInfo.subscriberCount || ''
-                );
-              }
-            } catch (_) {}
+          video = {
+            id: liveInfo.id,
+            channel_id: liveInfo.channelId,
+            channel_title: liveInfo.channelTitle,
+            title: liveInfo.title,
+            description: liveInfo.description,
+            duration: liveInfo.duration,
+            duration_string: liveInfo.durationString,
+            view_count: liveInfo.viewCount,
+            upload_date: liveInfo.uploadDate,
+            thumbnail_url: liveInfo.thumbnailUrl,
+            channel_avatar: liveInfo.channelAvatar || '',
+            is_downloaded: 0,
+            chapters: liveInfo.chapters,
+            language: liveInfo.language || '',
+          };
+          if (liveInfo.channelId && !liveInfo.channelAvatar) {
+            backfillChannelAvatar(liveInfo.channelId, liveInfo.channelTitle || '');
           }
         }
       } catch (_) {}
+    } else if (video && !video.channel_avatar && video.channel_id) {
+      backfillChannelAvatar(video.channel_id, video.channel_title || '');
     }
 
     if (!video) {
@@ -302,8 +327,8 @@ router.get('/:id', async (req, res) => {
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
         ON CONFLICT(id) DO UPDATE SET
           last_watched_at = datetime('now'),
-          title = COALESCE(NULLIF(excluded.title, ''), videos.title),
-          description = COALESCE(NULLIF(excluded.description, ''), videos.description)
+          title = CASE WHEN videos.title IS NOT NULL AND videos.title != '' THEN videos.title ELSE excluded.title END,
+          description = CASE WHEN videos.description IS NOT NULL AND videos.description != '' THEN videos.description ELSE excluded.description END
       `).run(
         video.id,
         video.channel_id || '',
@@ -333,8 +358,8 @@ router.get('/:id', async (req, res) => {
     `).all(id, video.channel_id || '');
 
     res.json({
-      video,
-      related,
+      video: applyVideoLocale(video),
+      related: applyVideoLocales(related as any[]),
     });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -440,9 +465,18 @@ router.get('/:id/stream', (req, res) => {
     else if (ext === '.mkv') contentType = 'video/x-matroska';
 
     if (range) {
-      const parts = range.replace(/bytes=/, '').split('-');
-      const start = parseInt(parts[0], 10);
-      const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
+      const match = String(range).match(/bytes=(\d+)-(\d*)/);
+      if (!match) {
+        res.status(416).setHeader('Content-Range', `bytes */${fileSize}`);
+        return res.end();
+      }
+      const start = parseInt(match[1], 10);
+      const requestedEnd = match[2] ? parseInt(match[2], 10) : fileSize - 1;
+      if (Number.isNaN(start) || start < 0 || start >= fileSize || Number.isNaN(requestedEnd) || requestedEnd < start) {
+        res.status(416).setHeader('Content-Range', `bytes */${fileSize}`);
+        return res.end();
+      }
+      const end = Math.min(requestedEnd, fileSize - 1);
       const chunksize = end - start + 1;
       const file = fs.createReadStream(filePath, { start, end });
 

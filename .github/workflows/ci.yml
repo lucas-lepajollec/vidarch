@@ -25,5 +25,8 @@ jobs:
       - name: Install Client Dependencies
         run: npm --prefix client ci
 
+      - name: Unit tests
+        run: npm test
+
       - name: Build Full Project (Frontend & Backend)
         run: npm run build

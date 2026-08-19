@@ -1,5 +1,7 @@
 import Database from 'better-sqlite3';
-import { DB_PATH } from '../config.js';
+import fs from 'fs';
+import path from 'path';
+import { DB_PATH, DOWNLOADS_DIR } from '../config.js';
 
 export const db = new Database(DB_PATH);
 
@@ -21,6 +23,7 @@ export function initDatabase() {
       video_count INTEGER DEFAULT 0,
       custom_url TEXT,
       is_owner INTEGER DEFAULT 0,
+      language TEXT,
       created_at TEXT DEFAULT (datetime('now')),
       updated_at TEXT DEFAULT (datetime('now'))
     );
@@ -29,6 +32,31 @@ export function initDatabase() {
   // Migration for is_owner in channels table
   try {
     db.exec(`ALTER TABLE channels ADD COLUMN is_owner INTEGER DEFAULT 0;`);
+  } catch (_) {}
+
+  try {
+    db.exec(`ALTER TABLE channels ADD COLUMN linked_youtube_id TEXT;`);
+  } catch (_) {}
+
+  try {
+    db.exec(`ALTER TABLE channels ADD COLUMN owner_branding_backup TEXT;`);
+  } catch (_) {}
+
+  try {
+    db.exec(`ALTER TABLE channels ADD COLUMN is_active_owner INTEGER DEFAULT 0;`);
+  } catch (_) {}
+
+  try {
+    db.exec(`ALTER TABLE channels ADD COLUMN origin_branding TEXT;`);
+  } catch (_) {}
+
+  try {
+    db.exec(`
+      UPDATE channels SET is_active_owner = 1
+      WHERE is_owner = 1 AND id = (
+        SELECT id FROM channels WHERE is_owner = 1 ORDER BY updated_at DESC LIMIT 1
+      )
+    `);
   } catch (_) {}
 
   // 2. Subscriptions table
@@ -73,13 +101,20 @@ export function initDatabase() {
       last_watched_at TEXT,
       created_at TEXT DEFAULT (datetime('now')),
       downloaded_at TEXT,
+      updated_at TEXT DEFAULT (datetime('now')),
+      language TEXT,
       FOREIGN KEY (channel_id) REFERENCES channels(id) ON DELETE SET NULL
     );
   `);
 
-  // Migration for last_watched_at if table already existed
   try {
     db.exec(`ALTER TABLE videos ADD COLUMN last_watched_at TEXT;`);
+  } catch (_) {}
+  try {
+    db.exec(`ALTER TABLE videos ADD COLUMN updated_at TEXT;`);
+  } catch (_) {}
+  try {
+    db.exec(`ALTER TABLE subscriptions ADD COLUMN auto_download_mode TEXT DEFAULT 'future';`);
   } catch (_) {}
 
   // 4. Download Queue table
@@ -106,6 +141,9 @@ export function initDatabase() {
       completed_at TEXT
     );
   `);
+
+  try { db.exec(`ALTER TABLE download_queue ADD COLUMN requested_resolution TEXT;`); } catch (_) {}
+  try { db.exec(`ALTER TABLE download_queue ADD COLUMN quality_note TEXT;`); } catch (_) {}
 
   // 5. Recent Search Videos table
   db.exec(`
@@ -149,11 +187,82 @@ export function initDatabase() {
     INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)
   `);
 
+  try {
+    db.exec(`ALTER TABLE videos ADD COLUMN language TEXT;`);
+  } catch (_) {}
+  try {
+    db.exec(`ALTER TABLE channels ADD COLUMN language TEXT;`);
+  } catch (_) {}
+  try {
+    db.exec(`ALTER TABLE recent_search_videos ADD COLUMN language TEXT;`);
+  } catch (_) {}
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS content_locales (
+      entity_type TEXT NOT NULL,
+      entity_id TEXT NOT NULL,
+      lang TEXT NOT NULL,
+      title TEXT NOT NULL,
+      description TEXT DEFAULT '',
+      channel_title TEXT DEFAULT '',
+      updated_at TEXT DEFAULT (datetime('now')),
+      PRIMARY KEY (entity_type, entity_id, lang)
+    );
+  `);
+
+  try {
+    db.exec(`
+      UPDATE videos
+      SET
+        title = (
+          SELECT cl.title FROM content_locales cl
+          WHERE cl.entity_type = 'video' AND cl.entity_id = videos.id AND cl.lang = 'original' AND cl.title != ''
+        ),
+        description = COALESCE(NULLIF((
+          SELECT cl.description FROM content_locales cl
+          WHERE cl.entity_type = 'video' AND cl.entity_id = videos.id AND cl.lang = 'original'
+        ), ''), videos.description),
+        channel_title = COALESCE(NULLIF((
+          SELECT cl.channel_title FROM content_locales cl
+          WHERE cl.entity_type = 'video' AND cl.entity_id = videos.id AND cl.lang = 'original'
+        ), ''), videos.channel_title)
+      WHERE EXISTS (
+        SELECT 1 FROM content_locales cl
+        WHERE cl.entity_type = 'video' AND cl.entity_id = videos.id AND cl.lang = 'original' AND cl.title != ''
+      );
+    `);
+    db.exec(`
+      UPDATE channels
+      SET
+        title = (
+          SELECT cl.title FROM content_locales cl
+          WHERE cl.entity_type = 'channel' AND cl.entity_id = channels.id AND cl.lang = 'original' AND cl.title != ''
+        ),
+        description = COALESCE(NULLIF((
+          SELECT cl.description FROM content_locales cl
+          WHERE cl.entity_type = 'channel' AND cl.entity_id = channels.id AND cl.lang = 'original'
+        ), ''), channels.description)
+      WHERE EXISTS (
+        SELECT 1 FROM content_locales cl
+        WHERE cl.entity_type = 'channel' AND cl.entity_id = channels.id AND cl.lang = 'original' AND cl.title != ''
+      );
+    `);
+    db.exec(`DELETE FROM content_locales WHERE lang != 'original'`);
+    db.prepare(`INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)`).run('content_language_mode', 'original');
+    restoreTitlesFromDownloadInfo();
+  } catch (err: any) {
+    console.warn('Could not restore original titles:', err.message);
+  }
+
   insertSetting.run('auto_scan_interval', '60');
   insertSetting.run('default_max_resolution', '1080p');
   insertSetting.run('download_directory', 'downloads');
   insertSetting.run('auto_update_ytdlp', 'true');
-  insertSetting.run('concurrent_downloads', '1');
+  insertSetting.run('concurrent_downloads', '2');
+  insertSetting.run('ui_language', 'en');
+  insertSetting.run('content_language_mode', 'original');
+  insertSetting.run('local_only', 'false');
+  insertSetting.run('scan_enabled', 'true');
 
   // Create indexes for fast queries
   db.exec(`
@@ -164,4 +273,46 @@ export function initDatabase() {
   `);
 
   console.log('✅ SQLite Database initialized with WAL mode at:', DB_PATH);
+}
+
+function restoreTitlesFromDownloadInfo() {
+  if (!fs.existsSync(DOWNLOADS_DIR)) return;
+  const hasOriginal = db.prepare(`
+    SELECT 1 AS ok FROM content_locales
+    WHERE entity_type = 'video' AND entity_id = ? AND lang = 'original'
+  `);
+  const updateTitle = db.prepare(`UPDATE videos SET title = ? WHERE id = ? AND (title IS NULL OR title != ?)`);
+  const saveOriginal = db.prepare(`
+    INSERT INTO content_locales (entity_type, entity_id, lang, title, description, channel_title, updated_at)
+    VALUES ('video', ?, 'original', ?, '', '', datetime('now'))
+    ON CONFLICT(entity_type, entity_id, lang) DO NOTHING
+  `);
+
+  const walk = (dir: string) => {
+    let entries: fs.Dirent[];
+    try {
+      entries = fs.readdirSync(dir, { withFileTypes: true });
+    } catch {
+      return;
+    }
+    for (const entry of entries) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        walk(full);
+        continue;
+      }
+      if (!entry.name.endsWith('.info.json')) continue;
+      try {
+        const json = JSON.parse(fs.readFileSync(full, 'utf-8'));
+        const id = typeof json.id === 'string' ? json.id : '';
+        const title = typeof json.title === 'string' ? json.title.trim() : '';
+        if (!id || !title) continue;
+        if (hasOriginal.get(id)) continue;
+        updateTitle.run(title, id, title);
+        saveOriginal.run(id, title);
+      } catch (_) {}
+    }
+  };
+
+  walk(DOWNLOADS_DIR);
 }

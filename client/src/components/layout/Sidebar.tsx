@@ -8,20 +8,42 @@ import {
   ThumbsUp, 
   Settings as SettingsIcon, 
   ChevronRight,
-  Radio,
+  RefreshCw,
   X,
   Menu,
-  User,
-  Sparkles
+  CircleUser,
 } from 'lucide-react';
 import { useMyTube } from '../../context/MyTubeContext';
+import { ChannelAvatar } from '../common/ChannelAvatar';
 import { VidArchLogo } from '../common/VidArchLogo';
+import { ModeSwitch } from './ModeSwitch';
 import type { PageRoute } from '../../context/MyTubeContext';
+import { useI18n } from '../../i18n/I18nProvider';
+import { ownerDisplayTitle } from '../../utils/channelTitle';
 
 interface SidebarProps {
   isOpen: boolean;
   isOverlay?: boolean;
   onClose?: () => void;
+}
+
+function YourChannelGlyph({
+  channel,
+}: {
+  channel: { id: string; avatar_url?: string | null; title?: string } | null;
+}) {
+  if (channel?.avatar_url) {
+    return (
+      <ChannelAvatar
+        channelId={channel.id}
+        url={channel.avatar_url}
+        title={channel.title}
+        className="w-5 h-5 rounded-full"
+        textClassName="text-[9px]"
+      />
+    );
+  }
+  return <CircleUser className="w-5 h-5 flex-shrink-0 text-[#aaa]" />;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isOverlay = false, onClose }) => {
@@ -32,20 +54,26 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isOverlay = false, onC
     isScanning, 
     triggerScan, 
     myChannel, 
-    openCreateChannelModal,
     activeTask,
+    localOnly,
+    scanEnabled,
   } = useMyTube();
+  const { t } = useI18n();
+
+  const sidebarSubs = subscriptions.filter(
+    (channel) => channel.id !== myChannel?.id && !String(channel.id).startsWith('custom_')
+  );
 
   const navItems: Array<{ id: PageRoute; label: string; icon: React.FC<{ className?: string }> }> = [
-    { id: 'home', label: 'Accueil', icon: Home },
-    { id: 'subscriptions', label: 'Abonnements', icon: Tv2 },
-    { id: 'downloads', label: 'Téléchargements', icon: DownloadCloud },
+    { id: 'home', label: t('nav.home'), icon: Home },
+    { id: 'subscriptions', label: t('nav.subscriptions'), icon: Tv2 },
+    { id: 'downloads', label: t('nav.downloads'), icon: DownloadCloud },
   ];
 
   const libraryItems: Array<{ id: PageRoute; label: string; icon: React.FC<{ className?: string }> }> = [
-    { id: 'library', label: 'Bibliothèque', icon: FolderHeart },
-    { id: 'history', label: 'Historique', icon: History },
-    { id: 'liked', label: 'Vidéos "J\'aime"', icon: ThumbsUp },
+    { id: 'library', label: t('nav.library'), icon: FolderHeart },
+    { id: 'history', label: t('nav.history'), icon: History },
+    { id: 'liked', label: t('nav.liked'), icon: ThumbsUp },
   ];
 
   const handleItemClick = (pageId: PageRoute) => {
@@ -60,25 +88,25 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isOverlay = false, onC
 
   // OVERLAY DRAWER (When on watch page or small screens)
   if (isOverlay) {
-    if (!isOpen) return null;
-
     return (
-      <div className="fixed inset-0 z-50 flex select-none">
-        {/* Backdrop Overlay */}
+      <div className={`fixed inset-0 z-50 flex select-none ${isOpen ? 'pointer-events-auto' : 'pointer-events-none'}`}>
         <div 
           onClick={onClose}
-          className="fixed inset-0 bg-black/70 backdrop-blur-xs transition-opacity duration-200"
+          className={`fixed inset-0 bg-black/70 backdrop-blur-[2px] transition-opacity duration-300 ease-out-smooth ${
+            isOpen ? 'opacity-100' : 'opacity-0'
+          }`}
         />
 
-        {/* Drawer Panel */}
-        <aside className="relative z-50 w-64 max-w-[80vw] h-full bg-[#0f0f0f] border-r border-[#272727] flex flex-col shadow-2xl overflow-y-auto">
+        <aside className={`relative z-50 w-64 max-w-[80vw] h-full bg-[#0f0f0f] border-r border-[#272727] flex flex-col shadow-2xl overflow-y-auto transition-transform duration-300 ease-out-smooth ${
+          isOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}>
           {/* Drawer Header with Logo & Close */}
           <div className="h-14 flex items-center justify-between px-4 border-b border-[#272727] flex-shrink-0">
             <div className="flex items-center gap-3">
               <button
                 onClick={onClose}
                 className="p-2 hover:bg-[#272727] rounded-full text-white cursor-pointer transition"
-                title="Fermer le menu"
+                title={t('nav.closeMenu')}
               >
                 <Menu className="w-5 h-5" />
               </button>
@@ -118,7 +146,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isOverlay = false, onC
                     <Icon className={`w-5 h-5 ${isActive ? 'text-[#ff0033]' : 'text-[#f1f1f1]'}`} />
                     <span className="flex-1 truncate">{item.label}</span>
                     {item.id === 'downloads' && activeTask && (
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#ff0033]/20 text-[#ff0033] border border-[#ff0033]/30 animate-pulse">
+                      <span className="text-[10px] tabular-nums font-semibold text-white">
                         {Math.round(activeTask.progress)}%
                       </span>
                     )}
@@ -133,32 +161,24 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isOverlay = false, onC
                 onClick={() => handleItemClick('library')}
                 className="flex items-center justify-between px-3 py-1.5 text-[#f1f1f1] font-semibold text-sm cursor-pointer hover:text-white group"
               >
-                <span>Vous</span>
+                <span>{t('nav.you')}</span>
                 <ChevronRight className="w-4 h-4 text-[#aaa] group-hover:translate-x-0.5 transition-transform" />
               </div>
 
               {/* Your Channel Button */}
               <button
                 onClick={() => {
-                  if (myChannel) {
-                    handleChannelClick(myChannel.id);
-                  } else {
-                    openCreateChannelModal();
-                    if (isOverlay && onClose) onClose();
-                  }
+                  goTo('mychannel');
+                  if (isOverlay && onClose) onClose();
                 }}
                 className={`w-full flex items-center gap-5 px-3 py-2.5 rounded-xl transition cursor-pointer text-left ${
-                  nav.page === 'channel' && nav.channelId === myChannel?.id
+                  nav.page === 'mychannel'
                     ? 'bg-[#272727] text-white font-semibold'
                     : 'text-[#f1f1f1] hover:bg-[#272727]/60'
                 }`}
               >
-                {myChannel?.avatar_url ? (
-                  <img src={myChannel.avatar_url} alt="Votre chaîne" className="w-5 h-5 rounded-full object-cover flex-shrink-0" />
-                ) : (
-                  <User className="w-5 h-5 text-[#aaa] flex-shrink-0" />
-                )}
-                <span className="truncate">{myChannel ? myChannel.title : 'Votre chaîne'}</span>
+                <YourChannelGlyph channel={myChannel} />
+                <span className="truncate">{ownerDisplayTitle(myChannel?.title, t('mych.defaultTitle'))}</span>
               </button>
 
               {libraryItems.map((item) => {
@@ -184,37 +204,36 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isOverlay = false, onC
             {/* Subscriptions List */}
             <div className="py-2 flex-1">
               <div className="flex items-center justify-between px-3 py-1.5 text-[#f1f1f1] font-semibold text-sm">
-                <span>Abonnements</span>
+                <span>{t('nav.subscriptions')}</span>
+                {!localOnly && scanEnabled && (
                 <button
                   onClick={triggerScan}
                   disabled={isScanning}
-                  className="text-[#888] hover:text-[#3ea6ff] p-1 rounded-full hover:bg-[#272727] cursor-pointer transition"
-                  title="Vérifier les nouvelles vidéos"
+                  className={`p-1 rounded-full hover:bg-[#272727] cursor-pointer transition-colors duration-200 ${
+                    isScanning ? 'text-white' : 'text-[#888] hover:text-white'
+                  }`}
+                  title={isScanning ? t('nav.scanning') : t('nav.scan')}
                 >
-                  <Radio className={`w-3.5 h-3.5 ${isScanning ? 'animate-spin text-amber-400' : ''}`} />
+                  <RefreshCw className={`w-3.5 h-3.5 ${isScanning ? 'animate-spin' : ''}`} />
                 </button>
+                )}
               </div>
 
-              {subscriptions.length > 0 && (
+              {sidebarSubs.length > 0 && (
                 <div className="space-y-0.5 mt-1">
-                  {subscriptions.slice(0, 30).map((channel) => (
+                  {sidebarSubs.slice(0, 30).map((channel) => (
                     <button
                       key={channel.id}
                       onClick={() => handleChannelClick(channel.id)}
                       className="w-full flex items-center gap-3 px-3 py-2 rounded-xl transition cursor-pointer text-left text-xs text-[#f1f1f1] hover:bg-[#272727]/60"
                     >
-                      {channel.avatar_url ? (
-                        <img
-                          src={channel.avatar_url}
-                          alt={channel.title}
-                          className="w-6 h-6 rounded-full object-cover flex-shrink-0 bg-white/10"
-                        />
-                      ) : (
-                        <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-[#ff0033] to-[#ff5e00] flex items-center justify-center text-white font-bold text-[10px] flex-shrink-0">
-                          {channel.title.charAt(0).toUpperCase()}
-                        </div>
-                      )}
-                      <span className="truncate flex-1">{channel.title}</span>
+                      <ChannelAvatar channelId={channel.id} url={channel.avatar_url} title={channel.title} className="w-6 h-6 rounded-full" textClassName="text-[10px]" />
+                      <span className="min-w-0 flex-1">
+                        <span className="truncate block">{channel.title}</span>
+                        {channel.is_owner === 1 && (
+                          <span className="block text-[10px] text-[#888]">{t('channel.ours')}</span>
+                        )}
+                      </span>
                     </button>
                   ))}
                 </div>
@@ -222,13 +241,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isOverlay = false, onC
             </div>
 
             {/* Settings */}
-            <div className="pt-2 border-t border-[#272727]">
+            <div className="pt-2 border-t border-[#272727] space-y-1">
+              <ModeSwitch />
               <button
                 onClick={() => handleItemClick('settings')}
-                className="w-full flex items-center gap-5 px-3 py-2.5 rounded-xl transition cursor-pointer text-left text-[#aaa] hover:bg-[#272727]/60 hover:text-white"
+                className="w-full flex items-center gap-5 px-3 py-2.5 rounded-xl transition-colors duration-200 cursor-pointer text-left text-[#aaa] hover:bg-[#272727]/60 hover:text-white"
               >
                 <SettingsIcon className="w-5 h-5" />
-                <span>Paramètres</span>
+                <span>{t('nav.settings')}</span>
               </button>
             </div>
           </div>
@@ -242,7 +262,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isOverlay = false, onC
     // Mini icon-only sidebar (fixed to viewport left on desktop)
     return (
       <aside 
-        className="hidden lg:flex fixed top-14 left-0 bottom-0 w-18 bg-[#0f0f0f] border-r border-[#272727] flex-col items-center py-3 gap-1 select-none z-40"
+        className="hidden lg:flex fixed top-14 left-0 bottom-0 w-18 bg-[#0f0f0f] border-r border-[#272727] flex-col items-center py-3 gap-1 select-none z-40 transition-[width] duration-300 ease-out-smooth"
         style={{ width: '72px' }}
       >
         {navItems.map((item) => {
@@ -262,13 +282,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isOverlay = false, onC
             </button>
           );
         })}
+        <ModeSwitch compact />
       </aside>
     );
   }
 
   return (
     <aside 
-      className="hidden lg:flex fixed top-14 left-0 bottom-0 w-60 bg-[#0f0f0f] border-r border-[#272727] flex-col overflow-y-auto px-3 py-3 select-none z-40 text-sm"
+      className="hidden lg:flex fixed top-14 left-0 bottom-0 w-60 bg-[#0f0f0f] border-r border-[#272727] flex-col overflow-y-auto px-3 py-3 select-none z-40 text-sm transition-[width] duration-300 ease-out-smooth"
       style={{ width: '240px' }}
     >
       {/* Primary Section */}
@@ -289,7 +310,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isOverlay = false, onC
               <Icon className={`w-5 h-5 ${isActive ? 'text-[#ff0033]' : 'text-[#f1f1f1]'}`} />
               <span className="flex-1 truncate">{item.label}</span>
               {item.id === 'downloads' && activeTask && (
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#ff0033]/20 text-[#ff0033] border border-[#ff0033]/30 animate-pulse">
+                <span className="text-[10px] tabular-nums font-semibold text-white">
                   {Math.round(activeTask.progress)}%
                 </span>
               )}
@@ -304,31 +325,21 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isOverlay = false, onC
           onClick={() => goTo('library')}
           className="flex items-center justify-between px-3 py-1.5 text-[#f1f1f1] font-semibold text-sm cursor-pointer hover:text-white group"
         >
-          <span>Vous</span>
+          <span>{t('nav.you')}</span>
           <ChevronRight className="w-4 h-4 text-[#aaa] group-hover:translate-x-0.5 transition-transform" />
         </div>
 
         {/* Your Channel Button */}
         <button
-          onClick={() => {
-            if (myChannel) {
-              goTo('channel', { channelId: myChannel.id });
-            } else {
-              openCreateChannelModal();
-            }
-          }}
+          onClick={() => goTo('mychannel')}
           className={`w-full flex items-center gap-5 px-3 py-2.5 rounded-xl transition cursor-pointer text-left ${
-            nav.page === 'channel' && nav.channelId === myChannel?.id
+            nav.page === 'mychannel'
               ? 'bg-[#272727] text-white font-semibold'
               : 'text-[#f1f1f1] hover:bg-[#272727]/60'
           }`}
         >
-          {myChannel?.avatar_url ? (
-            <img src={myChannel.avatar_url} alt="Votre chaîne" className="w-5 h-5 rounded-full object-cover flex-shrink-0" />
-          ) : (
-            <User className="w-5 h-5 text-[#aaa] flex-shrink-0" />
-          )}
-          <span className="truncate">{myChannel ? myChannel.title : 'Votre chaîne'}</span>
+          <YourChannelGlyph channel={myChannel} />
+          <span className="truncate">{ownerDisplayTitle(myChannel?.title, t('mych.defaultTitle'))}</span>
         </button>
 
         {libraryItems.map((item) => {
@@ -354,27 +365,31 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isOverlay = false, onC
       {/* Subscriptions Section */}
       <div className="py-3 border-b border-[#272727] flex-1">
         <div className="flex items-center justify-between px-3 py-1.5 text-[#f1f1f1] font-semibold text-sm">
-          <span>Abonnements</span>
-          <button
-            onClick={triggerScan}
-            disabled={isScanning}
-            className="text-[#888] hover:text-[#3ea6ff] p-1 rounded-full hover:bg-[#272727] cursor-pointer transition"
-            title="Vérifier les nouvelles vidéos"
-          >
-            <Radio className={`w-3.5 h-3.5 ${isScanning ? 'animate-spin text-amber-400' : ''}`} />
-          </button>
+          <span>{t('nav.subscriptions')}</span>
+          {!localOnly && scanEnabled && (
+            <button
+              onClick={triggerScan}
+              disabled={isScanning}
+              className={`p-1 rounded-full hover:bg-[#272727] cursor-pointer transition-colors duration-200 ${
+                isScanning ? 'text-white' : 'text-[#888] hover:text-white'
+              }`}
+              title={isScanning ? t('nav.scanning') : t('nav.scan')}
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isScanning ? 'animate-spin' : ''}`} />
+            </button>
+          )}
         </div>
 
-        {subscriptions.length === 0 ? (
+        {sidebarSubs.length === 0 ? (
           <div className="px-3 py-4 text-center">
-            <p className="text-xs text-[#888] mb-1 font-medium">Aucun abonnement</p>
+            <p className="text-xs text-[#888] mb-1 font-medium">{t('nav.noSubscriptions')}</p>
             <p className="text-[11px] text-[#666] leading-snug">
-              Recherchez une chaîne en haut pour vous abonner.
+              {t('nav.subscribeHint')}
             </p>
           </div>
         ) : (
           <div className="space-y-0.5 mt-1">
-            {subscriptions.slice(0, 25).map((channel) => {
+            {sidebarSubs.slice(0, 25).map((channel) => {
               const isCurrentChannel = nav.page === 'channel' && nav.channelId === channel.id;
               const hasNew = (channel.total_detected_videos || 0) > (channel.downloaded_count || 0);
 
@@ -388,20 +403,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isOverlay = false, onC
                       : 'text-[#f1f1f1] hover:bg-[#272727]/60'
                   }`}
                 >
-                  {channel.avatar_url ? (
-                    <img
-                      src={channel.avatar_url}
-                      alt={channel.title}
-                      className="w-6 h-6 rounded-full object-cover flex-shrink-0 bg-white/10"
-                    />
-                  ) : (
-                    <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-[#ff0033] to-[#ff5e00] flex items-center justify-center text-white font-bold text-[10px] flex-shrink-0">
-                      {channel.title.charAt(0).toUpperCase()}
-                    </div>
-                  )}
-                  <span className="truncate flex-1">{channel.title}</span>
+                  <ChannelAvatar channelId={channel.id} url={channel.avatar_url} title={channel.title} className="w-6 h-6 rounded-full" textClassName="text-[10px]" />
+                  <span className="min-w-0 flex-1">
+                    <span className="truncate block">{channel.title}</span>
+                    {channel.is_owner === 1 && (
+                      <span className="block text-[10px] text-[#888]">{t('channel.ours')}</span>
+                    )}
+                  </span>
                   {hasNew && (
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#3ea6ff] flex-shrink-0" title="Nouvelles vidéos disponibles" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#3ea6ff] flex-shrink-0" title={t('nav.newVideos')} />
                   )}
                 </button>
               );
@@ -411,17 +421,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isOverlay = false, onC
       </div>
 
       {/* Footer Settings */}
-      <div className="pt-2">
+      <div className="pt-2 space-y-1">
+        <ModeSwitch />
         <button
           onClick={() => goTo('settings')}
-          className={`w-full flex items-center gap-5 px-3 py-2.5 rounded-xl transition cursor-pointer text-left ${
+          className={`w-full flex items-center gap-5 px-3 py-2.5 rounded-xl transition-colors duration-200 cursor-pointer text-left ${
             nav.page === 'settings'
               ? 'bg-[#272727] text-white font-semibold'
               : 'text-[#aaa] hover:bg-[#272727]/60 hover:text-white'
           }`}
         >
           <SettingsIcon className="w-5 h-5" />
-          <span>Paramètres</span>
+          <span>{t('nav.settings')}</span>
         </button>
       </div>
     </aside>

@@ -5,7 +5,6 @@ import {
   Search as SearchIcon, 
   X, 
   Play, 
-  HardDrive,
   Clock,
   ExternalLink,
   ChevronRight,
@@ -13,6 +12,9 @@ import {
 } from 'lucide-react';
 import type { Video } from '../types';
 import { useMyTube } from '../context/MyTubeContext';
+import { MediaThumb } from '../components/common/MediaThumb';
+import { ExpandableText } from '../components/common/ExpandableText';
+import { useI18n } from '../i18n/I18nProvider';
 
 interface SearchHistoryItem {
   id: string;
@@ -22,7 +24,8 @@ interface SearchHistoryItem {
 }
 
 export const HistoryPage: React.FC = () => {
-  const { goTo, dataVersion } = useMyTube();
+  const { goTo, dataVersion, localOnly } = useMyTube();
+  const { t, locale } = useI18n();
   const [activeTab, setActiveTab] = useState<'videos' | 'searches'>('videos');
   const [videos, setVideos] = useState<Video[]>([]);
   const [searches, setSearches] = useState<SearchHistoryItem[]>([]);
@@ -54,10 +57,11 @@ export const HistoryPage: React.FC = () => {
 
   useEffect(() => {
     loadData();
-  }, [dataVersion]);
+    if (localOnly) setActiveTab('videos');
+  }, [dataVersion, localOnly]);
 
   const handleClearVideosHistory = async () => {
-    if (!confirm("Effacer tout l'historique des vidéos regardées ?")) return;
+    if (!confirm(t('history.clearVideosConfirm'))) return;
     try {
       await fetch('/api/history/videos', { method: 'DELETE' });
       setVideos([]);
@@ -67,7 +71,7 @@ export const HistoryPage: React.FC = () => {
   };
 
   const handleClearSearchHistory = async () => {
-    if (!confirm("Effacer tout l'historique de recherche ?")) return;
+    if (!confirm(t('history.clearSearchesConfirm'))) return;
     try {
       await fetch('/api/history/searches', { method: 'DELETE' });
       setSearches([]);
@@ -112,7 +116,7 @@ export const HistoryPage: React.FC = () => {
     try {
       const d = new Date(dateStr);
       if (isNaN(d.getTime())) return dateStr;
-      return d.toLocaleDateString('fr-FR', { 
+      return d.toLocaleDateString(locale, { 
         day: 'numeric', 
         month: 'short', 
         year: 'numeric',
@@ -125,13 +129,13 @@ export const HistoryPage: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 w-full px-3 sm:px-6 pt-3 pb-8 flex flex-col lg:flex-row gap-8 text-[#f1f1f1]">
+    <div className="flex-1 w-full px-4 sm:px-6 pt-6 pb-8 flex flex-col lg:flex-row gap-8 text-[#f1f1f1]">
       {/* ========================================================================= */}
       {/* Video List or Search List (Left on desktop, below controls on mobile)     */}
       {/* ========================================================================= */}
       <div className="order-2 lg:order-1 flex-1 space-y-4 min-w-0">
         <h1 className="text-xl font-bold text-white tracking-tight">
-          {activeTab === 'videos' ? 'Historique des vidéos regardées' : 'Historique des recherches'}
+          {activeTab === 'videos' ? t('history.videosTitle') : t('history.searchesTitle')}
         </h1>
 
         {/* 1. VIDEOS LIST */}
@@ -141,10 +145,6 @@ export const HistoryPage: React.FC = () => {
               <div className="space-y-4">
                 {filteredVideos.map((video) => {
                   const isDownloaded = video.is_downloaded === 1;
-                  const thumbSrc = (isDownloaded && video.local_thumbnail_path)
-                    ? `/media/downloads/${encodeURIComponent(video.local_thumbnail_path).replace(/%2F/g, '/')}`
-                    : video.thumbnail_url || `https://i.ytimg.com/vi/${video.id}/hqdefault.jpg`;
-
                   const progressPercent = video.duration && video.watch_progress
                     ? Math.min(100, Math.round((video.watch_progress / video.duration) * 100))
                     : 0;
@@ -157,20 +157,19 @@ export const HistoryPage: React.FC = () => {
                     >
                       {/* 16:9 Thumbnail */}
                       <div className="relative w-full sm:w-60 md:w-64 aspect-video rounded-xl overflow-hidden bg-[#222] flex-shrink-0 shadow-sm">
-                        <img
-                          src={thumbSrc}
+                        <MediaThumb
+                          video={video}
                           alt={video.title}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
                         />
+                        {!localOnly && !isDownloaded && (
+                          <span className="absolute top-1.5 left-1.5 bg-black/70 text-[#aaa] text-[9px] font-medium px-1.5 py-0.5 rounded">
+                            {t('card.online')}
+                          </span>
+                        )}
                         {video.duration_string && (
                           <span className="absolute bottom-1.5 right-1.5 bg-black/85 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">
                             {video.duration_string}
-                          </span>
-                        )}
-                        {isDownloaded && (
-                          <span className="absolute top-1.5 left-1.5 bg-emerald-600/90 text-white text-[9px] font-bold px-1.5 py-0.5 rounded flex items-center gap-1 shadow">
-                            <HardDrive className="w-2.5 h-2.5" />
-                            <span>Stocké</span>
                           </span>
                         )}
                         {progressPercent > 0 && (
@@ -184,13 +183,15 @@ export const HistoryPage: React.FC = () => {
                       <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
                         <div>
                           <div className="flex items-start justify-between gap-2">
-                            <h3 className="text-sm font-semibold text-white group-hover:text-[#3ea6ff] line-clamp-2 leading-snug">
-                              {video.title}
-                            </h3>
+                            <div className="min-w-0">
+                              <h3 className="text-sm font-semibold text-white group-hover:text-[#3ea6ff] line-clamp-2 leading-snug">
+                                {video.title}
+                              </h3>
+                            </div>
                             <button
                               onClick={(e) => handleRemoveVideo(video.id, e)}
                               className="p-1.5 text-[#aaa] hover:text-white rounded-full hover:bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer flex-shrink-0"
-                              title="Supprimer de l'historique"
+                              title={t('history.remove')}
                             >
                               <X className="w-4 h-4" />
                             </button>
@@ -209,21 +210,19 @@ export const HistoryPage: React.FC = () => {
                           </div>
 
                           {video.description && (
-                            <p className="text-xs text-[#717171] mt-2 line-clamp-2 leading-relaxed">
-                              {video.description}
-                            </p>
+                            <ExpandableText text={video.description} className="text-xs text-[#717171]" />
                           )}
                         </div>
 
                         {/* Timestamp */}
                         <div className="flex items-center gap-2 text-[11px] text-[#717171] mt-2">
                           {(video as any).last_watched_at ? (
-                            <span>Vu le {formatDate((video as any).last_watched_at)}</span>
+                            <span>{t('history.watchedOn', { date: formatDate((video as any).last_watched_at) })}</span>
                           ) : (
-                            <span>Vu récemment</span>
+                            <span>{t('history.watchedRecently')}</span>
                           )}
                           {progressPercent > 0 && (
-                            <span>• {progressPercent}% regardé</span>
+                            <span>• {progressPercent}%</span>
                           )}
                         </div>
                       </div>
@@ -236,9 +235,9 @@ export const HistoryPage: React.FC = () => {
                 <div className="w-16 h-16 rounded-full bg-[#272727] flex items-center justify-center text-[#aaa] mx-auto">
                   <HistoryIcon className="w-8 h-8" />
                 </div>
-                <h3 className="font-bold text-base text-white">Aucune vidéo dans l'historique</h3>
+                <h3 className="font-bold text-base text-white">{t('history.emptyVideos')}</h3>
                 <p className="text-xs text-[#aaa]">
-                  Les vidéos que vous regardez sur VidArch apparaîtront automatiquement ici.
+                  {t('history.emptyVideosBody')}
                 </p>
               </div>
             )}
@@ -246,7 +245,7 @@ export const HistoryPage: React.FC = () => {
         )}
 
         {/* 2. SEARCHES LIST */}
-        {activeTab === 'searches' && (
+        {activeTab === 'searches' && !localOnly && (
           <div>
             {filteredSearches.length > 0 ? (
               <div className="space-y-1">
@@ -263,7 +262,7 @@ export const HistoryPage: React.FC = () => {
                           {s.query}
                         </span>
                         <span className="text-[11px] text-[#717171]">
-                          Recherché le {formatDate(s.searched_at)}
+                          {formatDate(s.searched_at)}
                         </span>
                       </div>
                     </div>
@@ -272,7 +271,7 @@ export const HistoryPage: React.FC = () => {
                       <button
                         onClick={(e) => handleRemoveSearch(s.id, e)}
                         className="p-1.5 text-[#aaa] hover:text-white rounded-full hover:bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-                        title="Supprimer cette recherche"
+                        title={t('history.removeSearch')}
                       >
                         <X className="w-4 h-4" />
                       </button>
@@ -285,7 +284,7 @@ export const HistoryPage: React.FC = () => {
                 <div className="w-16 h-16 rounded-full bg-[#272727] flex items-center justify-center text-[#aaa] mx-auto">
                   <SearchIcon className="w-8 h-8" />
                 </div>
-                <h3 className="font-bold text-base text-white">Aucune recherche enregistrée</h3>
+                <h3 className="font-bold text-base text-white">{t('history.emptySearches')}</h3>
                 <p className="text-xs text-[#aaa]">
                   Vos prochaines recherches apparaîtront ici.
                 </p>
@@ -306,7 +305,7 @@ export const HistoryPage: React.FC = () => {
             type="text"
             value={searchFilter}
             onChange={(e) => setSearchFilter(e.target.value)}
-            placeholder="Rechercher dans l'historique..."
+            placeholder={t('history.searchPh')}
             className="w-full bg-transparent text-[16px] sm:text-xs text-white placeholder-[#717171] focus:outline-none"
           />
           {searchFilter && (
@@ -324,7 +323,7 @@ export const HistoryPage: React.FC = () => {
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-[#f1f1f1] hover:bg-[#272727] transition cursor-pointer disabled:opacity-40"
           >
             <Trash2 className="w-4 h-4 text-[#aaa]" />
-            <span>Effacer tout l'historique des vidéos</span>
+            <span>{t('history.clearVideos')}</span>
           </button>
 
           <button
@@ -333,13 +332,13 @@ export const HistoryPage: React.FC = () => {
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-[#f1f1f1] hover:bg-[#272727] transition cursor-pointer disabled:opacity-40"
           >
             <Trash2 className="w-4 h-4 text-[#aaa]" />
-            <span>Effacer tout l'historique des recherches</span>
+            <span>{t('history.clearSearches')}</span>
           </button>
         </div>
 
         {/* Type d'historique Radio Buttons (Native YouTube style) */}
         <div className="space-y-3 pt-2">
-          <span className="text-xs font-bold text-white block">Type d'historique</span>
+          <span className="text-xs font-bold text-white block">{t('history.type')}</span>
           
           <div className="space-y-1">
             <label 
@@ -347,7 +346,7 @@ export const HistoryPage: React.FC = () => {
               className="flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-[#272727] cursor-pointer transition"
             >
               <span className={`text-xs font-medium ${activeTab === 'videos' ? 'text-white font-bold' : 'text-[#aaa]'}`}>
-                Vidéos regardées ({videos.length})
+                {t('history.watchedCount', { count: videos.length })}
               </span>
               <input
                 type="radio"
@@ -358,21 +357,22 @@ export const HistoryPage: React.FC = () => {
               />
             </label>
 
+            {!localOnly && (
             <label 
               onClick={() => setActiveTab('searches')}
               className="flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-[#272727] cursor-pointer transition"
             >
               <span className={`text-xs font-medium ${activeTab === 'searches' ? 'text-white font-bold' : 'text-[#aaa]'}`}>
-                Recherches ({searches.length})
+                {t('history.searchesCount', { count: searches.length })}
               </span>
               <input
                 type="radio"
                 name="history_type"
                 checked={activeTab === 'searches'}
                 onChange={() => setActiveTab('searches')}
-                className="accent-[#ff0033] w-4 h-4 cursor-pointer"
               />
             </label>
+            )}
           </div>
         </div>
       </div>

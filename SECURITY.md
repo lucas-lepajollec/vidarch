@@ -25,3 +25,10 @@ Please include:
 3. Your proposed fix or mitigation if you have one.
 
 We will review your submission promptly and coordinate a patch and release before public disclosure.
+
+## Hardening a deployment
+
+- Set `AUTH_PASSWORD` or a password in **Settings → Sécurité** before exposing the host.
+- Do not serve or share the `data/` directory: it contains `vidarch.db`, `cookies.txt`, and the session secret.
+- Put VidArch behind HTTPS (Caddy / Nginx). The session cookie is `HttpOnly` + `SameSite=Lax` (and `Secure` when the request is HTTPS).
+- Keep yt-dlp updated (`yt-dlp -U` on startup / weekly, or the Settings button). YouTube extractors break often.

@@ -1,6 +1,7 @@
 import { Router, Response } from 'express';
 import { downloadQueue } from '../services/queue.js';
 import { getVideoDetails } from '../services/ytdlp.js';
+import { isAllowedYouTubeTarget, looksLikeUrl, isYouTubeVideoId } from '../utils/youtube.js';
 
 const router = Router();
 
@@ -97,6 +98,14 @@ router.post('/', async (req, res) => {
     return res.status(400).json({ error: 'Identifiant ou URL de vidéo requis' });
   }
 
+  const candidate = String(url || videoId || '').trim();
+  if (looksLikeUrl(candidate) && !isAllowedYouTubeTarget(candidate)) {
+    return res.status(400).json({ error: 'Seuls les liens YouTube sont acceptés' });
+  }
+  if (!looksLikeUrl(candidate) && videoId && !isYouTubeVideoId(String(videoId))) {
+    return res.status(400).json({ error: 'Identifiant YouTube invalide' });
+  }
+
   try {
     let videoTitle = title;
     let videoChannel = channelTitle;
@@ -128,6 +137,12 @@ router.post('/', async (req, res) => {
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
+});
+
+// POST cancel all active tasks
+router.post('/cancel-all', (req, res) => {
+  const canceled = downloadQueue.cancelAllActive();
+  res.json({ success: true, canceled });
 });
 
 // POST cancel task

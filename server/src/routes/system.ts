@@ -5,8 +5,24 @@ import { db } from '../db/database.js';
 import { COOKIES_FILE, DOWNLOADS_DIR, findYtDlpPath } from '../config.js';
 import { getYtDlpVersion, updateYtDlp } from '../services/ytdlp.js';
 import { scannerService } from '../services/scanner.js';
+import { downloadQueue } from '../services/queue.js';
+import { isScanEnabled } from '../utils/settings.js';
 
 const router = Router();
+
+const ALLOWED_SETTINGS = new Set([
+  'auto_scan_interval',
+  'default_max_resolution',
+  'auto_update_ytdlp',
+  'concurrent_downloads',
+  'auto_download_new_subs',
+  'download_shorts_default',
+  'ui_language',
+  'local_only',
+  'scan_enabled',
+]);
+
+const COOKIES_MAX_BYTES = 2 * 1024 * 1024;
 
 function getDirectorySize(dirPath: string): number {
   let size = 0;
@@ -78,7 +94,7 @@ router.post('/update-ytdlp', async (req, res) => {
 // POST trigger manual scan of subscriptions
 router.post('/scan', async (req, res) => {
   try {
-    const result = await scannerService.scanAllSubscriptions();
+    const result = await scannerService.scanAllSubscriptions({ forceFull: isScanEnabled() });
     res.json({ success: true, ...result });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -88,8 +104,14 @@ router.post('/scan', async (req, res) => {
 // POST save cookies.txt
 router.post('/cookies', (req, res) => {
   const { content } = req.body;
-  if (!content) {
+  if (!content || typeof content !== 'string') {
     return res.status(400).json({ error: 'Contenu du cookie requis' });
+  }
+  if (content.length > COOKIES_MAX_BYTES) {
+    return res.status(400).json({ error: 'Fichier cookies trop volumineux' });
+  }
+  if (!/netscape|# http|youtube\.com/i.test(content)) {
+    return res.status(400).json({ error: 'Format cookies.txt Netscape invalide' });
   }
 
   try {
@@ -161,14 +183,34 @@ router.get('/settings', (req, res) => {
 
 router.put('/settings', (req, res) => {
   const settings = req.body;
+  if (!settings || typeof settings !== 'object' || Array.isArray(settings)) {
+    return res.status(400).json({ error: 'Objet de paramètres requis' });
+  }
   try {
     const stmt = db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)');
-    const updateMany = db.transaction((obj) => {
+    const updateMany = db.transaction((obj: Record<string, unknown>) => {
       for (const [k, v] of Object.entries(obj)) {
-        stmt.run(k, String(v));
+        if (!ALLOWED_SETTINGS.has(k)) continue;
+        const value = String(v);
+        if (k === 'ui_language' && !['en', 'fr', 'es', 'de'].includes(value)) continue;
+        if (k === 'local_only' && !['true', 'false'].includes(value)) continue;
+        if (k === 'scan_enabled' && !['true', 'false'].includes(value)) continue;
+        if (k === 'concurrent_downloads') {
+          const n = parseInt(value, 10);
+          if (!Number.isFinite(n) || n < 1 || n > 4) continue;
+          stmt.run(k, String(Math.round(n)));
+          continue;
+        }
+        stmt.run(k, value);
       }
     });
     updateMany(settings);
+    if (settings.auto_scan_interval !== undefined) {
+      scannerService.initCron();
+    }
+    if (settings.concurrent_downloads !== undefined) {
+      downloadQueue.processNext();
+    }
     res.json({ success: true });
   } catch (err: any) {
     res.status(500).json({ error: err.message });

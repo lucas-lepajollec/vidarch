@@ -4,19 +4,56 @@ import {
   Menu, 
   Settings as SettingsIcon, 
   X, 
-  Radio, 
-  DownloadCloud, 
+  Download, 
   Plus, 
   User, 
-  Tv2, 
-  Sliders, 
   ArrowLeft,
-  Users,
-  Check,
-  UserMinus
+  Clock,
+  RefreshCw,
 } from 'lucide-react';
 import { useMyTube } from '../../context/MyTubeContext';
 import { VidArchLogo } from '../common/VidArchLogo';
+import { ChannelAvatar } from '../common/ChannelAvatar';
+import { useI18n } from '../../i18n/I18nProvider';
+import { ownerDisplayTitle } from '../../utils/channelTitle';
+
+interface SearchHistoryItem {
+  id: string;
+  query: string;
+}
+
+const SearchHistoryList: React.FC<{
+  items: SearchHistoryItem[];
+  onPick: (query: string) => void;
+  onRemove: (id: string) => void;
+  removeLabel: string;
+}> = ({ items, onPick, onRemove, removeLabel }) => (
+  <ul className="py-1.5">
+    {items.map((item) => (
+      <li key={item.id} className="flex items-center hover:bg-[#3d3d3d]">
+        <button
+          type="button"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => onPick(item.query)}
+          className="flex-1 min-w-0 flex items-center gap-3 px-4 py-2.5 text-left cursor-pointer"
+        >
+          <Clock className="w-4 h-4 text-[#aaa] flex-shrink-0" />
+          <span className="flex-1 text-sm text-white truncate">{item.query}</span>
+        </button>
+        <button
+          type="button"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => onRemove(item.id)}
+          className="p-2 mr-2 rounded-full text-[#aaa] hover:text-white hover:bg-white/10 cursor-pointer flex-shrink-0"
+          title={removeLabel}
+          aria-label={removeLabel}
+        >
+          <X className="w-4 h-4" />
+        </button>
+      </li>
+    ))}
+  </ul>
+);
 
 interface HeaderProps {
   onToggleSidebar: () => void;
@@ -31,24 +68,65 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
     triggerScan, 
     openImportModal, 
     myChannel,
-    myChannels,
-    setActiveOwnerChannel,
-    unclaimChannel,
-    openCreateChannelModal, 
-    openEditChannelModal 
+    localOnly,
+    scanEnabled,
   } = useMyTube();
+  const { t } = useI18n();
 
   const [searchQuery, setSearchQuery] = useState(nav.query || '');
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
-  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
-  const profileMenuRef = useRef<HTMLDivElement>(null);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [searchHistory, setSearchHistory] = useState<SearchHistoryItem[]>([]);
   const mobileInputRef = useRef<HTMLInputElement>(null);
+  const desktopSearchRef = useRef<HTMLDivElement>(null);
+
+  const loadSearchHistory = async () => {
+    try {
+      const res = await fetch('/api/history/searches');
+      if (res.ok) {
+        const data = await res.json();
+        setSearchHistory(Array.isArray(data) ? data : []);
+      }
+    } catch {
+      // Keep the last known list if the request fails.
+    }
+  };
+
+  const openSearchHistory = () => {
+    setHistoryOpen(true);
+    void loadSearchHistory();
+  };
+
+  const filteredHistory = (() => {
+    const q = searchQuery.trim().toLowerCase();
+    const list = q
+      ? searchHistory.filter((s) => s.query.toLowerCase().includes(q))
+      : searchHistory;
+    return list.slice(0, 8);
+  })();
+
+  const showHistory = historyOpen && filteredHistory.length > 0;
+
+  const runSearch = (query: string) => {
+    const next = query.trim();
+    if (!next) return;
+    setSearchQuery(next);
+    goTo('search', { query: next });
+    setHistoryOpen(false);
+    setIsMobileSearchOpen(false);
+  };
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (searchQuery.trim()) {
-      goTo('search', { query: searchQuery.trim() });
-      setIsMobileSearchOpen(false);
+    runSearch(searchQuery);
+  };
+
+  const handleRemoveHistory = async (id: string) => {
+    try {
+      await fetch(`/api/history/searches/${encodeURIComponent(id)}`, { method: 'DELETE' });
+      setSearchHistory((prev) => prev.filter((s) => s.id !== id));
+    } catch {
+      // Ignore; the row stays until the next refresh.
     }
   };
 
@@ -58,67 +136,92 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
     }
   }, [nav.query]);
 
-  // Focus mobile input when search opens
   useEffect(() => {
-    if (isMobileSearchOpen && mobileInputRef.current) {
-      mobileInputRef.current.focus();
-    }
+    if (!isMobileSearchOpen) return;
+    mobileInputRef.current?.focus();
+    setHistoryOpen(true);
+    void loadSearchHistory();
   }, [isMobileSearchOpen]);
 
-  // Close profile menu when clicking outside
   useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (profileMenuRef.current && !profileMenuRef.current.contains(e.target as Node)) {
-        setIsProfileMenuOpen(false);
-      }
+    if (!historyOpen || isMobileSearchOpen) return;
+    const onDocDown = (e: MouseEvent) => {
+      const target = e.target as Node;
+      if (desktopSearchRef.current?.contains(target)) return;
+      setHistoryOpen(false);
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setHistoryOpen(false);
+    };
+    document.addEventListener('mousedown', onDocDown);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDocDown);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [historyOpen, isMobileSearchOpen]);
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 h-14 bg-[#0f0f0f] border-b border-[#272727] px-3 sm:px-4 flex items-center justify-between select-none">
+    <header className="fixed top-0 left-0 right-0 z-50 h-14 bg-[#0f0f0f] border-b border-[#272727] px-3 sm:px-4 flex items-center justify-between select-none overflow-visible">
       {/* ========================================================================= */}
       {/* MOBILE FULL-SCREEN SEARCH OVERLAY (when active on mobile)                */}
       {/* ========================================================================= */}
       {isMobileSearchOpen ? (
-        <div className="absolute inset-0 z-50 bg-[#0f0f0f] px-2 flex items-center gap-2 animate-in fade-in duration-150">
-          <button
-            type="button"
-            onClick={() => setIsMobileSearchOpen(false)}
-            className="p-2 rounded-full hover:bg-white/10 text-[#f1f1f1] cursor-pointer flex-shrink-0"
-            title="Fermer la recherche"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-
-          <form onSubmit={handleSearchSubmit} className="flex-1 flex items-center">
-            <div className="flex-1 flex items-center bg-[#121212] border border-[#303030] rounded-full px-3.5 py-1.5 focus-within:border-[#3ea6ff]">
-              <input
-                ref={mobileInputRef}
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Rechercher sur VidArch..."
-                className="w-full bg-transparent text-[16px] sm:text-sm text-white focus:outline-none placeholder-[#717171]"
-              />
-              {searchQuery && (
-                <button
-                  type="button"
-                  onClick={() => setSearchQuery('')}
-                  className="p-1 text-[#aaa] hover:text-white"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              )}
-            </div>
+        <div className="fixed inset-0 z-50 bg-[#0f0f0f] flex flex-col animate-in fade-in duration-300">
+          <div className="h-14 px-2 flex items-center gap-2 flex-shrink-0">
             <button
-              type="submit"
-              className="p-2 ml-1 text-[#f1f1f1] hover:text-white transition cursor-pointer"
+              type="button"
+              onClick={() => {
+                setIsMobileSearchOpen(false);
+                setHistoryOpen(false);
+              }}
+              className="p-2 rounded-full hover:bg-white/10 text-[#f1f1f1] cursor-pointer flex-shrink-0"
+              title={t('header.searchClose')}
             >
-              <Search className="w-4 h-4" />
+              <ArrowLeft className="w-5 h-5" />
             </button>
-          </form>
+
+            <form onSubmit={handleSearchSubmit} className="flex-1 flex items-center">
+              <div className="flex-1 flex items-center bg-[#121212] border border-[#303030] rounded-full px-3.5 py-1.5 focus-within:border-[#3ea6ff]">
+                <input
+                  ref={mobileInputRef}
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onFocus={openSearchHistory}
+                  placeholder={localOnly ? t('header.searchPlaceholderLocal') : t('header.searchPlaceholder')}
+                  className="w-full bg-transparent text-[16px] sm:text-sm text-white focus:outline-none placeholder-[#717171]"
+                  autoComplete="off"
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery('')}
+                    className="p-1 text-[#aaa] hover:text-white"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+              <button
+                type="submit"
+                className="p-2 ml-1 text-[#f1f1f1] hover:text-white transition cursor-pointer"
+              >
+                <Search className="w-4 h-4" />
+              </button>
+            </form>
+          </div>
+
+          {showHistory && (
+            <div className="flex-1 overflow-y-auto border-t border-[#272727]">
+              <SearchHistoryList
+                items={filteredHistory}
+                onPick={runSearch}
+                onRemove={handleRemoveHistory}
+                removeLabel={t('history.removeSearch')}
+              />
+            </div>
+          )}
         </div>
       ) : null}
 
@@ -131,7 +234,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
         <button
           onClick={onToggleSidebar}
           className="p-2 hover:bg-white/10 rounded-full transition text-[#f1f1f1] cursor-pointer"
-          title="Menu principal"
+          title={t('nav.menu')}
         >
           <Menu className="w-5 h-5" />
         </button>
@@ -146,34 +249,50 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
 
       {/* Center: Desktop/Tablet Centered & Fixed Search Bar */}
       <div className="hidden sm:flex absolute left-1/2 -translate-x-1/2 w-full max-w-[500px] md:max-w-[560px] lg:max-w-[620px] px-4 justify-center z-10 pointer-events-auto">
-        <form onSubmit={handleSearchSubmit} className="flex items-center w-full">
-          <div className="flex items-center flex-1 bg-[#121212] border border-[#303030] rounded-l-full px-4 py-1.5 focus-within:border-[#3ea6ff] focus-within:ring-1 focus-within:ring-[#3ea6ff] transition">
-            <Search className="w-4 h-4 text-[#888] mr-2 flex-shrink-0" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Rechercher une vidéo ou chaîne..."
-              className="w-full bg-transparent text-[16px] sm:text-sm text-[#f1f1f1] placeholder-[#717171] focus:outline-none"
-            />
-            {searchQuery && (
-              <button
-                type="button"
-                onClick={() => setSearchQuery('')}
-                className="text-[#888] hover:text-white p-0.5 rounded-full hover:bg-white/10 cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            )}
-          </div>
-          <button
-            type="submit"
-            className="bg-[#222] hover:bg-[#2a2a2a] text-[#f1f1f1] px-5 py-2 border border-l-0 border-[#303030] rounded-r-full flex items-center justify-center transition cursor-pointer flex-shrink-0"
-            title="Rechercher"
-          >
-            <Search className="w-4 h-4" />
-          </button>
-        </form>
+        <div ref={desktopSearchRef} className="relative w-full">
+          <form onSubmit={handleSearchSubmit} className="flex items-center w-full">
+            <div className="flex items-center flex-1 bg-[#121212] border border-[#303030] rounded-l-full px-4 py-1.5 focus-within:border-[#3ea6ff] focus-within:ring-1 focus-within:ring-[#3ea6ff] transition">
+              <Search className="w-4 h-4 text-[#888] mr-2 flex-shrink-0" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onFocus={openSearchHistory}
+                onClick={openSearchHistory}
+                placeholder={localOnly ? t('header.searchPlaceholderLocal') : t('header.searchPlaceholder')}
+                className="w-full bg-transparent text-[16px] sm:text-sm text-[#f1f1f1] placeholder-[#717171] focus:outline-none"
+                autoComplete="off"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  className="text-[#888] hover:text-white p-0.5 rounded-full hover:bg-white/10 cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+            <button
+              type="submit"
+              className="bg-[#222] hover:bg-[#2a2a2a] text-[#f1f1f1] px-5 py-2 border border-l-0 border-[#303030] rounded-r-full flex items-center justify-center transition cursor-pointer flex-shrink-0"
+              title={t('header.search')}
+            >
+              <Search className="w-4 h-4" />
+            </button>
+          </form>
+
+          {showHistory && (
+            <div className="absolute top-full left-0 right-0 mt-1.5 bg-[#212121] rounded-xl border border-[#303030] shadow-[0_8px_28px_rgba(0,0,0,0.55)] overflow-hidden z-50">
+              <SearchHistoryList
+                items={filteredHistory}
+                onPick={runSearch}
+                onRemove={handleRemoveHistory}
+                removeLabel={t('history.removeSearch')}
+              />
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Right: Actions */}
@@ -182,7 +301,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
         <button
           onClick={() => setIsMobileSearchOpen(true)}
           className="sm:hidden p-2 rounded-full hover:bg-white/10 text-[#f1f1f1] transition cursor-pointer"
-          title="Rechercher"
+          title={t('header.search')}
         >
           <Search className="w-5 h-5" />
         </button>
@@ -191,37 +310,48 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
         <button
           onClick={openImportModal}
           className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full text-xs font-semibold bg-[#222] hover:bg-[#333] text-white transition cursor-pointer border border-white/5 shadow-sm active:scale-98"
-          title="Importer une vidéo ou une chaîne"
+          title={localOnly ? t('header.importTitleLocal') : t('header.importTitle')}
         >
           <Plus className="w-3.5 h-3.5 text-[#ff0033]" />
-          <span className="hidden sm:inline">Importer</span>
+          <span className="hidden sm:inline">{t('header.import')}</span>
         </button>
 
-        {/* Scanner Radar Button */}
+        {!localOnly && scanEnabled && (
         <button
           onClick={triggerScan}
           disabled={isScanning}
-          title={isScanning ? "Scan des abonnements en cours..." : "Scanner les abonnements"}
-          className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full text-xs font-medium transition cursor-pointer ${
-            isScanning 
-              ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30 animate-pulse' 
-              : 'bg-white/5 hover:bg-white/10 text-[#aaa] hover:text-white border border-white/5'
+          title={isScanning ? t('nav.scanning') : t('nav.scan')}
+          className={`relative flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full text-xs font-medium border border-white/5 cursor-pointer transition-colors duration-200 overflow-hidden ${
+            isScanning
+              ? 'bg-[#2a2a2a] text-white'
+              : 'bg-[#222] hover:bg-[#333] text-[#aaa] hover:text-white'
           }`}
         >
-          <Radio className={`w-3.5 h-3.5 ${isScanning ? 'animate-spin text-amber-400' : ''}`} />
-          <span className="hidden md:inline">{isScanning ? 'Scan...' : 'Scanner'}</span>
+          <RefreshCw className={`w-3.5 h-3.5 ${isScanning ? 'animate-spin' : ''}`} />
+          <span className="hidden md:inline">{isScanning ? t('header.scanning') : t('header.scan')}</span>
         </button>
+        )}
 
         {/* Live Active Download Indicator */}
         {activeTask && (
           <button
             onClick={() => goTo('downloads')}
-            title="Téléchargement en cours - Voir la file"
-            className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full text-xs font-semibold bg-[#ff0033]/20 text-[#ff0033] border border-[#ff0033]/30 animate-pulse cursor-pointer shadow-sm"
+            title={t('header.queueTitle')}
+            className="relative flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full text-xs font-medium bg-[#2a2a2a] hover:bg-[#333] text-white border border-white/10 cursor-pointer transition-colors duration-200 overflow-hidden"
           >
-            <DownloadCloud className="w-3.5 h-3.5 animate-bounce text-[#ff0033]" />
-            <span className="text-[11px] font-bold">
-              {activeTask.status === 'queued' ? 'En file' : activeTask.status === 'processing' ? 'Finalisation' : `${Math.round(activeTask.progress)}%`}
+            <Download className={`w-3.5 h-3.5 ${activeTask.status === 'downloading' ? 'animate-download-nudge' : ''}`} />
+            <span className="text-[11px] tabular-nums font-semibold">
+              {activeTask.status === 'queued'
+                ? t('header.queued')
+                : activeTask.status === 'processing'
+                  ? t('header.processing')
+                  : `${Math.round(activeTask.progress)}%`}
+            </span>
+            <span className={`activity-bar ${activeTask.status !== 'downloading' ? 'activity-bar-indeterminate' : ''}`}>
+              <span
+                className="activity-bar-fill"
+                style={{ width: activeTask.status === 'downloading' ? `${Math.max(8, activeTask.progress || 0)}%` : undefined }}
+              />
             </span>
           </button>
         )}
@@ -234,173 +364,33 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
               ? 'bg-white/20 text-white' 
               : 'hover:bg-white/10 text-[#aaa] hover:text-white'
           }`}
-          title="Paramètres"
+          title={t('nav.settings')}
         >
           <SettingsIcon className="w-4 h-4" />
         </button>
 
-        {/* User Profile / Channel Dropdown */}
-        <div className="relative" ref={profileMenuRef}>
-          <button
-            onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
-            className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center bg-[#272727] hover:ring-2 hover:ring-white/20 transition cursor-pointer flex-shrink-0"
-            title="Compte & Votre Chaîne"
-          >
-            {myChannel?.avatar_url ? (
-              <img src={myChannel.avatar_url} alt={myChannel.title} className="w-full h-full object-cover" />
-            ) : myChannel ? (
-              <div className="w-full h-full bg-gradient-to-tr from-[#ff0033] to-[#ff5e00] text-white font-bold text-xs flex items-center justify-center">
-                {myChannel.title.charAt(0).toUpperCase()}
-              </div>
-            ) : (
-              <div className="w-full h-full bg-[#272727] text-[#aaa] hover:text-white flex items-center justify-center transition">
-                <User className="w-4 h-4" />
-              </div>
-            )}
-          </button>
-
-          {/* Profile Menu Dropdown (YouTube Account Switcher Style) */}
-          {isProfileMenuOpen && (
-            <div className="absolute right-0 top-11 w-72 bg-[#212121] border border-[#383838] rounded-2xl shadow-2xl py-2 z-50 animate-in fade-in duration-100 text-xs select-none max-h-[85vh] overflow-y-auto">
-              {/* Header Info */}
-              <div className="px-4 py-3 border-b border-[#303030] flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full overflow-hidden bg-[#333] flex-shrink-0 flex items-center justify-center">
-                  {myChannel?.avatar_url ? (
-                    <img src={myChannel.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
-                  ) : (
-                    <User className="w-5 h-5 text-[#aaa]" />
-                  )}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <span className="font-bold text-white block truncate text-sm">
-                    {myChannel ? myChannel.title : 'Votre Espace'}
-                  </span>
-                  <span className="text-[#aaa] text-[11px] block truncate">
-                    {myChannel?.handle || 'Aucune chaîne configurée'}
-                  </span>
-                </div>
-              </div>
-
-              {/* Primary Actions */}
-              <div className="py-1.5 border-b border-[#303030]">
-                {myChannel && (
-                  <>
-                    <button
-                      onClick={() => {
-                        setIsProfileMenuOpen(false);
-                        goTo('channel', { channelId: myChannel.id });
-                      }}
-                      className="w-full px-4 py-2.5 flex items-center gap-3 text-[#f1f1f1] hover:bg-[#303030] transition cursor-pointer font-medium"
-                    >
-                      <Tv2 className="w-4 h-4 text-[#ff0033]" />
-                      <span>Afficher votre chaîne</span>
-                    </button>
-
-                    <button
-                      onClick={() => {
-                        setIsProfileMenuOpen(false);
-                        openEditChannelModal(myChannel);
-                      }}
-                      className="w-full px-4 py-2.5 flex items-center gap-3 text-[#f1f1f1] hover:bg-[#303030] transition cursor-pointer font-medium"
-                    >
-                      <Sliders className="w-4 h-4 text-[#aaa]" />
-                      <span>Personnaliser la chaîne</span>
-                    </button>
-                  </>
-                )}
-              </div>
-
-              {/* Switch Channel / Account Section */}
-              <div className="py-2 border-b border-[#303030]">
-                <div className="px-4 pb-1.5 flex items-center justify-between text-[11px] font-semibold text-[#888] uppercase tracking-wider">
-                  <span>Changer de chaîne</span>
-                  <Users className="w-3.5 h-3.5 text-[#717171]" />
-                </div>
-
-                {/* Owned Channels List */}
-                <div className="space-y-0.5 max-h-44 overflow-y-auto">
-                  {myChannels.map((ch) => {
-                    const isActive = myChannel?.id === ch.id;
-                    return (
-                      <button
-                        key={ch.id}
-                        onClick={async () => {
-                          await setActiveOwnerChannel(ch.id);
-                          setIsProfileMenuOpen(false);
-                          goTo('channel', { channelId: ch.id });
-                        }}
-                        className={`w-full px-4 py-2 flex items-center justify-between transition cursor-pointer ${
-                          isActive ? 'bg-[#2a2a2a] text-white font-bold' : 'hover:bg-[#282828] text-[#ccc]'
-                        }`}
-                      >
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          <div className="w-7 h-7 rounded-full overflow-hidden bg-[#333] flex-shrink-0 flex items-center justify-center">
-                            {ch.avatar_url ? (
-                              <img src={ch.avatar_url} alt={ch.title} className="w-full h-full object-cover" />
-                            ) : (
-                              <div className="w-full h-full bg-gradient-to-tr from-[#ff0033] to-[#ff5e00] text-white text-[10px] font-bold flex items-center justify-center">
-                                {ch.title.charAt(0).toUpperCase()}
-                              </div>
-                            )}
-                          </div>
-                          <div className="min-w-0 text-left">
-                            <span className="block truncate text-xs font-semibold">{ch.title}</span>
-                            <span className="block truncate text-[10px] text-[#888]">{ch.handle || 'Chaîne'}</span>
-                          </div>
-                        </div>
-
-                        {isActive && <Check className="w-4 h-4 text-[#ff0033] flex-shrink-0" />}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* Create / Import another channel */}
-                <button
-                  onClick={() => {
-                    setIsProfileMenuOpen(false);
-                    openCreateChannelModal();
-                  }}
-                  className="w-full px-4 py-2 mt-1 flex items-center gap-3 text-[#3ea6ff] hover:bg-[#303030] transition cursor-pointer font-medium"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Ajouter / Créer une autre chaîne</span>
-                </button>
-
-                {/* Dissociate / Unclaim current channel */}
-                {myChannel && (
-                  <button
-                    onClick={async () => {
-                      if (confirm(`Dissocier "${myChannel.title}" de votre profil créateur ? (Elle redeviendra une chaîne normale)`)) {
-                        await unclaimChannel(myChannel.id);
-                        setIsProfileMenuOpen(false);
-                      }
-                    }}
-                    className="w-full px-4 py-2 flex items-center gap-3 text-red-400 hover:bg-red-500/10 transition cursor-pointer font-medium"
-                  >
-                    <UserMinus className="w-4 h-4" />
-                    <span>Dissocier cette chaîne</span>
-                  </button>
-                )}
-              </div>
-
-              {/* Settings */}
-              <div className="pt-1.5">
-                <button
-                  onClick={() => {
-                    setIsProfileMenuOpen(false);
-                    goTo('settings');
-                  }}
-                  className="w-full px-4 py-2.5 flex items-center gap-3 text-[#f1f1f1] hover:bg-[#303030] transition cursor-pointer font-medium"
-                >
-                  <SettingsIcon className="w-4 h-4 text-[#aaa]" />
-                  <span>Paramètres</span>
-                </button>
-              </div>
+        {/* User Profile / Channel */}
+        <button
+          onClick={() => goTo('mychannel')}
+          className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center bg-[#272727] cursor-pointer flex-shrink-0 outline-none ring-0 focus:outline-none focus:ring-0 focus-visible:outline-none hover:opacity-90 transition"
+          title={t('nav.yourChannel')}
+        >
+          {myChannel ? (
+            <ChannelAvatar
+              channelId={myChannel.id}
+              url={myChannel.avatar_url}
+              title={ownerDisplayTitle(myChannel.title, t('mych.defaultTitle'))}
+              className="w-full h-full rounded-full"
+              textClassName="text-xs"
+            />
+          ) : (
+            <div className="w-full h-full bg-[#272727] text-[#aaa] hover:text-white flex items-center justify-center transition">
+              <User className="w-4 h-4" />
             </div>
           )}
-        </div>
+        </button>
       </div>
     </header>
   );
 };
+
