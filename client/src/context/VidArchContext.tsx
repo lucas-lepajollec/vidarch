@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import type { Video, Channel, DownloadTask, SystemStatus, PageRoute, NavigationState, AuthStatus } from '../types';
 import { navToPath, pathToNav } from '../utils/routes';
 import { parseQualityNote } from '../utils/qualityNote';
@@ -28,24 +28,12 @@ export interface DownloadModalConfig {
 
 interface VidArchContextType {
   nav: NavigationState;
-  goTo: (page: PageRoute, params?: { videoId?: string; channelId?: string; query?: string }) => void;
+  goTo: (page: PageRoute, params?: { videoId?: string; channelId?: string; query?: string; playlistId?: string; playlistShuffle?: boolean }) => void;
   goBack: () => void;
   subscriptions: Channel[];
   refreshSubscriptions: () => Promise<void>;
   subscribeChannel: (url: string, autoDownload?: boolean, maxResolution?: string) => Promise<boolean>;
   unsubscribeChannel: (channelId: string) => Promise<boolean>;
-  queue: DownloadTask[];
-  refreshQueue: () => Promise<void>;
-  activeTask?: DownloadTask;
-  enqueueDownload: (params: {
-    videoId: string;
-    url?: string;
-    title?: string;
-    channelTitle?: string;
-    channelId?: string;
-    thumbnailUrl?: string;
-    resolution?: string;
-  }) => Promise<void>;
   systemStatus: SystemStatus | null;
   refreshSystemStatus: () => Promise<void>;
   isScanning: boolean;
@@ -80,7 +68,170 @@ interface VidArchContextType {
   dismissDownloadNotice: () => void;
 }
 
+interface DownloadQueueContextType {
+  queue: DownloadTask[];
+  refreshQueue: () => Promise<void>;
+  activeTask?: DownloadTask;
+  enqueueDownload: (params: {
+    videoId: string;
+    url?: string;
+    title?: string;
+    channelTitle?: string;
+    channelId?: string;
+    thumbnailUrl?: string;
+    resolution?: string;
+  }) => Promise<void>;
+}
+
 const VidArchContext = createContext<VidArchContextType | null>(null);
+const DownloadQueueContext = createContext<DownloadQueueContextType | null>(null);
+
+const DownloadQueueProvider: React.FC<{
+  children: React.ReactNode;
+  navPage: string;
+  authReady: boolean;
+  notifyDataChanged: () => void;
+  refreshSubscriptions: () => Promise<void>;
+  refreshSystemStatus: () => Promise<void>;
+  onCompleted: (data: { title?: string; videoId?: string; qualityNote?: string | null }) => void;
+}> = ({
+  children,
+  navPage,
+  authReady,
+  notifyDataChanged,
+  refreshSubscriptions,
+  refreshSystemStatus,
+  onCompleted,
+}) => {
+  const [queue, setQueue] = useState<DownloadTask[]>([]);
+
+  const refreshQueue = useCallback(async () => {
+    try {
+      const res = await fetch('/api/downloads/queue');
+      if (res.ok) {
+        const data: DownloadTask[] = await res.json();
+        setQueue(data);
+      }
+    } catch (err) {
+      console.error('Error fetching download queue:', err);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!authReady) return;
+
+    let eventSource: EventSource | null = null;
+    let reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
+
+    const connectSSE = () => {
+      try {
+        eventSource = new EventSource('/api/downloads/events');
+
+        eventSource.addEventListener('queue', (e) => {
+          try {
+            setQueue(JSON.parse(e.data));
+          } catch (_) {}
+        });
+
+        eventSource.addEventListener('progress', (e) => {
+          try {
+            const prog = JSON.parse(e.data);
+            setQueue((prev) => prev.map((item) => item.id === prog.id ? {
+              ...item,
+              progress: prog.progress,
+              speed: prog.speed,
+              eta: prog.eta,
+              status: String(prog.status || '').includes('Traitement') ? 'processing' : 'downloading',
+            } : item));
+          } catch (_) {}
+        });
+
+        eventSource.addEventListener('completed', (e) => {
+          void refreshQueue();
+          void refreshSubscriptions();
+          void refreshSystemStatus();
+          notifyDataChanged();
+          try {
+            onCompleted(JSON.parse(e.data));
+          } catch (_) {}
+        });
+
+        eventSource.addEventListener('failed', () => {
+          void refreshQueue();
+          notifyDataChanged();
+        });
+
+        eventSource.onerror = () => {
+          eventSource?.close();
+          if (reconnectTimeout) clearTimeout(reconnectTimeout);
+          reconnectTimeout = setTimeout(connectSSE, 3000);
+        };
+      } catch (_) {
+        reconnectTimeout = setTimeout(connectSSE, 3000);
+      }
+    };
+
+    connectSSE();
+    void refreshQueue();
+
+    return () => {
+      if (reconnectTimeout) clearTimeout(reconnectTimeout);
+      eventSource?.close();
+    };
+  }, [authReady, refreshQueue, refreshSubscriptions, refreshSystemStatus, notifyDataChanged, onCompleted]);
+
+  const hasActive = queue.some((t) => t.status === 'downloading' || t.status === 'processing' || t.status === 'queued');
+
+  useEffect(() => {
+    if (!hasActive && navPage !== 'downloads') return;
+    const interval = setInterval(() => {
+      void refreshQueue();
+    }, 1500);
+    return () => clearInterval(interval);
+  }, [hasActive, navPage, refreshQueue]);
+
+  const enqueueDownload = useCallback(async (params: {
+    videoId: string;
+    url?: string;
+    title?: string;
+    channelTitle?: string;
+    channelId?: string;
+    thumbnailUrl?: string;
+    resolution?: string;
+  }) => {
+    const res = await fetch('/api/downloads', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params),
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw new Error(data.error || 'Failed to queue download');
+    }
+
+    if (data.item) {
+      setQueue((prev) => [data.item, ...prev.filter((i) => i.id !== data.item.id)]);
+    }
+    await refreshQueue();
+    notifyDataChanged();
+  }, [refreshQueue, notifyDataChanged]);
+
+  const activeTask = queue.find((t) => t.status === 'downloading' || t.status === 'processing' || t.status === 'queued');
+
+  const value = useMemo<DownloadQueueContextType>(() => ({
+    queue,
+    refreshQueue,
+    activeTask,
+    enqueueDownload,
+  }), [queue, refreshQueue, activeTask, enqueueDownload]);
+
+  return (
+    <DownloadQueueContext.Provider value={value}>
+      {children}
+    </DownloadQueueContext.Provider>
+  );
+};
 
 export const VidArchProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { language, setLanguage } = useI18n();
@@ -95,7 +246,6 @@ export const VidArchProvider: React.FC<{ children: React.ReactNode }> = ({ child
     envLocked: false,
   });
   const [subscriptions, setSubscriptions] = useState<Channel[]>([]);
-  const [queue, setQueue] = useState<DownloadTask[]>([]);
   const [systemStatus, setSystemStatus] = useState<SystemStatus | null>(null);
   const [isScanning, setIsScanning] = useState(false);
   const [downloadModal, setDownloadModal] = useState<DownloadModalConfig>({ isOpen: false });
@@ -179,7 +329,7 @@ export const VidArchProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setEditingChannel(null);
   }, []);
 
-  const goTo = useCallback((page: PageRoute, params?: { videoId?: string; channelId?: string; query?: string }) => {
+  const goTo = useCallback((page: PageRoute, params?: { videoId?: string; channelId?: string; query?: string; playlistId?: string; playlistShuffle?: boolean }) => {
     const nextState: NavigationState = { page, ...params };
     setNav(nextState);
     const path = navToPath(nextState);
@@ -267,19 +417,6 @@ export const VidArchProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   }, []);
 
-  // Load download queue directly via REST
-  const refreshQueue = useCallback(async () => {
-    try {
-      const res = await fetch('/api/downloads/queue');
-      if (res.ok) {
-        const data: DownloadTask[] = await res.json();
-        setQueue(data);
-      }
-    } catch (err) {
-      console.error('Error fetching download queue:', err);
-    }
-  }, []);
-
   // Load my personal channel
   const refreshMyChannel = useCallback(async () => {
     try {
@@ -327,105 +464,16 @@ export const VidArchProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   }, []);
 
-  // Subscribe to SSE for live queue progress & live reactive updates
   useEffect(() => {
     if (auth.loading) return;
     if (auth.required && !auth.authenticated) return;
-
-    let eventSource: EventSource | null = null;
-    let reconnectTimeout: any = null;
-
-    const connectSSE = () => {
-      try {
-        eventSource = new EventSource('/api/downloads/events');
-
-        eventSource.addEventListener('queue', (e) => {
-          try {
-            const data = JSON.parse(e.data);
-            setQueue(data);
-          } catch (_) {}
-        });
-
-        eventSource.addEventListener('progress', (e) => {
-          try {
-            const prog = JSON.parse(e.data);
-            setQueue(prev => prev.map(item => item.id === prog.id ? {
-              ...item,
-              progress: prog.progress,
-              speed: prog.speed,
-              eta: prog.eta,
-              status: prog.status.includes('Traitement') ? 'processing' : 'downloading',
-            } : item));
-          } catch (_) {}
-        });
-
-        eventSource.addEventListener('completed', (e) => {
-          refreshQueue();
-          refreshSubscriptions();
-          refreshSystemStatus();
-          notifyDataChanged();
-          try {
-            const data = JSON.parse(e.data) as {
-              title?: string;
-              videoId?: string;
-              qualityNote?: string | null;
-            };
-            const note = parseQualityNote(data.qualityNote);
-            if (note) {
-              setDownloadNotice({
-                title: String(data.title || '').length > 48
-                  ? `${String(data.title).slice(0, 45)}…`
-                  : (data.title || ''),
-                videoId: data.videoId,
-                requested: note.requested,
-                actual: note.actual,
-                direction: note.direction,
-              });
-            }
-          } catch (_) {}
-        });
-
-        eventSource.addEventListener('failed', () => {
-          refreshQueue();
-          notifyDataChanged();
-        });
-
-        eventSource.onerror = () => {
-          eventSource?.close();
-          clearTimeout(reconnectTimeout);
-          reconnectTimeout = setTimeout(connectSSE, 3000);
-        };
-      } catch (_) {
-        reconnectTimeout = setTimeout(connectSSE, 3000);
-      }
-    };
-
-    connectSSE();
-    refreshQueue();
     refreshSubscriptions();
     refreshSystemStatus();
     refreshMyChannel();
-
-    return () => {
-      clearTimeout(reconnectTimeout);
-      eventSource?.close();
-    };
-  }, [refreshQueue, refreshSubscriptions, refreshSystemStatus, refreshMyChannel, notifyDataChanged, auth.loading, auth.required, auth.authenticated]);
-
-  // Fallback Polling: while any downloads are in progress or queued, refresh every 1.5s
-  useEffect(() => {
-    const hasActive = queue.some(t => t.status === 'downloading' || t.status === 'processing' || t.status === 'queued');
-    if (!hasActive && nav.page !== 'downloads') return;
-
-    const interval = setInterval(() => {
-      refreshQueue();
-    }, 1500);
-
-    return () => clearInterval(interval);
-  }, [queue, nav.page, refreshQueue]);
+  }, [refreshSubscriptions, refreshSystemStatus, refreshMyChannel, auth.loading, auth.required, auth.authenticated]);
 
   // Trigger manual scanner
-  const triggerScan = async () => {
+  const triggerScan = useCallback(async () => {
     if (localOnly || !scanEnabled) return;
     setIsScanning(true);
     try {
@@ -438,38 +486,9 @@ export const VidArchProvider: React.FC<{ children: React.ReactNode }> = ({ child
     } finally {
       setIsScanning(false);
     }
-  };
+  }, [localOnly, scanEnabled, refreshSubscriptions, refreshSystemStatus, notifyDataChanged]);
 
-  // Enqueue download with instant optimistic feedback
-  const enqueueDownload = async (params: {
-    videoId: string;
-    url?: string;
-    title?: string;
-    channelTitle?: string;
-    channelId?: string;
-    thumbnailUrl?: string;
-    resolution?: string;
-  }) => {
-    const res = await fetch('/api/downloads', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(params),
-    });
-
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      throw new Error(data.error || 'Failed to queue download');
-    }
-
-    if (data.item) {
-      setQueue(prev => [data.item, ...prev.filter(i => i.id !== data.item.id)]);
-    }
-    await refreshQueue();
-    notifyDataChanged();
-  };
-
-  // Subscribe channel
-  const subscribeChannel = async (url: string, autoDownload = false, maxResolution = '1080p') => {
+  const subscribeChannel = useCallback(async (url: string, autoDownload = false, maxResolution = '1080p') => {
     try {
       const res = await fetch('/api/channels/subscribe', {
         method: 'POST',
@@ -498,23 +517,22 @@ export const VidArchProvider: React.FC<{ children: React.ReactNode }> = ({ child
       console.error('Error subscribing:', err);
       return false;
     }
-  };
+  }, [refreshSubscriptions, notifyDataChanged]);
 
-  // Unsubscribe channel
-  const unsubscribeChannel = async (channelId: string) => {
+  const unsubscribeChannel = useCallback(async (channelId: string) => {
     try {
       setSubscriptions(prev => prev.filter(s => s.id !== channelId && s.handle !== channelId && `@${s.handle?.replace(/^@/, '')}` !== `@${channelId.replace(/^@/, '')}`));
-      
-      const res = await fetch(`/api/channels/${encodeURIComponent(channelId)}/unsubscribe`, { 
+
+      const res = await fetch(`/api/channels/${encodeURIComponent(channelId)}/unsubscribe`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ channelId })
       });
-      
+
       if (!res.ok) {
         await fetch(`/api/channels/${encodeURIComponent(channelId)}`, { method: 'DELETE' });
       }
-      
+
       await refreshSubscriptions();
       notifyDataChanged();
       return true;
@@ -522,7 +540,7 @@ export const VidArchProvider: React.FC<{ children: React.ReactNode }> = ({ child
       console.error('Error unsubscribing:', err);
       return false;
     }
-  };
+  }, [refreshSubscriptions, notifyDataChanged]);
 
   const openDownloadModal = useCallback((config: Omit<DownloadModalConfig, 'isOpen'>) => {
     setIsImportModalOpen(false);
@@ -540,58 +558,84 @@ export const VidArchProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setDownloadNotice(null);
   }, []);
 
-  // Active task matches any downloading, processing, or queued task
-  const activeTask = queue.find(t => t.status === 'downloading' || t.status === 'processing' || t.status === 'queued');
+  const onQueueCompleted = useCallback((data: { title?: string; videoId?: string; qualityNote?: string | null }) => {
+    const note = parseQualityNote(data.qualityNote);
+    if (!note) return;
+    setDownloadNotice({
+      title: String(data.title || '').length > 48
+        ? `${String(data.title).slice(0, 45)}…`
+        : (data.title || ''),
+      videoId: data.videoId,
+      requested: note.requested,
+      actual: note.actual,
+      direction: note.direction,
+    });
+  }, []);
+
+  const value = useMemo<VidArchContextType>(() => ({
+    nav,
+    goTo,
+    goBack,
+    subscriptions,
+    refreshSubscriptions,
+    subscribeChannel,
+    unsubscribeChannel,
+    systemStatus,
+    refreshSystemStatus,
+    isScanning,
+    triggerScan,
+    downloadModal,
+    openDownloadModal,
+    closeDownloadModal,
+    isImportModalOpen,
+    openImportModal,
+    closeImportModal,
+    myChannel,
+    myChannels,
+    refreshMyChannel,
+    setActiveOwnerChannel,
+    isEditChannelModalOpen,
+    editingChannel,
+    openEditChannelModal,
+    closeEditChannelModal,
+    dataVersion,
+    notifyDataChanged,
+    auth,
+    refreshAuth,
+    markAuthenticated,
+    logout,
+    localOnly,
+    scanEnabled,
+    uiLanguage: language,
+    setLocalOnly,
+    setScanEnabled,
+    setUiLanguage,
+    downloadNotice,
+    dismissDownloadNotice,
+  }), [
+    nav, goTo, goBack, subscriptions, refreshSubscriptions, subscribeChannel, unsubscribeChannel,
+    systemStatus, refreshSystemStatus, isScanning, triggerScan, downloadModal, openDownloadModal,
+    closeDownloadModal, isImportModalOpen, openImportModal, closeImportModal, myChannel, myChannels,
+    refreshMyChannel, setActiveOwnerChannel, isEditChannelModalOpen, editingChannel, openEditChannelModal,
+    closeEditChannelModal, dataVersion, notifyDataChanged, auth, refreshAuth, markAuthenticated, logout,
+    localOnly, scanEnabled, language, setLocalOnly, setScanEnabled, setUiLanguage, downloadNotice,
+    dismissDownloadNotice,
+  ]);
+
+  const authReady = !auth.loading && (!auth.required || auth.authenticated);
 
   return (
-    <VidArchContext.Provider
-      value={{
-        nav,
-        goTo,
-        goBack,
-        subscriptions,
-        refreshSubscriptions,
-        subscribeChannel,
-        unsubscribeChannel,
-        queue,
-        refreshQueue,
-        activeTask,
-        enqueueDownload,
-        systemStatus,
-        refreshSystemStatus,
-        isScanning,
-        triggerScan,
-        downloadModal,
-        openDownloadModal,
-        closeDownloadModal,
-        isImportModalOpen,
-        openImportModal,
-        closeImportModal,
-        myChannel,
-        myChannels,
-        refreshMyChannel,
-        setActiveOwnerChannel,
-        isEditChannelModalOpen,
-        editingChannel,
-        openEditChannelModal,
-        closeEditChannelModal,
-        dataVersion,
-        notifyDataChanged,
-        auth,
-        refreshAuth,
-        markAuthenticated,
-        logout,
-        localOnly,
-        scanEnabled,
-        uiLanguage: language,
-        setLocalOnly,
-        setScanEnabled,
-        setUiLanguage,
-        downloadNotice,
-        dismissDownloadNotice,
-      }}
-    >
-      {children}
+    <VidArchContext.Provider value={value}>
+      <DownloadQueueProvider
+        navPage={nav.page}
+        authReady={authReady}
+        notifyDataChanged={notifyDataChanged}
+        refreshSubscriptions={refreshSubscriptions}
+        refreshSystemStatus={refreshSystemStatus}
+        onCompleted={onQueueCompleted}
+      >
+        {children}
+      </DownloadQueueProvider>
     </VidArchContext.Provider>
   );
 };
@@ -600,6 +644,14 @@ export const useVidArch = () => {
   const ctx = useContext(VidArchContext);
   if (!ctx) {
     throw new Error('useVidArch must be used within a VidArchProvider');
+  }
+  return ctx;
+};
+
+export const useDownloadQueue = () => {
+  const ctx = useContext(DownloadQueueContext);
+  if (!ctx) {
+    throw new Error('useDownloadQueue must be used within a VidArchProvider');
   }
   return ctx;
 };

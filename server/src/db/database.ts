@@ -264,11 +264,35 @@ export function initDatabase() {
   insertSetting.run('local_only', 'false');
   insertSetting.run('scan_enabled', 'true');
 
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS playlists (
+      id TEXT PRIMARY KEY,
+      title TEXT NOT NULL,
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now'))
+    );
+    CREATE TABLE IF NOT EXISTS playlist_videos (
+      playlist_id TEXT NOT NULL,
+      video_id TEXT NOT NULL,
+      position INTEGER DEFAULT 0,
+      added_at TEXT DEFAULT (datetime('now')),
+      PRIMARY KEY (playlist_id, video_id),
+      FOREIGN KEY (playlist_id) REFERENCES playlists(id) ON DELETE CASCADE,
+      FOREIGN KEY (video_id) REFERENCES videos(id) ON DELETE CASCADE
+    );
+    CREATE INDEX IF NOT EXISTS idx_playlist_videos_video ON playlist_videos(video_id);
+    CREATE INDEX IF NOT EXISTS idx_playlist_videos_position ON playlist_videos(playlist_id, position);
+  `);
+
   // Create indexes for fast queries
   db.exec(`
     CREATE INDEX IF NOT EXISTS idx_videos_channel_id ON videos(channel_id);
     CREATE INDEX IF NOT EXISTS idx_videos_is_downloaded ON videos(is_downloaded);
     CREATE INDEX IF NOT EXISTS idx_videos_upload_date ON videos(upload_date);
+    CREATE INDEX IF NOT EXISTS idx_videos_channel_downloaded ON videos(channel_id, is_downloaded);
+    CREATE INDEX IF NOT EXISTS idx_videos_downloaded_upload ON videos(is_downloaded, upload_date);
+    CREATE INDEX IF NOT EXISTS idx_videos_last_watched ON videos(last_watched_at);
+    CREATE INDEX IF NOT EXISTS idx_videos_liked ON videos(liked);
     CREATE INDEX IF NOT EXISTS idx_download_queue_status ON download_queue(status);
   `);
 

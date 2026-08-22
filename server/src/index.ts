@@ -26,6 +26,7 @@ import systemRoutes from './routes/system.js';
 import historyRoutes from './routes/history.js';
 import importRoutes from './routes/import.js';
 import authRoutes from './routes/auth.js';
+import playlistsRoutes from './routes/playlists.js';
 
 initDatabase();
 
@@ -153,6 +154,7 @@ app.use('/api/downloads', downloadsRoutes);
 app.use('/api/system', systemRoutes);
 app.use('/api/history', historyRoutes);
 app.use('/api/import', importRoutes);
+app.use('/api/playlists', playlistsRoutes);
 
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', time: new Date().toISOString() });

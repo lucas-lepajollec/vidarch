@@ -90,7 +90,7 @@ function upsertChannel(details: any, images: { avatarUrl?: string; bannerUrl?: s
       avatar_url = COALESCE(NULLIF(excluded.avatar_url, ''), channels.avatar_url),
       banner_url = COALESCE(NULLIF(excluded.banner_url, ''), channels.banner_url),
       subscriber_count = COALESCE(NULLIF(excluded.subscriber_count, ''), channels.subscriber_count),
-      video_count = CASE WHEN excluded.video_count > 0 THEN excluded.video_count ELSE channels.video_count END,
+      video_count = CASE WHEN excluded.video_count > IFNULL(channels.video_count, 0) THEN excluded.video_count ELSE channels.video_count END,
       language = COALESCE(NULLIF(excluded.language, ''), channels.language),
       updated_at = datetime('now')
   `).run(

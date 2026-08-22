@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { db } from '../db/database.js';
 import { getChannelDetails, getChannelVideos } from '../services/ytdlp.js';
 import { persistImageInput } from '../utils/assets.js';
-import { hydrateOriginalVideos } from '../utils/innertube.js';
+import { ensureChannelVideoCount, hydrateOriginalVideos } from '../utils/innertube.js';
 import { parseYoutubeHandle, sanitizeAvatarUrl } from '../utils/youtube.js';
 import { isLocalOnly } from '../utils/settings.js';
 import { downloadQueue } from '../services/queue.js';
@@ -244,7 +244,7 @@ function upsertYoutubeCatalog(details: any) {
       avatar_url = COALESCE(NULLIF(excluded.avatar_url, ''), channels.avatar_url),
       banner_url = COALESCE(NULLIF(excluded.banner_url, ''), channels.banner_url),
       subscriber_count = excluded.subscriber_count,
-      video_count = excluded.video_count,
+      video_count = CASE WHEN excluded.video_count > IFNULL(channels.video_count, 0) THEN excluded.video_count ELSE channels.video_count END,
       updated_at = datetime('now')
   `).run(
     details.id,
@@ -906,6 +906,7 @@ router.get('/:id', async (req, res) => {
               description = COALESCE(NULLIF(excluded.description, ''), channels.description),
               subscriber_count = COALESCE(NULLIF(excluded.subscriber_count, ''), channels.subscriber_count),
               handle = COALESCE(NULLIF(excluded.handle, ''), channels.handle),
+              video_count = CASE WHEN excluded.video_count > IFNULL(channels.video_count, 0) THEN excluded.video_count ELSE channels.video_count END,
               updated_at = datetime('now')
           `).run(
             effectiveId,
@@ -976,6 +977,11 @@ router.get('/:id', async (req, res) => {
       await hydrateOriginalVideos(detectedVideos as any[]);
     }
 
+    if (!skipLive && channel.id && !String(channel.id).startsWith('custom_')) {
+      const knownCount = Number(detectedVideos.length || 0) + Number(downloadedVideos.length || 0);
+      channel.video_count = await ensureChannelVideoCount(channel.id, knownCount);
+    }
+
     if (channel.avatar_url) channel.avatar_url = sanitizeAvatarUrl(channel.avatar_url);
     attachAutoDownload(channel);
 
@@ -1020,7 +1026,7 @@ router.post('/subscribe', async (req, res) => {
         avatar_url = COALESCE(NULLIF(excluded.avatar_url, ''), channels.avatar_url),
         banner_url = COALESCE(NULLIF(excluded.banner_url, ''), channels.banner_url),
         subscriber_count = excluded.subscriber_count,
-        video_count = excluded.video_count,
+        video_count = CASE WHEN excluded.video_count > IFNULL(channels.video_count, 0) THEN excluded.video_count ELSE channels.video_count END,
         language = COALESCE(NULLIF(excluded.language, ''), channels.language),
         updated_at = datetime('now')
     `).run(

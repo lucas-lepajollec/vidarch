@@ -15,7 +15,7 @@ import {
   extractYouTubeVideoId,
 } from '../utils/youtube.js';
 import { rememberFetchedChannel, rememberFetchedVideo } from '../utils/contentLocale.js';
-import { hydrateOriginalVideos } from '../utils/innertube.js';
+import { fetchChannelVideoCount, hydrateOriginalVideos } from '../utils/innertube.js';
 import {
   parseMaxHeight as parseMaxHeightCap,
   buildYtDlpFormatSelector,
@@ -373,6 +373,20 @@ export async function getChannelDetails(channelUrlOrHandle: string, maxItems = 5
     language: pickContentLanguage(v),
   }));
 
+  const fetched = videos.length;
+  const truncated = fetched >= cap;
+  const reported = Number(json.playlist_count || 0);
+  let videoCount = 0;
+  if (reported > fetched || (reported > 0 && !truncated)) {
+    videoCount = reported;
+  } else if (!truncated && fetched > 0) {
+    videoCount = fetched;
+  }
+  if (channelId && (videoCount <= 0 || (truncated && videoCount <= cap))) {
+    const liveCount = await fetchChannelVideoCount(String(channelId));
+    if (liveCount > videoCount) videoCount = liveCount;
+  }
+
   const channel = {
     id: channelId,
     title: channelTitle,
@@ -381,7 +395,7 @@ export async function getChannelDetails(channelUrlOrHandle: string, maxItems = 5
     avatarUrl,
     bannerUrl,
     subscriberCount: json.channel_follower_count ? `${json.channel_follower_count} abonnés` : '',
-    videoCount: json.playlist_count || (json.entries?.length || 0),
+    videoCount,
     videos,
     url: targetUrl,
     language: pickContentLanguage(json),

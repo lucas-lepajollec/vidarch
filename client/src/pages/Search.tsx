@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Search as SearchIcon, 
   DownloadCloud, 
@@ -7,7 +7,6 @@ import {
   CheckCircle2, 
   Check, 
   Play, 
-  Trash2, 
   ChevronDown,
   UserMinus
 } from 'lucide-react';
@@ -17,6 +16,7 @@ import { formatViews, formatSubscriberCount } from '../utils/format';
 import { MediaThumb } from '../components/common/MediaThumb';
 import { ChannelAvatar } from '../components/common/ChannelAvatar';
 import { ExpandableText } from '../components/common/ExpandableText';
+import { VideoCard } from '../components/video/VideoCard';
 import { useI18n } from '../i18n/I18nProvider';
 
 interface ChannelResult {
@@ -32,6 +32,68 @@ interface ChannelResult {
   url?: string;
   language?: string;
 }
+
+const PeekVideoRow: React.FC<{
+  videos: Video[];
+  onDelete: (id: string) => void;
+}> = ({ videos, onDelete }) => {
+  const scrollerRef = useRef<HTMLDivElement>(null);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+
+  const updatePeek = () => {
+    const el = scrollerRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 6);
+    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 6);
+  };
+
+  useEffect(() => {
+    const el = scrollerRef.current;
+    if (!el) return;
+    updatePeek();
+    el.addEventListener('scroll', updatePeek, { passive: true });
+    const ro = new ResizeObserver(updatePeek);
+    ro.observe(el);
+    window.addEventListener('resize', updatePeek);
+    return () => {
+      el.removeEventListener('scroll', updatePeek);
+      ro.disconnect();
+      window.removeEventListener('resize', updatePeek);
+    };
+  }, [videos.length]);
+
+  return (
+    <div className="relative -mx-1 px-1">
+      <div
+        ref={scrollerRef}
+        className="flex gap-3 overflow-x-auto no-scrollbar snap-x snap-mandatory pb-1"
+      >
+        {videos.map((video) => (
+          <div
+            key={video.id}
+            className={`snap-start shrink-0 ${
+              videos.length === 1
+                ? 'w-full max-w-md'
+                : 'w-[calc((100%-0.75rem)/1.5)] sm:w-[calc((100%-1.5rem)/2.5)] xl:w-[calc((100%-2.25rem)/3.5)]'
+            }`}
+          >
+            <VideoCard
+              video={video}
+              onDelete={() => onDelete(video.id)}
+            />
+          </div>
+        ))}
+      </div>
+      {canScrollLeft && (
+        <div className="pointer-events-none absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-[#0f0f0f] to-transparent" />
+      )}
+      {canScrollRight && (
+        <div className="pointer-events-none absolute inset-y-0 right-0 w-14 sm:w-16 bg-gradient-to-l from-[#0f0f0f] via-[#0f0f0f]/80 to-transparent" />
+      )}
+    </div>
+  );
+};
 
 export const SearchPage: React.FC = () => {
   const { nav, goTo, openDownloadModal, subscribeChannel, unsubscribeChannel, subscriptions, localOnly } = useMyTube();
@@ -114,17 +176,6 @@ export const SearchPage: React.FC = () => {
       }
     } finally {
       setSubscribingId(null);
-    }
-  };
-
-  const handleDeleteLocalVideo = async (videoId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!confirm(t('search.deleteConfirm'))) return;
-    try {
-      await fetch(`/api/videos/${videoId}`, { method: 'DELETE' });
-      setLocalVideos(prev => prev.filter(v => v.id !== videoId));
-    } catch (err) {
-      console.error('Delete error:', err);
     }
   };
 
@@ -295,7 +346,7 @@ export const SearchPage: React.FC = () => {
           )}
 
           {/* ========================================================================= */}
-          {/* 2. LOCAL VIDEOS SECTION (Stored in Library) - Rich Horizontal Cards       */}
+          {/* 2. LOCAL / DOWNLOADED VIDEOS — horizontal peek carousel */}
           {/* ========================================================================= */}
           {showLocalVideos && (
             <div className="space-y-3">
@@ -303,87 +354,10 @@ export const SearchPage: React.FC = () => {
                 {t('search.libraryTitle', { count: localVideos.length })}
               </h3>
 
-              <div className="space-y-3">
-                {localVideos.map((video) => {
-                  return (
-                    <div
-                      key={video.id}
-                      onClick={() => goTo('watch', { videoId: video.id })}
-                      className="flex flex-col sm:flex-row gap-4 p-3 rounded-2xl hover:bg-[#181818] transition cursor-pointer group bg-[#0f0f0f]/40"
-                    >
-                      {/* Thumbnail */}
-                      <div className="relative w-full sm:w-64 aspect-video rounded-xl overflow-hidden bg-[#272727] flex-shrink-0">
-                        <MediaThumb video={video} alt={video.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200" />
-                        {video.duration_string && (
-                          <span className="absolute bottom-2 right-2 bg-black/80 text-white text-[11px] font-semibold px-2 py-0.5 rounded-md">
-                            {video.duration_string}
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Content */}
-                      <div className="flex-1 flex flex-col justify-between py-1 min-w-0">
-                        <div>
-                          <h3 className="font-semibold text-sm sm:text-base text-white group-hover:text-[#3ea6ff] line-clamp-2 leading-snug">
-                            {video.title}
-                          </h3>
-
-                          {/* Stats */}
-                          <div className="text-xs text-[#aaa] mt-1 flex items-center gap-1.5">
-                            {video.view_count !== undefined && video.view_count !== null && (
-                              <span>{formatViews(video.view_count, locale)}</span>
-                            )}
-                            {video.view_count && video.upload_date && <span>•</span>}
-                            {video.upload_date && <span>{video.upload_date}</span>}
-                          </div>
-
-                          {/* Channel */}
-                          <div 
-                            className="flex items-center gap-2 mt-2.5 group/ch cursor-pointer"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (video.channel_id) {
-                                goTo('channel', { channelId: video.channel_id });
-                              }
-                            }}
-                          >
-                            <ChannelAvatar
-                              channelId={video.channel_id}
-                              url={video.channel_avatar}
-                              title={video.channel_title}
-                              className="w-6 h-6 rounded-full"
-                              textClassName="text-[10px]"
-                            />
-                            <span className="text-xs text-[#aaa] group-hover/ch:text-white font-medium">
-                              {video.channel_title}
-                            </span>
-                            <CheckCircle2 className="w-3 h-3 text-[#888] fill-current" />
-                          </div>
-                        </div>
-
-                        {/* Actions */}
-                        <div className="flex items-center gap-2 mt-3 pt-2" onClick={(e) => e.stopPropagation()}>
-                          <button
-                            onClick={() => goTo('watch', { videoId: video.id })}
-                            className="bg-white text-black font-semibold text-xs px-4 py-1.5 rounded-full hover:bg-white/90 transition flex items-center gap-1.5 cursor-pointer"
-                          >
-                            <Play className="w-3.5 h-3.5 fill-current" />
-                            <span>{t('search.play')}</span>
-                          </button>
-
-                          <button
-                            onClick={(e) => handleDeleteLocalVideo(video.id, e)}
-                            className="p-1.5 text-[#aaa] hover:text-rose-400 rounded-full hover:bg-[#272727] transition cursor-pointer"
-                            title={t('card.delete')}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+              <PeekVideoRow
+                videos={localVideos}
+                onDelete={(id) => setLocalVideos((prev) => prev.filter((item) => item.id !== id))}
+              />
             </div>
           )}
 

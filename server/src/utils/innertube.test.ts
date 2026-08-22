@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { parsePlayerResponse } from './innertube.js';
+import { extractChannelVideoCount, parsePlayerResponse } from './innertube.js';
 import { sanitizeAvatarUrl, sanitizeThumbUrl } from './youtube.js';
 
 describe('original metadata helpers', () => {
@@ -28,5 +28,49 @@ describe('original metadata helpers', () => {
       sanitizeAvatarUrl('https://yt3.googleusercontent.com/xyz=s0'),
       /=s240/,
     );
+  });
+
+  it('reads the channel video count from the nested page header', () => {
+    const payload = {
+      header: {
+        pageHeaderRenderer: {
+          content: {
+            pageHeaderViewModel: {
+              metadata: {
+                contentMetadataViewModel: {
+                  metadataRows: [
+                    { metadataParts: [{ text: { content: '@Squeezie' } }] },
+                    {
+                      metadataParts: [
+                        { text: { content: '19.1M subscribers' } },
+                        { text: { content: '1.8K videos' } },
+                      ],
+                    },
+                  ],
+                },
+              },
+            },
+          },
+        },
+      },
+    };
+    assert.equal(extractChannelVideoCount(payload), 1800);
+    assert.equal(extractChannelVideoCount({
+      header: {
+        pageHeaderRenderer: {
+          content: {
+            pageHeaderViewModel: {
+              metadata: {
+                contentMetadataViewModel: {
+                  metadataRows: [
+                    { metadataParts: [{ text: { content: '450 videos' } }] },
+                  ],
+                },
+              },
+            },
+          },
+        },
+      },
+    }), 450);
   });
 });

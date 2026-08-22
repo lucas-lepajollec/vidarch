@@ -570,7 +570,7 @@ export const ImportModal: React.FC = () => {
                   <select
                     value={selectedChannelId}
                     onChange={(e) => setSelectedChannelId(e.target.value)}
-                    className="w-full bg-[#1e1e1e] border border-[#383838] text-white text-xs rounded-xl px-3.5 py-2.5 outline-none cursor-pointer"
+                    className="va-select w-full"
                   >
                     <option value="">{t('import.defaultSpace')}</option>
                     {subscriptions.map((s) => (

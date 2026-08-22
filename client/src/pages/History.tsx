@@ -190,7 +190,7 @@ export const HistoryPage: React.FC = () => {
                             </div>
                             <button
                               onClick={(e) => handleRemoveVideo(video.id, e)}
-                              className="p-1.5 text-[#aaa] hover:text-white rounded-full hover:bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer flex-shrink-0"
+                              className="p-1.5 text-[#aaa] hover:text-white rounded-full hover:bg-white/10 transition-colors cursor-pointer flex-shrink-0"
                               title={t('history.remove')}
                             >
                               <X className="w-4 h-4" />
@@ -270,7 +270,7 @@ export const HistoryPage: React.FC = () => {
                     <div className="flex items-center gap-2 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
                       <button
                         onClick={(e) => handleRemoveSearch(s.id, e)}
-                        className="p-1.5 text-[#aaa] hover:text-white rounded-full hover:bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                        className="p-1.5 text-[#aaa] hover:text-white rounded-full hover:bg-white/10 transition-colors cursor-pointer"
                         title={t('history.removeSearch')}
                       >
                         <X className="w-4 h-4" />

@@ -10,12 +10,15 @@ import {
   ArrowLeft,
   Clock,
   RefreshCw,
+  Check,
 } from 'lucide-react';
 import { useMyTube } from '../../context/MyTubeContext';
+import { useDownloadQueue } from '../../context/VidArchContext';
 import { VidArchLogo } from '../common/VidArchLogo';
 import { ChannelAvatar } from '../common/ChannelAvatar';
 import { useI18n } from '../../i18n/I18nProvider';
 import { ownerDisplayTitle } from '../../utils/channelTitle';
+import { AnchoredPopover } from '../common/AnchoredPopover';
 
 interface SearchHistoryItem {
   id: string;
@@ -28,27 +31,27 @@ const SearchHistoryList: React.FC<{
   onRemove: (id: string) => void;
   removeLabel: string;
 }> = ({ items, onPick, onRemove, removeLabel }) => (
-  <ul className="py-1.5">
+  <ul>
     {items.map((item) => (
-      <li key={item.id} className="flex items-center hover:bg-[#3d3d3d]">
+      <li key={item.id} className="flex items-center gap-0.5">
         <button
           type="button"
           onMouseDown={(e) => e.preventDefault()}
           onClick={() => onPick(item.query)}
-          className="flex-1 min-w-0 flex items-center gap-3 px-4 py-2.5 text-left cursor-pointer"
+          className="va-menu-item !w-auto flex-1 min-w-0"
         >
-          <Clock className="w-4 h-4 text-[#aaa] flex-shrink-0" />
-          <span className="flex-1 text-sm text-white truncate">{item.query}</span>
+          <Clock className="va-menu-icon" />
+          <span className="truncate">{item.query}</span>
         </button>
         <button
           type="button"
           onMouseDown={(e) => e.preventDefault()}
           onClick={() => onRemove(item.id)}
-          className="p-2 mr-2 rounded-full text-[#aaa] hover:text-white hover:bg-white/10 cursor-pointer flex-shrink-0"
+          className="p-1.5 mr-0.5 rounded-lg text-[#8a8a8a] hover:text-white hover:bg-white/[0.06] cursor-pointer flex-shrink-0"
           title={removeLabel}
           aria-label={removeLabel}
         >
-          <X className="w-4 h-4" />
+          <X className="w-3.5 h-3.5" />
         </button>
       </li>
     ))}
@@ -59,18 +62,29 @@ interface HeaderProps {
   onToggleSidebar: () => void;
 }
 
+const MenuProgress: React.FC<{ value?: number; indeterminate?: boolean }> = ({ value, indeterminate }) => (
+  <span className="mt-1.5 block h-0.5 w-full rounded-full bg-white/10 overflow-hidden">
+    <span
+      className={`block h-full rounded-full bg-[#3ea6ff] ${indeterminate ? 'menu-progress-indeterminate' : 'progress-fill'}`}
+      style={indeterminate ? undefined : { width: `${Math.min(100, Math.max(4, value || 0))}%` }}
+    />
+  </span>
+);
+
 export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
   const { 
     nav, 
     goTo, 
-    activeTask, 
     isScanning, 
     triggerScan, 
     openImportModal, 
     myChannel,
+    myChannels,
+    setActiveOwnerChannel,
     localOnly,
     scanEnabled,
   } = useMyTube();
+  const { activeTask } = useDownloadQueue();
   const { t } = useI18n();
 
   const [searchQuery, setSearchQuery] = useState(nav.query || '');
@@ -79,6 +93,11 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
   const [searchHistory, setSearchHistory] = useState<SearchHistoryItem[]>([]);
   const mobileInputRef = useRef<HTMLInputElement>(null);
   const desktopSearchRef = useRef<HTMLDivElement>(null);
+  const accountBtnRef = useRef<HTMLButtonElement>(null);
+  const [accountOpen, setAccountOpen] = useState(false);
+
+  const hasActivity = isScanning || !!activeTask;
+  const ownedChannels = myChannels.length > 0 ? myChannels : (myChannel ? [myChannel] : []);
 
   const loadSearchHistory = async () => {
     try {
@@ -247,8 +266,8 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
         </button>
       </div>
 
-      {/* Center: Desktop/Tablet Centered & Fixed Search Bar */}
-      <div className="hidden sm:flex absolute left-1/2 -translate-x-1/2 w-full max-w-[500px] md:max-w-[560px] lg:max-w-[620px] px-4 justify-center z-10 pointer-events-auto">
+      {/* Center: Desktop search — lg+ only so landscape phones keep the portrait icon */}
+      <div className="hidden lg:flex absolute left-1/2 -translate-x-1/2 w-full max-w-[500px] md:max-w-[560px] lg:max-w-[620px] px-4 justify-center z-10 pointer-events-auto">
         <div ref={desktopSearchRef} className="relative w-full">
           <form onSubmit={handleSearchSubmit} className="flex items-center w-full">
             <div className="flex items-center flex-1 bg-[#121212] border border-[#303030] rounded-l-full px-4 py-1.5 focus-within:border-[#3ea6ff] focus-within:ring-1 focus-within:ring-[#3ea6ff] transition">
@@ -283,7 +302,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
           </form>
 
           {showHistory && (
-            <div className="absolute top-full left-0 right-0 mt-1.5 bg-[#212121] rounded-xl border border-[#303030] shadow-[0_8px_28px_rgba(0,0,0,0.55)] overflow-hidden z-50">
+            <div className="absolute top-full left-0 right-0 mt-1.5 max-h-[min(24rem,calc(100dvh-4.5rem))] overflow-y-auto va-menu z-50">
               <SearchHistoryList
                 items={filteredHistory}
                 onPick={runSearch}
@@ -295,71 +314,19 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
         </div>
       </div>
 
-      {/* Right: Actions */}
-      <div className="flex items-center gap-1.5 sm:gap-2 justify-end flex-shrink-0">
-        {/* Mobile Search Button (only on < 640px) */}
+      {/* Right: Search (mobile) + Settings + Account */}
+      <div className="flex items-center gap-1 sm:gap-1.5 justify-end flex-shrink-0">
         <button
           onClick={() => setIsMobileSearchOpen(true)}
-          className="sm:hidden p-2 rounded-full hover:bg-white/10 text-[#f1f1f1] transition cursor-pointer"
+          className="lg:hidden p-2 rounded-full hover:bg-white/10 text-[#f1f1f1] transition cursor-pointer"
           title={t('header.search')}
         >
           <Search className="w-5 h-5" />
         </button>
 
-        {/* Import Button */}
-        <button
-          onClick={openImportModal}
-          className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full text-xs font-semibold bg-[#222] hover:bg-[#333] text-white transition cursor-pointer border border-white/5 shadow-sm active:scale-98"
-          title={localOnly ? t('header.importTitleLocal') : t('header.importTitle')}
-        >
-          <Plus className="w-3.5 h-3.5 text-[#ff0033]" />
-          <span className="hidden sm:inline">{t('header.import')}</span>
-        </button>
-
-        {!localOnly && scanEnabled && (
-        <button
-          onClick={triggerScan}
-          disabled={isScanning}
-          title={isScanning ? t('nav.scanning') : t('nav.scan')}
-          className={`relative flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full text-xs font-medium border border-white/5 cursor-pointer transition-colors duration-200 overflow-hidden ${
-            isScanning
-              ? 'bg-[#2a2a2a] text-white'
-              : 'bg-[#222] hover:bg-[#333] text-[#aaa] hover:text-white'
-          }`}
-        >
-          <RefreshCw className={`w-3.5 h-3.5 ${isScanning ? 'animate-spin' : ''}`} />
-          <span className="hidden md:inline">{isScanning ? t('header.scanning') : t('header.scan')}</span>
-        </button>
-        )}
-
-        {/* Live Active Download Indicator */}
-        {activeTask && (
-          <button
-            onClick={() => goTo('downloads')}
-            title={t('header.queueTitle')}
-            className="relative flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full text-xs font-medium bg-[#2a2a2a] hover:bg-[#333] text-white border border-white/10 cursor-pointer transition-colors duration-200 overflow-hidden"
-          >
-            <Download className={`w-3.5 h-3.5 ${activeTask.status === 'downloading' ? 'animate-download-nudge' : ''}`} />
-            <span className="text-[11px] tabular-nums font-semibold">
-              {activeTask.status === 'queued'
-                ? t('header.queued')
-                : activeTask.status === 'processing'
-                  ? t('header.processing')
-                  : `${Math.round(activeTask.progress)}%`}
-            </span>
-            <span className={`activity-bar ${activeTask.status !== 'downloading' ? 'activity-bar-indeterminate' : ''}`}>
-              <span
-                className="activity-bar-fill"
-                style={{ width: activeTask.status === 'downloading' ? `${Math.max(8, activeTask.progress || 0)}%` : undefined }}
-              />
-            </span>
-          </button>
-        )}
-
-        {/* Settings button (hidden on tiny mobile, accessible in profile dropdown) */}
         <button
           onClick={() => goTo('settings')}
-          className={`p-2 rounded-full transition cursor-pointer hidden sm:block ${
+          className={`p-2 rounded-full transition cursor-pointer ${
             nav.page === 'settings' 
               ? 'bg-white/20 text-white' 
               : 'hover:bg-white/10 text-[#aaa] hover:text-white'
@@ -369,26 +336,159 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
           <SettingsIcon className="w-4 h-4" />
         </button>
 
-        {/* User Profile / Channel */}
-        <button
-          onClick={() => goTo('mychannel')}
-          className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center bg-[#272727] cursor-pointer flex-shrink-0 outline-none ring-0 focus:outline-none focus:ring-0 focus-visible:outline-none hover:opacity-90 transition"
-          title={t('nav.yourChannel')}
-        >
-          {myChannel ? (
-            <ChannelAvatar
-              channelId={myChannel.id}
-              url={myChannel.avatar_url}
-              title={ownerDisplayTitle(myChannel.title, t('mych.defaultTitle'))}
-              className="w-full h-full rounded-full"
-              textClassName="text-xs"
-            />
-          ) : (
-            <div className="w-full h-full bg-[#272727] text-[#aaa] hover:text-white flex items-center justify-center transition">
-              <User className="w-4 h-4" />
-            </div>
-          )}
-        </button>
+        <div className="relative">
+          <button
+            ref={accountBtnRef}
+            type="button"
+            onClick={() => setAccountOpen((open) => !open)}
+            className="relative w-8 h-8 rounded-full flex items-center justify-center bg-[#272727] cursor-pointer flex-shrink-0 outline-none hover:opacity-90 transition"
+            title={t('nav.yourChannel')}
+          >
+            <span className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center">
+              {myChannel ? (
+                <ChannelAvatar
+                  channelId={myChannel.id}
+                  url={myChannel.avatar_url}
+                  title={ownerDisplayTitle(myChannel.title, t('mych.defaultTitle'))}
+                  className="w-full h-full rounded-full"
+                  textClassName="text-xs"
+                />
+              ) : (
+                <span className="w-full h-full bg-[#272727] text-[#aaa] flex items-center justify-center">
+                  <User className="w-4 h-4" />
+                </span>
+              )}
+            </span>
+            {hasActivity && (
+              <span className="activity-dot absolute top-0 left-0 pointer-events-none" />
+            )}
+          </button>
+
+          <AnchoredPopover
+            open={accountOpen}
+            onClose={() => setAccountOpen(false)}
+            anchorRef={accountBtnRef}
+            align="end"
+            preferredSide="bottom"
+            className="w-72 max-w-[calc(100vw-16px)]"
+          >
+            <p className="va-menu-label">
+              {ownedChannels.length > 1 ? t('header.yourChannels') : t('nav.yourChannel')}
+            </p>
+            {ownedChannels.length > 0 ? (
+              ownedChannels.map((ch) => {
+                const active = myChannel?.id === ch.id;
+                return (
+                  <button
+                    key={ch.id}
+                    type="button"
+                    onClick={async () => {
+                      if (!active) await setActiveOwnerChannel(ch.id);
+                      setAccountOpen(false);
+                      goTo('mychannel');
+                    }}
+                    className={`va-menu-item ${active ? 'is-active' : ''}`}
+                  >
+                    <ChannelAvatar
+                      channelId={ch.id}
+                      url={ch.avatar_url}
+                      title={ownerDisplayTitle(ch.title, t('mych.defaultTitle'))}
+                      className="w-7 h-7 rounded-full"
+                      textClassName="text-[10px]"
+                    />
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate">
+                        {ownerDisplayTitle(ch.title, t('mych.defaultTitle'))}
+                      </span>
+                      {(ch.handle) && (
+                        <span className="va-menu-hint truncate">{ch.handle}</span>
+                      )}
+                    </span>
+                    {active && <Check className="w-3.5 h-3.5 text-white/50 flex-shrink-0" />}
+                  </button>
+                );
+              })
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  setAccountOpen(false);
+                  goTo('mychannel');
+                }}
+                className="va-menu-item"
+              >
+                {t('header.goToChannel')}
+              </button>
+            )}
+
+            <div className="va-menu-sep" />
+
+            <button
+              type="button"
+              onClick={() => {
+                setAccountOpen(false);
+                openImportModal();
+              }}
+              className="va-menu-item"
+            >
+              <Plus className="va-menu-icon" />
+              <span>{t('header.import')}</span>
+            </button>
+
+            {!localOnly && scanEnabled && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (!isScanning) void triggerScan();
+                }}
+                disabled={isScanning}
+                className="va-menu-item items-start"
+              >
+                <RefreshCw className="va-menu-icon mt-0.5" />
+                <span className="min-w-0 flex-1">
+                  <span>{isScanning ? t('header.scanning') : t('header.scan')}</span>
+                  {isScanning && <MenuProgress indeterminate />}
+                </span>
+              </button>
+            )}
+
+            {activeTask && (
+              <button
+                type="button"
+                onClick={() => {
+                  setAccountOpen(false);
+                  goTo('downloads');
+                }}
+                className="va-menu-item items-start"
+              >
+                <Download className="va-menu-icon mt-0.5" />
+                <span className="min-w-0 flex-1">
+                  <span className="flex items-center justify-between gap-2">
+                    <span className="truncate">
+                      {activeTask.status === 'queued'
+                        ? t('header.queued')
+                        : activeTask.status === 'processing'
+                          ? t('header.processing')
+                          : t('header.downloadInProgress')}
+                    </span>
+                    {activeTask.status === 'downloading' && (
+                      <span className="text-[11px] tabular-nums font-medium text-white/45 flex-shrink-0">
+                        {Math.round(activeTask.progress)}%
+                      </span>
+                    )}
+                  </span>
+                  {activeTask.title && (
+                    <span className="va-menu-hint truncate">{activeTask.title}</span>
+                  )}
+                  <MenuProgress
+                    value={activeTask.status === 'downloading' ? activeTask.progress : undefined}
+                    indeterminate={activeTask.status !== 'downloading'}
+                  />
+                </span>
+              </button>
+            )}
+          </AnchoredPopover>
+        </div>
       </div>
     </header>
   );

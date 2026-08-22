@@ -26,6 +26,8 @@ export interface Video {
   last_watched_at?: string;
   chapters?: Array<{ title: string; start_time: number; end_time: number }>;
   language?: string;
+  channel_video_count?: number;
+  channel_downloaded_count?: number;
 }
 
 export interface Channel {
@@ -107,13 +109,29 @@ export interface SystemStatus {
   isScanning: boolean;
 }
 
-export type PageRoute = 'home' | 'subscriptions' | 'library' | 'history' | 'liked' | 'downloads' | 'settings' | 'watch' | 'channel' | 'search' | 'mychannel';
+export type PageRoute = 'home' | 'subscriptions' | 'library' | 'history' | 'liked' | 'playlists' | 'downloads' | 'settings' | 'watch' | 'channel' | 'search' | 'mychannel';
 
 export interface NavigationState {
   page: PageRoute;
   videoId?: string;
   channelId?: string;
   query?: string;
+  playlistId?: string;
+  playlistShuffle?: boolean;
+}
+
+export interface PlaylistSummary {
+  id: string;
+  title: string;
+  system: boolean;
+  video_count: number;
+  cover_thumb?: string;
+  cover_video_id?: string;
+  local_thumbnail_path?: string;
+  is_downloaded?: number;
+  contains?: boolean;
+  created_at?: string | null;
+  updated_at?: string | null;
 }
 
 export interface AuthStatus {

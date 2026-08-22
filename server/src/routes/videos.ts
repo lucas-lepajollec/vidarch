@@ -10,7 +10,7 @@ import {
   applyVideoLocale,
   applyVideoLocales,
 } from '../utils/contentLocale.js';
-import { hydrateOriginalVideos } from '../utils/innertube.js';
+import { ensureChannelVideoCount, hydrateOriginalVideos } from '../utils/innertube.js';
 
 const router = Router();
 
@@ -256,7 +256,9 @@ router.get('/:id', async (req, res) => {
              c.avatar_url as channel_avatar, 
              c.banner_url as channel_banner, 
              c.handle as channel_handle, 
-             c.subscriber_count as channel_subscribers
+             c.subscriber_count as channel_subscribers,
+             c.video_count as channel_video_count,
+             (SELECT count(*) FROM videos dv WHERE dv.channel_id = v.channel_id AND dv.is_downloaded = 1) as channel_downloaded_count
       FROM videos v
       LEFT JOIN channels c ON v.channel_id = c.id
       WHERE v.id = ?
@@ -316,6 +318,26 @@ router.get('/:id', async (req, res) => {
 
     if (!video) {
       return res.status(404).json({ error: 'Vidéo introuvable' });
+    }
+
+    if (video.channel_id) {
+      const counts = db.prepare(`
+        SELECT
+          COALESCE((SELECT video_count FROM channels WHERE id = ?), 0) as channel_video_count,
+          (SELECT count(*) FROM videos WHERE channel_id = ? AND is_downloaded = 1) as channel_downloaded_count,
+          (SELECT count(*) FROM videos WHERE channel_id = ?) as channel_known_count
+      `).get(video.channel_id, video.channel_id, video.channel_id) as {
+        channel_video_count: number;
+        channel_downloaded_count: number;
+        channel_known_count: number;
+      };
+      const knownCount = Number(counts.channel_known_count || 0);
+      const downloadedCount = Number(counts.channel_downloaded_count || 0);
+      video.channel_downloaded_count = downloadedCount;
+      video.channel_video_count = await ensureChannelVideoCount(video.channel_id, knownCount);
+      if (!video.channel_video_count) {
+        video.channel_video_count = Number(counts.channel_video_count || 0);
+      }
     }
 
     // Record last_watched_at immediately when video is opened

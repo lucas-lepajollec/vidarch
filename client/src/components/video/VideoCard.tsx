@@ -1,10 +1,11 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
   Play, 
   Download, 
   MoreVertical, 
   Trash2, 
-  ExternalLink
+  ExternalLink,
+  ListPlus
 } from 'lucide-react';
 import type { Video } from '../../types';
 import { useVidArch } from '../../context/VidArchContext';
@@ -12,6 +13,8 @@ import { formatViews, formatUploadDate, formatFileSize } from '../../utils/forma
 import { MediaThumb } from '../common/MediaThumb';
 import { ChannelAvatar } from '../common/ChannelAvatar';
 import { useI18n } from '../../i18n/I18nProvider';
+import { AnchoredPopover } from '../common/AnchoredPopover';
+import { AddToPlaylistModal } from '../playlist/AddToPlaylistModal';
 
 interface VideoCardProps {
   video: Video;
@@ -33,19 +36,9 @@ export const VideoCard: React.FC<VideoCardProps> = ({
   const { goTo, openDownloadModal, localOnly } = useVidArch();
   const { t, locale } = useI18n();
   const [showMenu, setShowMenu] = useState(false);
+  const [showPlaylistModal, setShowPlaylistModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!showMenu) return;
-    const handleClickOutside = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setShowMenu(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [showMenu]);
+  const menuBtnRef = useRef<HTMLButtonElement>(null);
 
   const isDownloaded = video.is_downloaded === 1;
   const sizeLabel = showFileSize && isDownloaded ? formatFileSize(video.file_size, locale) : '';
@@ -82,7 +75,29 @@ export const VideoCard: React.FC<VideoCardProps> = ({
     }
   };
 
-  // Watch progress percentage
+  const handleAddToPlaylist = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowMenu(false);
+    setShowPlaylistModal(true);
+  };
+
+  const playlistMenuItem = (
+    <button
+      onClick={handleAddToPlaylist}
+      className="va-menu-item"
+    >
+      <ListPlus className="va-menu-icon" />
+      <span>{t('card.addToPlaylist')}</span>
+    </button>
+  );
+
+  const playlistModal = (
+    <AddToPlaylistModal
+      open={showPlaylistModal}
+      videoId={video.id}
+      onClose={() => setShowPlaylistModal(false)}
+    />
+  );
   const progressPercent = video.duration && video.watch_progress
     ? Math.min(100, Math.round((video.watch_progress / video.duration) * 100))
     : 0;
@@ -90,11 +105,12 @@ export const VideoCard: React.FC<VideoCardProps> = ({
   if (layout === 'horizontal') {
     // Horizontal row card (for related sidebar in Watch page or compact list)
     return (
+      <>
       <div 
         onClick={handleCardClick}
-        className="flex gap-3 group cursor-pointer hover:bg-white/5 p-1.5 rounded-xl transition"
+        className="flex gap-3.5 group cursor-pointer hover:bg-white/5 p-1.5 rounded-xl transition"
       >
-        <div className="relative w-40 aspect-video rounded-lg overflow-hidden bg-[#222] flex-shrink-0">
+        <div className="relative w-52 aspect-video rounded-xl overflow-hidden bg-[#222] flex-shrink-0">
           <MediaThumb
             video={video}
             alt={video.title}
@@ -115,15 +131,16 @@ export const VideoCard: React.FC<VideoCardProps> = ({
             </span>
           ) : null}
         </div>
+        <div className="flex-1 min-w-0 flex items-start gap-1">
         <div className="flex-1 min-w-0 flex flex-col justify-start">
-          <h4 className="text-xs font-semibold text-[#f1f1f1] group-hover:text-white line-clamp-2 leading-snug">
+          <h4 className="text-[13px] font-semibold text-[#f1f1f1] group-hover:text-white line-clamp-2 leading-snug">
             {video.title}
           </h4>
-          <p className="text-[11px] text-[#aaa] mt-1 hover:text-[#f1f1f1] truncate">
+          <p className="text-xs text-[#aaa] mt-1 hover:text-[#f1f1f1] truncate">
             {video.channel_title}
           </p>
           {!hideMeta && (
-            <div className="text-[10px] text-[#717171] mt-0.5 flex items-center gap-1.5">
+            <div className="text-[11px] text-[#717171] mt-0.5 flex items-center gap-1.5">
               {video.view_count !== undefined && video.view_count !== null && (
                 <>
                   <span>{formatViews(video.view_count, locale)}</span>
@@ -134,7 +151,62 @@ export const VideoCard: React.FC<VideoCardProps> = ({
             </div>
           )}
         </div>
+        <div className="relative flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+          <button
+            ref={menuBtnRef}
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowMenu(!showMenu);
+            }}
+            className="p-1 text-[#ccc] hover:text-white rounded-full hover:bg-white/10 transition-colors cursor-pointer flex-shrink-0"
+            title={t('card.options')}
+          >
+            <MoreVertical className="w-4 h-4" />
+          </button>
+          <AnchoredPopover
+            open={showMenu}
+            onClose={() => setShowMenu(false)}
+            anchorRef={menuBtnRef}
+            align="end"
+            preferredSide="top"
+            className="w-52"
+          >
+              {playlistMenuItem}
+              {!isDownloaded && !localOnly ? (
+                <button
+                  onClick={handleDownloadClick}
+                  className="va-menu-item"
+                >
+                  <Download className="va-menu-icon" />
+                  <span>{t('card.download')}</span>
+                </button>
+              ) : isDownloaded ? (
+                <button
+                  onClick={handleDeleteClick}
+                  disabled={isDeleting}
+                  className="va-menu-item is-danger"
+                >
+                  <Trash2 className="va-menu-icon" />
+                  <span>{isDeleting ? t('card.deleting') : t('card.delete')}</span>
+                </button>
+              ) : null}
+              {!localOnly && (
+              <a
+                href={(video as any).url || `https://www.youtube.com/watch?v=${video.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="va-menu-item"
+              >
+                <ExternalLink className="va-menu-icon" />
+                <span>{t('card.openYoutube')}</span>
+              </a>
+              )}
+          </AnchoredPopover>
+        </div>
+        </div>
       </div>
+      {playlistModal}
+      </>
     );
   }
 
@@ -227,38 +299,43 @@ export const VideoCard: React.FC<VideoCardProps> = ({
         </div>
 
         {/* Context Menu (3 dots) */}
-        <div className="relative" ref={menuRef}>
+        <div className="relative flex-shrink-0">
           <button
+            ref={menuBtnRef}
             onClick={(e) => {
               e.stopPropagation();
               setShowMenu(!showMenu);
             }}
-            className="p-1.5 text-[#aaa] hover:text-white rounded-full hover:bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+            className="p-1.5 text-[#ccc] hover:text-white rounded-full hover:bg-white/10 transition-colors cursor-pointer flex-shrink-0"
             title={t('card.options')}
           >
             <MoreVertical className="w-4 h-4" />
           </button>
 
-          {showMenu && (
-            <div 
-              className="absolute right-0 bottom-full sm:bottom-auto sm:top-full mb-2 sm:mb-0 sm:mt-1 w-52 bg-[#212121] border border-[#303030] rounded-xl shadow-2xl py-1.5 z-30 animate-in fade-in zoom-in-95 duration-100"
-              onClick={(e) => e.stopPropagation()}
-            >
+          <AnchoredPopover
+            open={showMenu}
+            onClose={() => setShowMenu(false)}
+            anchorRef={menuBtnRef}
+            align="end"
+            preferredSide="bottom"
+            className="w-52"
+          >
+              {playlistMenuItem}
               {!isDownloaded && !localOnly ? (
                 <button
                   onClick={handleDownloadClick}
-                  className="w-full flex items-center gap-3 px-4 py-2.5 text-xs text-[#f1f1f1] hover:bg-[#333] transition cursor-pointer text-left"
+                  className="va-menu-item"
                 >
-                  <Download className="w-4 h-4 text-[#ff0033]" />
+                  <Download className="va-menu-icon" />
                   <span>{t('card.download')}</span>
                 </button>
               ) : isDownloaded ? (
                 <button
                   onClick={handleDeleteClick}
                   disabled={isDeleting}
-                  className="w-full flex items-center gap-3 px-4 py-2.5 text-xs text-rose-400 hover:bg-rose-500/10 transition cursor-pointer text-left disabled:opacity-50"
+                  className="va-menu-item is-danger"
                 >
-                  <Trash2 className="w-4 h-4" />
+                  <Trash2 className="va-menu-icon" />
                   <span>{isDeleting ? t('card.deleting') : t('card.delete')}</span>
                 </button>
               ) : null}
@@ -268,16 +345,16 @@ export const VideoCard: React.FC<VideoCardProps> = ({
                 href={(video as any).url || `https://www.youtube.com/watch?v=${video.id}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full flex items-center gap-3 px-4 py-2.5 text-xs text-[#aaa] hover:text-white hover:bg-[#333] transition cursor-pointer"
+                className="va-menu-item"
               >
-                <ExternalLink className="w-4 h-4" />
+                <ExternalLink className="va-menu-icon" />
                 <span>{t('card.openYoutube')}</span>
               </a>
               )}
-            </div>
-          )}
+          </AnchoredPopover>
         </div>
       </div>
+      {playlistModal}
     </div>
   );
 };

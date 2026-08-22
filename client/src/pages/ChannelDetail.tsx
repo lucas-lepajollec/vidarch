@@ -231,7 +231,11 @@ export const ChannelDetail: React.FC = () => {
                 </>
               )}
               <span>•</span>
-              <span>{t('channel.videoCount', { count: downloadedVideos.length })}</span>
+              <span>{t('channel.videoCount', {
+                count: localOnly
+                  ? downloadedVideos.length
+                  : (channel.video_count || downloadedVideos.length),
+              })}</span>
             </div>
             {channel.description && (
               <ExpandableText text={channel.description} />

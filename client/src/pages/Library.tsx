@@ -4,7 +4,6 @@ import {
   LayoutGrid, 
   Folder, 
   FolderOpen,
-  ChevronDown, 
   ArrowLeft,
   Search
 } from 'lucide-react';
@@ -170,35 +169,27 @@ export const Library: React.FC = () => {
           {/* Controls for Grid View */}
           {viewMode === 'grid' && (
             <div className="flex flex-wrap items-center gap-2">
-              {/* Channel filter with fixed spacious dropdown styling */}
-              <div className="relative">
-                <select
-                  value={channelFilter}
-                  onChange={(e) => setChannelFilter(e.target.value)}
-                  className="appearance-none bg-[#181818] hover:bg-[#202020] text-xs font-medium text-[#f1f1f1] border border-[#303030] hover:border-[#444] rounded-xl pl-3.5 pr-9 py-2 focus:outline-none focus:border-white transition cursor-pointer shadow-sm"
-                >
-                  <option value="all">{t('library.allChannels')}</option>
-                  {subscriptions.map(s => (
-                    <option key={s.id} value={s.id}>{s.title}</option>
-                  ))}
-                </select>
-                <ChevronDown className="w-3.5 h-3.5 text-[#aaa] pointer-events-none absolute right-3 top-1/2 -translate-y-1/2" />
-              </div>
+              <select
+                value={channelFilter}
+                onChange={(e) => setChannelFilter(e.target.value)}
+                className="va-select"
+              >
+                <option value="all">{t('library.allChannels')}</option>
+                {subscriptions.map(s => (
+                  <option key={s.id} value={s.id}>{s.title}</option>
+                ))}
+              </select>
 
-              {/* Sort selector with fixed spacious dropdown styling */}
-              <div className="relative">
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as any)}
-                  className="appearance-none bg-[#181818] hover:bg-[#202020] text-xs font-medium text-[#f1f1f1] border border-[#303030] hover:border-[#444] rounded-xl pl-3.5 pr-9 py-2 focus:outline-none focus:border-white transition cursor-pointer shadow-sm"
-                >
-                  <option value="date">{t('library.sortDate')}</option>
-                  <option value="size">{t('library.sortSize')}</option>
-                  <option value="duration">{t('library.duration')}</option>
-                  <option value="title">{t('library.sortTitle')}</option>
-                </select>
-                <ChevronDown className="w-3.5 h-3.5 text-[#aaa] pointer-events-none absolute right-3 top-1/2 -translate-y-1/2" />
-              </div>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as any)}
+                className="va-select"
+              >
+                <option value="date">{t('library.sortDate')}</option>
+                <option value="size">{t('library.sortSize')}</option>
+                <option value="duration">{t('library.duration')}</option>
+                <option value="title">{t('library.sortTitle')}</option>
+              </select>
             </div>
           )}
 

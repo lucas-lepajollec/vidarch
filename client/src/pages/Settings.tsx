@@ -280,7 +280,7 @@ export const Settings: React.FC = () => {
                     await setUiLanguage(next);
                     showToast(t('settings.saved'));
                   }}
-                  className="bg-[#272727] hover:bg-[#383838] text-white text-xs font-medium px-4 py-2 rounded-lg border border-[#383838] focus:outline-none focus:border-white transition cursor-pointer"
+                  className="va-select"
                 >
                   {UI_LANGUAGES.map((lang) => (
                     <option key={lang.id} value={lang.id}>{lang.label}</option>
@@ -347,7 +347,7 @@ export const Settings: React.FC = () => {
                       setDefaultResolution(e.target.value);
                       handleSaveGeneralSettings(scanInterval, e.target.value, autoDownloadNewSubs);
                     }}
-                    className="bg-[#272727] hover:bg-[#383838] text-white text-xs font-medium px-4 py-2 rounded-lg border border-[#383838] focus:outline-none focus:border-white transition cursor-pointer"
+                    className="va-select"
                   >
                     <option value="2160p">{t('settings.q4k')}</option>
                     <option value="1440p">{t('settings.q2k')}</option>
@@ -406,7 +406,7 @@ export const Settings: React.FC = () => {
                       setConcurrentDownloads(e.target.value);
                       handleSaveGeneralSettings(scanInterval, defaultResolution, autoDownloadNewSubs, e.target.value);
                     }}
-                    className="bg-[#272727] hover:bg-[#383838] text-white text-xs font-medium px-4 py-2 rounded-lg border border-[#383838] focus:outline-none focus:border-white transition cursor-pointer"
+                    className="va-select"
                   >
                     <option value="1">{t('settings.concurrent1')}</option>
                     <option value="2">{t('settings.concurrent2')}</option>
@@ -490,7 +490,7 @@ export const Settings: React.FC = () => {
                       setScanInterval(e.target.value);
                       handleSaveGeneralSettings(e.target.value, defaultResolution, autoDownloadNewSubs);
                     }}
-                    className="bg-[#272727] hover:bg-[#383838] text-white text-xs font-medium px-4 py-2 rounded-lg border border-[#383838] focus:outline-none focus:border-white transition cursor-pointer"
+                    className="va-select"
                   >
                     <option value="30">{t('settings.every30')}</option>
                     <option value="60">{t('settings.everyHour')}</option>

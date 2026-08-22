@@ -156,3 +156,165 @@ export async function hydrateOriginalVideos<T extends {
   });
   return videos;
 }
+
+function parseVideoCountText(value: unknown): number {
+  if (typeof value === 'number' && Number.isFinite(value) && value >= 0) {
+    return Math.floor(value);
+  }
+  if (value && typeof value === 'object') {
+    const node = value as Record<string, unknown>;
+    if (typeof node.simpleText === 'string') return parseVideoCountText(node.simpleText);
+    if (typeof node.content === 'string') return parseVideoCountText(node.content);
+    if (Array.isArray(node.runs)) {
+      return parseVideoCountText(node.runs.map((run: { text?: string }) => run?.text || '').join(''));
+    }
+    const label = (node.accessibility as { accessibilityData?: { label?: string } } | undefined)
+      ?.accessibilityData?.label;
+    if (label) return parseVideoCountText(label);
+  }
+  if (typeof value !== 'string') return 0;
+  const text = value.replace(/\u00a0/g, ' ').trim();
+  if (!/(vidéos?|vídeos?|videos?)/i.test(text)) return 0;
+
+  const compact = text.match(/([\d]+(?:[.,][\d]+)?)\s*([kmb])\b/i);
+  if (compact) {
+    const amount = parseFloat(compact[1].replace(',', '.'));
+    if (!Number.isFinite(amount)) return 0;
+    const factor = compact[2].toLowerCase() === 'b' ? 1_000_000_000
+      : compact[2].toLowerCase() === 'm' ? 1_000_000
+        : 1_000;
+    return Math.round(amount * factor);
+  }
+
+  const exact = text.match(/([\d][\d.\s,]*)/);
+  if (!exact) return 0;
+  const digits = exact[1].replace(/[.\s,]/g, '');
+  const n = parseInt(digits, 10);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function walkVideoCount(node: unknown, depth = 0): number {
+  if (!node || depth > 24) return 0;
+  if (typeof node === 'string') return parseVideoCountText(node);
+  if (typeof node !== 'object') return 0;
+
+  if (Array.isArray(node)) {
+    let best = 0;
+    for (const item of node) {
+      const n = walkVideoCount(item, depth + 1);
+      if (n > best) best = n;
+    }
+    return best;
+  }
+
+  const obj = node as Record<string, unknown>;
+  let best = 0;
+  for (const [key, val] of Object.entries(obj)) {
+    if (/video[s]?_?count/i.test(key)) {
+      const n = parseVideoCountText(val);
+      if (n > best) best = n;
+    }
+  }
+  for (const val of Object.values(obj)) {
+    const n = walkVideoCount(val, depth + 1);
+    if (n > best) best = n;
+  }
+  return best;
+}
+
+export function extractChannelVideoCount(json: unknown): number {
+  const root = json as Record<string, unknown> | null;
+  if (!root) return 0;
+  const fromHeader = walkVideoCount(root.header);
+  if (fromHeader > 0) return fromHeader;
+  const fromMeta = Math.max(walkVideoCount(root.metadata), walkVideoCount(root.microformat));
+  return fromMeta;
+}
+
+export function persistChannelVideoCount(channelId: string, count: number): void {
+  if (!channelId || count <= 0) return;
+  try {
+    db.prepare(`
+      UPDATE channels
+      SET video_count = CASE WHEN ? > IFNULL(video_count, 0) THEN ? ELSE video_count END
+      WHERE id = ?
+    `).run(count, count, channelId);
+  } catch (_) {}
+}
+
+function toChannelBrowseId(id: string): string {
+  if (!id) return '';
+  if (/^UC[A-Za-z0-9_-]{22}$/.test(id)) return id;
+  if (/^UU[A-Za-z0-9_-]{22}$/.test(id)) return `UC${id.slice(2)}`;
+  if (/^UULF[A-Za-z0-9_-]{22}$/.test(id)) return `UC${id.slice(4)}`;
+  return id.startsWith('UC') ? id : '';
+}
+
+export async function fetchChannelVideoCount(channelId: string): Promise<number> {
+  const browseId = toChannelBrowseId(channelId);
+  if (!browseId) return 0;
+  const ac = new AbortController();
+  const timer = setTimeout(() => ac.abort(), 12000);
+  try {
+    const res = await fetch(`${INNERTUBE_URL}/browse?prettyPrint=false`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'User-Agent': CLIENT_UA,
+        'X-YouTube-Client-Name': '1',
+        'X-YouTube-Client-Version': CLIENT_VERSION,
+      },
+      body: JSON.stringify({
+        context: {
+          client: {
+            clientName: 'WEB',
+            clientVersion: CLIENT_VERSION,
+            hl: 'en',
+            gl: 'US',
+          },
+        },
+        browseId,
+      }),
+      signal: ac.signal,
+    });
+    if (!res.ok) return 0;
+    return extractChannelVideoCount(await res.json());
+  } catch {
+    return 0;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+const verifiedVideoCounts = new Set<string>();
+
+export async function ensureChannelVideoCount(channelId: string, knownCount = 0): Promise<number> {
+  if (!channelId || channelId.startsWith('custom_')) return knownCount;
+  let stored = 0;
+  try {
+    const row = db.prepare('SELECT video_count FROM channels WHERE id = ?').get(channelId) as
+      | { video_count?: number }
+      | undefined;
+    stored = Number(row?.video_count || 0);
+  } catch {
+    stored = 0;
+  }
+
+  if (verifiedVideoCounts.has(channelId) && stored > 0) return stored;
+
+  // Catalog fetches cap at 50/100, so a stored total in that range is not trusted
+  // until YouTube's channel header confirms it.
+  const looksCapped = stored <= 0 || stored <= 200;
+  if (!looksCapped) {
+    verifiedVideoCounts.add(channelId);
+    return stored;
+  }
+
+  const live = await fetchChannelVideoCount(channelId);
+  if (live > 0) {
+    persistChannelVideoCount(channelId, live);
+    verifiedVideoCounts.add(channelId);
+    return Math.max(live, stored);
+  }
+  return stored || knownCount;
+}

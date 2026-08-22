@@ -22,6 +22,7 @@ import { useI18n } from '../i18n/I18nProvider';
 import { bannerSrc } from '../utils/media';
 import { isUnsetOwnerTitle, ownerDisplayTitle } from '../utils/channelTitle';
 import { AutoDownloadControl } from '../components/channel/AutoDownloadControl';
+import { AnchoredPopover } from '../components/common/AnchoredPopover';
 
 function readFileAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -76,6 +77,7 @@ export const MyChannel: React.FC = () => {
 
   const bannerInputRef = useRef<HTMLInputElement>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
+  const switchBtnRef = useRef<HTMLButtonElement>(null);
 
   const loadPage = async (silent = false) => {
     if (!silent) setIsLoading(true);
@@ -436,6 +438,7 @@ export const MyChannel: React.FC = () => {
           {canSwitch && (
             <div className="relative">
               <button
+                ref={switchBtnRef}
                 type="button"
                 onClick={() => setSwitchOpen((open) => !open)}
                 className="bg-[#272727] hover:bg-[#383838] text-white text-xs font-semibold px-4 py-2.5 rounded-full transition cursor-pointer flex items-center gap-1.5 border border-white/5"
@@ -443,8 +446,14 @@ export const MyChannel: React.FC = () => {
                 <span>{t('settings.switchChannel')}</span>
                 <ChevronDown className="w-3.5 h-3.5 text-[#aaa]" />
               </button>
-              {switchOpen && (
-                <div className="absolute right-0 top-11 z-20 w-64 bg-[#212121] border border-[#383838] rounded-2xl shadow-2xl py-1.5 overflow-hidden">
+              <AnchoredPopover
+                open={switchOpen}
+                onClose={() => setSwitchOpen(false)}
+                anchorRef={switchBtnRef}
+                align="end"
+                preferredSide="bottom"
+                className="w-64 max-w-[calc(100vw-16px)]"
+              >
                   {myChannels.map((ch) => {
                     const active = ch.id === channel.id;
                     return (
@@ -455,21 +464,20 @@ export const MyChannel: React.FC = () => {
                           setSwitchOpen(false);
                           if (!active) await setActiveOwnerChannel(ch.id);
                         }}
-                        className={`w-full px-3 py-2.5 flex items-center gap-2.5 text-left transition cursor-pointer ${
-                          active ? 'bg-[#2a2a2a] text-white' : 'text-[#ddd] hover:bg-[#282828]'
-                        }`}
+                        className={`va-menu-item ${active ? 'is-active' : ''}`}
                       >
                         <ChannelAvatar channelId={ch.id} url={ch.avatar_url} title={ch.title} className="w-7 h-7 rounded-full" />
                         <span className="min-w-0 flex-1">
-                          <span className="block text-xs font-semibold truncate">{ownerDisplayTitle(ch.title, t('mych.defaultTitle'))}</span>
-                          <span className="block text-[10px] text-[#888] truncate">{ch.handle || t('channel.ours')}</span>
+                          <span className="block truncate">{ownerDisplayTitle(ch.title, t('mych.defaultTitle'))}</span>
+                          {(ch.handle) && (
+                            <span className="va-menu-hint truncate">{ch.handle}</span>
+                          )}
                         </span>
-                        {active && <Check className="w-3.5 h-3.5 text-[#ff0033] flex-shrink-0" />}
+                        {active && <Check className="w-3.5 h-3.5 text-white/50 flex-shrink-0" />}
                       </button>
                     );
                   })}
-                </div>
-              )}
+              </AnchoredPopover>
             </div>
           )}
         </div>

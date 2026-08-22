@@ -8,11 +8,13 @@ import {
   Film,
 } from 'lucide-react';
 import { useMyTube } from '../../context/MyTubeContext';
+import { useDownloadQueue } from '../../context/VidArchContext';
 import { MediaThumb } from '../common/MediaThumb';
 import { useI18n } from '../../i18n/I18nProvider';
 
 export const DownloadModal: React.FC = () => {
-  const { downloadModal, closeDownloadModal, enqueueDownload } = useMyTube();
+  const { downloadModal, closeDownloadModal } = useMyTube();
+  const { enqueueDownload } = useDownloadQueue();
   const { t } = useI18n();
 
   const [resolution, setResolution] = useState('1080p');

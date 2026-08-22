@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Check, ChevronDown, Loader2, Zap } from 'lucide-react';
+import { Check, ChevronDown, Loader2 } from 'lucide-react';
 import { useI18n } from '../../i18n/I18nProvider';
+import { AnchoredPopover } from '../common/AnchoredPopover';
 
 export type AutoDownloadChoice = 'off' | 'future' | 'all';
 
@@ -20,20 +21,11 @@ export const AutoDownloadControl: React.FC<{
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [choice, setChoice] = useState<AutoDownloadChoice>(() => choiceFromProps(autoDownload, autoDownloadMode));
-  const rootRef = useRef<HTMLDivElement>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     setChoice(choiceFromProps(autoDownload, autoDownloadMode));
   }, [autoDownload, autoDownloadMode, channelId]);
-
-  useEffect(() => {
-    if (!open) return;
-    const onDoc = (event: MouseEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
-    };
-    document.addEventListener('mousedown', onDoc);
-    return () => document.removeEventListener('mousedown', onDoc);
-  }, [open]);
 
   const apply = async (next: AutoDownloadChoice) => {
     if (busy || next === choice) {
@@ -81,8 +73,9 @@ export const AutoDownloadControl: React.FC<{
   ];
 
   return (
-    <div ref={rootRef} className="relative">
+    <div className="relative">
       <button
+        ref={btnRef}
         type="button"
         onClick={() => setOpen((value) => !value)}
         disabled={busy}
@@ -95,16 +88,20 @@ export const AutoDownloadControl: React.FC<{
             : 'bg-[#272727] hover:bg-[#383838] text-white border border-white/5'
         }`}
       >
-        {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Zap className={`w-3.5 h-3.5 ${active ? 'fill-white' : 'text-[#ffb020]'}`} />}
+        {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
         {!compact || active ? <span>{label}</span> : <span>{t('channel.autoDownload')}</span>}
         <ChevronDown className={`w-3.5 h-3.5 ${active ? 'text-white/80' : 'text-[#aaa]'}`} />
       </button>
 
-      {open && (
-        <div className="absolute right-0 top-11 z-30 w-72 bg-[#212121] border border-[#383838] rounded-2xl shadow-2xl py-1.5 overflow-hidden">
-          <p className="px-3.5 pt-2 pb-1.5 text-[10px] font-semibold uppercase tracking-wider text-[#888]">
-            {t('channel.autoDownload')}
-          </p>
+      <AnchoredPopover
+        open={open}
+        onClose={() => setOpen(false)}
+        anchorRef={btnRef}
+        align="end"
+        preferredSide="bottom"
+        className="w-72 max-w-[calc(100vw-16px)]"
+      >
+          <p className="va-menu-label">{t('channel.autoDownload')}</p>
           {options.map((option) => {
             const selected = choice === option.id;
             return (
@@ -112,26 +109,17 @@ export const AutoDownloadControl: React.FC<{
                 key={option.id}
                 type="button"
                 onClick={() => apply(option.id)}
-                className={`w-full px-3.5 py-2.5 text-left transition cursor-pointer ${
-                  selected ? 'bg-[#2a2a2a]' : 'hover:bg-[#282828]'
-                }`}
+                className={`va-menu-item items-start ${selected ? 'is-active' : ''}`}
               >
-                <span className="flex items-start gap-2.5">
-                  <span className={`mt-0.5 flex-shrink-0 w-4 h-4 rounded-full border flex items-center justify-center ${
-                    selected ? 'border-[#ff0033] bg-[#ff0033]' : 'border-[#555]'
-                  }`}>
-                    {selected ? <Check className="w-2.5 h-2.5 text-white" /> : null}
-                  </span>
-                  <span className="min-w-0">
-                    <span className="block text-xs font-semibold text-white">{option.label}</span>
-                    <span className="block text-[11px] text-[#888] leading-snug mt-0.5">{option.hint}</span>
-                  </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block">{option.label}</span>
+                  <span className="va-menu-hint">{option.hint}</span>
                 </span>
+                {selected ? <Check className="w-3.5 h-3.5 text-white/50 flex-shrink-0 mt-0.5" /> : null}
               </button>
             );
           })}
-        </div>
-      )}
+      </AnchoredPopover>
     </div>
   );
 };

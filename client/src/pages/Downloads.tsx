@@ -7,20 +7,19 @@ import {
   Loader2,
   Clock,
 } from 'lucide-react';
-import { useVidArch } from '../context/VidArchContext';
+import { useVidArch, useDownloadQueue } from '../context/VidArchContext';
 import { MediaThumb } from '../components/common/MediaThumb';
 import { useI18n } from '../i18n/I18nProvider';
 import { parseQualityNote } from '../utils/qualityNote';
 
 export const Downloads: React.FC = () => {
-  const { queue, refreshQueue, goTo } = useVidArch();
+  const { goTo } = useVidArch();
+  const { queue, refreshQueue } = useDownloadQueue();
   const { t, locale } = useI18n();
   const [filter, setFilter] = useState<'all' | 'active' | 'completed' | 'error'>('all');
 
   useEffect(() => {
-    refreshQueue();
-    const interval = setInterval(refreshQueue, 2000);
-    return () => clearInterval(interval);
+    void refreshQueue();
   }, [refreshQueue]);
 
   const handleCancel = async (id: string) => {
@@ -225,7 +224,7 @@ export const Downloads: React.FC = () => {
 
                   <button
                     onClick={() => handleCancel(task.id)}
-                    className="self-start p-1.5 text-[#aaa] hover:text-white rounded-full hover:bg-white/10 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity cursor-pointer flex-shrink-0"
+                    className="self-start p-1.5 text-[#aaa] hover:text-white rounded-full hover:bg-white/10 transition-colors cursor-pointer flex-shrink-0"
                     title={t('downloads.cancel')}
                   >
                     <X className="w-4 h-4" />
@@ -314,7 +313,7 @@ export const Downloads: React.FC = () => {
                             e.stopPropagation();
                             handleRetry(task.id);
                           }}
-                          className="p-1.5 text-[#aaa] hover:text-white rounded-full hover:bg-white/10 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity cursor-pointer"
+                          className="p-1.5 text-[#aaa] hover:text-white rounded-full hover:bg-white/10 transition-colors cursor-pointer"
                           title={t('common.retry')}
                         >
                           <RotateCcw className="w-4 h-4" />
@@ -325,7 +324,7 @@ export const Downloads: React.FC = () => {
                           e.stopPropagation();
                           handleDelete(task.id);
                         }}
-                        className="p-1.5 text-[#aaa] hover:text-white rounded-full hover:bg-white/10 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity cursor-pointer"
+                        className="p-1.5 text-[#aaa] hover:text-white rounded-full hover:bg-white/10 transition-colors cursor-pointer"
                         title={t('history.remove')}
                       >
                         <Trash2 className="w-4 h-4" />

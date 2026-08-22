@@ -5,7 +5,7 @@ import {
   DownloadCloud, 
   FolderHeart, 
   History, 
-  ThumbsUp, 
+  ListVideo, 
   Settings as SettingsIcon, 
   ChevronRight,
   RefreshCw,
@@ -14,6 +14,7 @@ import {
   CircleUser,
 } from 'lucide-react';
 import { useMyTube } from '../../context/MyTubeContext';
+import { useDownloadQueue } from '../../context/VidArchContext';
 import { ChannelAvatar } from '../common/ChannelAvatar';
 import { VidArchLogo } from '../common/VidArchLogo';
 import { ModeSwitch } from './ModeSwitch';
@@ -54,10 +55,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isOverlay = false, onC
     isScanning, 
     triggerScan, 
     myChannel, 
-    activeTask,
     localOnly,
     scanEnabled,
   } = useMyTube();
+  const { activeTask } = useDownloadQueue();
   const { t } = useI18n();
 
   const sidebarSubs = subscriptions.filter(
@@ -73,7 +74,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isOverlay = false, onC
   const libraryItems: Array<{ id: PageRoute; label: string; icon: React.FC<{ className?: string }> }> = [
     { id: 'library', label: t('nav.library'), icon: FolderHeart },
     { id: 'history', label: t('nav.history'), icon: History },
-    { id: 'liked', label: t('nav.liked'), icon: ThumbsUp },
+    { id: 'playlists', label: t('nav.playlists'), icon: ListVideo },
   ];
 
   const handleItemClick = (pageId: PageRoute) => {

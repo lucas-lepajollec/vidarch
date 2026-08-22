@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { 
   ThumbsUp, 
   DownloadCloud, 
@@ -8,62 +8,223 @@ import {
   Share2,
   Check,
   Loader2,
-  UserMinus
+  UserMinus,
+  ListPlus
 } from 'lucide-react';
-import type { Video } from '../types';
+import type { PlaylistSummary, Video } from '../types';
 import { CustomVideoPlayer } from '../components/video/CustomVideoPlayer';
 import { useMyTube } from '../context/MyTubeContext';
 import { formatViews, formatUploadDate, formatFileSize } from '../utils/format';
-import { MediaThumb } from '../components/common/MediaThumb';
 import { ChannelAvatar } from '../components/common/ChannelAvatar';
-import { useI18n } from '../i18n/I18nProvider';
 import { ExpandableText } from '../components/common/ExpandableText';
+import { useI18n } from '../i18n/I18nProvider';
+import { VideoCard } from '../components/video/VideoCard';
+import { readPlayerPrefs, writePlayerPrefs } from '../utils/playerPrefs';
+import { AddToPlaylistModal } from '../components/playlist/AddToPlaylistModal';
+import { PlaylistQueuePanel } from '../components/playlist/PlaylistQueuePanel';
+
+const LOOP_KEY = 'va.pl.loop';
+
+function readLoopPref(): boolean {
+  try {
+    return localStorage.getItem(LOOP_KEY) !== '0';
+  } catch {
+    return true;
+  }
+}
+
+function queueOrder(ids: string[], playlistId: string, shuffle: boolean): string[] {
+  if (!shuffle) return ids;
+  const key = `va.pl.order.${playlistId}`;
+  try {
+    const raw = sessionStorage.getItem(key);
+    if (raw) {
+      const saved = JSON.parse(raw) as string[];
+      if (Array.isArray(saved)) {
+        const known = new Set(ids);
+        const kept = saved.filter((id) => known.has(id));
+        const extra = ids.filter((id) => !kept.includes(id));
+        if (kept.length + extra.length === ids.length) return [...kept, ...extra];
+      }
+    }
+  } catch {}
+  const next = [...ids];
+  for (let i = next.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [next[i], next[j]] = [next[j], next[i]];
+  }
+  try {
+    sessionStorage.setItem(key, JSON.stringify(next));
+  } catch {}
+  return next;
+}
 
 export const Watch: React.FC = () => {
-  const { nav, goTo, subscriptions, subscribeChannel, unsubscribeChannel, openDownloadModal, dataVersion, localOnly } = useMyTube();
+  const { nav, goTo, subscriptions, subscribeChannel, unsubscribeChannel, openDownloadModal, dataVersion, localOnly, notifyDataChanged } = useMyTube();
   const { t, locale } = useI18n();
   const [video, setVideo] = useState<Video | null>(null);
   const [related, setRelated] = useState<Video[]>([]);
-  const [isTheatre, setIsTheatre] = useState(false);
+  const [isTheatre, setIsTheatre] = useState(() => readPlayerPrefs().theatre);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubscribing, setIsSubscribing] = useState(false);
   const [isHoveredSub, setIsHoveredSub] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
+  const [showPlaylistModal, setShowPlaylistModal] = useState(false);
+  const [queuePlaylist, setQueuePlaylist] = useState<PlaylistSummary | null>(null);
+  const [queueVideos, setQueueVideos] = useState<Video[]>([]);
+  const [loop, setLoop] = useState(readLoopPref);
+  const skipVersionRefresh = useRef(true);
+  const loadVideoRef = useRef<(silent?: boolean) => Promise<void>>(async () => {});
+  const playerBoxRef = useRef<HTMLDivElement>(null);
+  const [playerH, setPlayerH] = useState<number | undefined>(undefined);
 
   const videoId = nav.videoId;
+  const playlistId = nav.playlistId;
+  const shuffle = !!nav.playlistShuffle;
 
-  const loadVideo = async () => {
+  const loadVideo = useCallback(async (silent = false) => {
     if (!videoId) return;
-    setIsLoading(true);
+    if (!silent) {
+      setIsLoading(true);
+      window.scrollTo(0, 0);
+    }
     try {
       const res = await fetch(`/api/videos/${videoId}`);
       if (res.ok) {
         const data = await res.json();
-        setVideo(data.video);
+        setVideo((prev) => {
+          const next = data.video as Video;
+          if (silent && prev && prev.id === next.id) {
+            const keepStream = prev.is_downloaded === 1 && !!prev.local_video_path;
+            return keepStream
+              ? { ...next, is_downloaded: prev.is_downloaded, local_video_path: prev.local_video_path }
+              : { ...next };
+          }
+          return next;
+        });
         setRelated(data.related || []);
 
-        // Record immediate watch event in history
-        try {
-          await fetch(`/api/videos/${videoId}/progress`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              progress: Math.max(1, data.video?.watch_progress || 1),
-            }),
-          });
-        } catch (_) {}
+        if (!silent) {
+          try {
+            await fetch(`/api/videos/${videoId}/progress`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                progress: Math.max(1, data.video?.watch_progress || 1),
+              }),
+            });
+          } catch (_) {}
+        }
       }
     } catch (err) {
       console.error('Error fetching video details:', err);
     } finally {
-      setIsLoading(false);
+      if (!silent) setIsLoading(false);
     }
-  };
+  }, [videoId]);
+
+  loadVideoRef.current = loadVideo;
 
   useEffect(() => {
-    loadVideo();
-    window.scrollTo(0, 0);
-  }, [videoId, dataVersion]);
+    void loadVideo(false);
+  }, [loadVideo]);
+
+  useEffect(() => {
+    if (skipVersionRefresh.current) {
+      skipVersionRefresh.current = false;
+      return;
+    }
+    void loadVideoRef.current(true);
+  }, [dataVersion]);
+
+  useEffect(() => {
+    if (!playlistId) {
+      setQueuePlaylist(null);
+      setQueueVideos([]);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(`/api/playlists/${encodeURIComponent(playlistId)}`);
+        if (!res.ok || cancelled) return;
+        const data = await res.json();
+        setQueuePlaylist(data.playlist);
+        setQueueVideos(data.videos || []);
+      } catch (err) {
+        console.error('Error loading playlist queue:', err);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [playlistId, dataVersion]);
+
+  useEffect(() => {
+    const el = playerBoxRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => setPlayerH(el.clientHeight));
+    ro.observe(el);
+    setPlayerH(el.clientHeight);
+    return () => ro.disconnect();
+  }, [isTheatre, videoId, playlistId, isLoading]);
+
+  const orderedIds = useMemo(
+    () => (playlistId ? queueOrder(queueVideos.map((item) => item.id), playlistId, shuffle) : []),
+    [playlistId, queueVideos, shuffle],
+  );
+
+  const playInQueue = useCallback((id: string) => {
+    goTo('watch', { videoId: id, playlistId, playlistShuffle: shuffle || undefined });
+  }, [goTo, playlistId, shuffle]);
+
+  const playNext = useCallback(() => {
+    if (!playlistId || !videoId || orderedIds.length < 2) return;
+    const idx = orderedIds.indexOf(videoId);
+    if (idx < 0) return;
+    let next = idx + 1;
+    if (next >= orderedIds.length) {
+      if (!loop) return;
+      next = 0;
+    }
+    if (orderedIds[next] === videoId) return;
+    goTo('watch', { videoId: orderedIds[next], playlistId, playlistShuffle: shuffle || undefined });
+  }, [goTo, playlistId, videoId, orderedIds, loop, shuffle]);
+
+  const toggleLoop = () => {
+    setLoop((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem(LOOP_KEY, next ? '1' : '0');
+      } catch {}
+      return next;
+    });
+  };
+
+  const toggleShuffle = () => {
+    if (playlistId) {
+      try {
+        sessionStorage.removeItem(`va.pl.order.${playlistId}`);
+      } catch {}
+    }
+    goTo('watch', {
+      videoId: videoId,
+      playlistId,
+      playlistShuffle: shuffle ? undefined : true,
+    });
+  };
+
+  const closeQueue = () => {
+    if (videoId) goTo('watch', { videoId });
+  };
+
+  const toggleTheatre = () => {
+    setIsTheatre((open) => {
+      const next = !open;
+      writePlayerPrefs({ theatre: next });
+      return next;
+    });
+  };
 
   if (isLoading || !video) {
     return (
@@ -78,6 +239,17 @@ export const Watch: React.FC = () => {
 
   const isSubscribed = subscriptions.some(s => s.id === video.channel_id);
   const isDownloaded = video.is_downloaded === 1;
+  const showQueue = !!queuePlaylist && queueVideos.length > 0;
+
+  const playerNode = (
+    <CustomVideoPlayer
+      video={video}
+      isTheatre={isTheatre}
+      onToggleTheatre={toggleTheatre}
+      autoPlay={!!playlistId}
+      onEnded={playNext}
+    />
+  );
 
   const toggleLike = async () => {
     try {
@@ -88,6 +260,7 @@ export const Watch: React.FC = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ liked: nextLiked === 1 }),
       });
+      notifyDataChanged();
     } catch (_) {}
   };
 
@@ -118,26 +291,39 @@ export const Watch: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 w-full px-0 sm:px-6 pt-0 sm:pt-6 pb-8 space-y-4">
-      {isTheatre && (
-        <div className="w-full aspect-video bg-black overflow-hidden">
-          <CustomVideoPlayer
-            video={video}
-            isTheatre={isTheatre}
-            onToggleTheatre={() => setIsTheatre((open) => !open)}
-          />
+    <>
+    {isTheatre && (
+      <div className="w-full h-[calc(100dvh-3.5rem)] bg-black flex overflow-hidden">
+        <div className="flex-1 min-w-0 h-full overflow-hidden">
+          {playerNode}
         </div>
-      )}
-
+        {showQueue && (
+          <div className="hidden lg:block w-[480px] flex-shrink-0 h-full bg-[#0f0f0f]">
+            <PlaylistQueuePanel
+              playlist={queuePlaylist!}
+              videos={queueVideos}
+              currentId={video.id}
+              shuffle={shuffle}
+              loop={loop}
+              fill
+              onPlay={playInQueue}
+              onToggleShuffle={toggleShuffle}
+              onToggleLoop={toggleLoop}
+              onClose={closeQueue}
+            />
+          </div>
+        )}
+      </div>
+    )}
+    <div className={`flex-1 w-full px-0 lg:px-6 pb-8 space-y-4 ${isTheatre ? 'pt-4 lg:pt-5' : 'pt-0 lg:pt-6'}`}>
       <div className="flex flex-col lg:flex-row gap-6 items-start">
         <div className="flex-1 min-w-0 w-full space-y-4">
           {!isTheatre && (
-            <div className="w-full aspect-video bg-black overflow-hidden rounded-none sm:rounded-2xl shadow-2xl">
-              <CustomVideoPlayer
-                video={video}
-                isTheatre={isTheatre}
-                onToggleTheatre={() => setIsTheatre((open) => !open)}
-              />
+            <div
+              ref={playerBoxRef}
+              className="w-full bg-black overflow-hidden rounded-none lg:rounded-2xl shadow-2xl"
+            >
+              {playerNode}
             </div>
           )}
 
@@ -174,7 +360,11 @@ export const Watch: React.FC = () => {
                       <CheckCircle2 className="w-3.5 h-3.5 text-[#aaa] fill-current flex-shrink-0" />
                     </button>
                     <span className="text-[11px] text-[#aaa] block truncate">
-                      {isDownloaded ? t('watch.stored') : t('watch.youtubeChannel')}
+                      {t('channel.videoCount', {
+                        count: localOnly
+                          ? (video.channel_downloaded_count || 0)
+                          : (video.channel_video_count || video.channel_downloaded_count || 0),
+                      })}
                     </span>
                   </div>
                 </div>
@@ -222,17 +412,24 @@ export const Watch: React.FC = () => {
 
               {/* Action Pills Bar (Horizontally scrollable on mobile) */}
               <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
-                {/* Like Button */}
+                <button
+                  onClick={() => setShowPlaylistModal(true)}
+                  className="flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs font-semibold bg-[#272727] hover:bg-[#383838] text-[#f1f1f1] transition cursor-pointer flex-shrink-0"
+                >
+                  <ListPlus className="w-3.5 sm:w-4 h-3.5 sm:h-4" />
+                  <span>{t('watch.addToPlaylist')}</span>
+                </button>
+
                 <button
                   onClick={toggleLike}
-                  className={`flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs font-semibold transition cursor-pointer flex-shrink-0 ${
+                  className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center transition cursor-pointer flex-shrink-0 ${
                     video.liked === 1
                       ? 'bg-[#3ea6ff]/20 text-[#3ea6ff] border border-[#3ea6ff]/30'
                       : 'bg-[#272727] hover:bg-[#383838] text-[#f1f1f1]'
                   }`}
+                  title={t('watch.like')}
                 >
                   <ThumbsUp className={`w-3.5 sm:w-4 h-3.5 sm:h-4 ${video.liked === 1 ? 'fill-current' : ''}`} />
-                  <span>{t('watch.like')}</span>
                 </button>
 
                 {/* Download / Local Status */}
@@ -314,66 +511,41 @@ export const Watch: React.FC = () => {
         </div>
         </div>
 
-        <div className="w-full lg:w-[400px] flex-shrink-0 space-y-3 px-3 sm:px-0">
+        <div className="w-full lg:w-[480px] flex-shrink-0 space-y-3 px-3 sm:px-0">
+          {showQueue && (
+            <div className={isTheatre ? 'lg:hidden' : undefined}>
+              <PlaylistQueuePanel
+                playlist={queuePlaylist!}
+                videos={queueVideos}
+                currentId={video.id}
+                shuffle={shuffle}
+                loop={loop}
+                maxHeight={playerH && playerH > 120 ? playerH : 360}
+                onPlay={playInQueue}
+                onToggleShuffle={toggleShuffle}
+                onToggleLoop={toggleLoop}
+                onClose={closeQueue}
+              />
+            </div>
+          )}
           <h2 className="text-sm font-bold text-white px-1">
             {t('watch.related')}
           </h2>
 
-          <div className="space-y-3">
-            {related.map((item) => {
-              return (
-                <div
-                  key={item.id}
-                  onClick={() => goTo('watch', { videoId: item.id })}
-                  className="flex gap-3 group cursor-pointer p-1.5 rounded-xl hover:bg-[#181818] transition"
-                >
-                  {/* Compact 16:9 Thumbnail */}
-                  <div className="relative w-40 sm:w-44 aspect-video rounded-xl overflow-hidden bg-[#222] flex-shrink-0 shadow-sm">
-                    <MediaThumb
-                      video={item}
-                      alt={item.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-                    />
-                    {item.duration_string && (
-                      <span className="absolute bottom-1 right-1 bg-black/85 text-white text-[10px] font-bold px-1 py-0.2 rounded">
-                        {item.duration_string}
-                      </span>
-                    )}
-                    {item.is_downloaded !== 1 && !localOnly && (
-                      <span className="absolute top-1 left-1 bg-black/70 text-[#aaa] text-[8px] font-medium px-1.5 py-0.5 rounded">
-                        {t('card.online')}
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Compact Info */}
-                  <div className="flex-1 min-w-0 flex flex-col justify-start py-0.5">
-                    <h3 className="font-semibold text-xs text-white group-hover:text-[#3ea6ff] line-clamp-2 leading-snug">
-                      {item.title}
-                    </h3>
-                    <p className="text-[11px] text-[#aaa] mt-1 truncate">
-                      {item.channel_title}
-                    </p>
-                    <div className="text-[10px] text-[#717171] mt-0.5 flex items-center gap-1">
-                      {item.view_count !== undefined && item.view_count !== null ? (
-                        <span>{formatViews(item.view_count)}</span>
-                      ) : (
-                        <span>{formatViews(item.view_count, locale)}</span>
-                      )}
-                      {item.upload_date && (
-                        <>
-                          <span>•</span>
-                          <span>{item.upload_date}</span>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+          <div className="space-y-1">
+            {related.map((item) => (
+              <VideoCard key={item.id} video={item} layout="horizontal" />
+            ))}
           </div>
         </div>
       </div>
     </div>
+    <AddToPlaylistModal
+      open={showPlaylistModal}
+      videoId={video.id}
+      onClose={() => setShowPlaylistModal(false)}
+      onLikedChange={(liked) => setVideo((prev) => prev ? { ...prev, liked: liked ? 1 : 0 } : null)}
+    />
+    </>
   );
 };
