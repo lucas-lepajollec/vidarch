@@ -194,33 +194,53 @@ export async function getYtDlpVersion(): Promise<string> {
   }
 }
 
-export async function updateYtDlp(): Promise<{ success: boolean; message: string }> {
-  const ytDlp = findYtDlpPath();
-  try {
-      const { stdout, stderr } = await execFileAsync(ytDlp, ['-U'], { timeout: 120000, windowsHide: true });
-      try {
-        await execFileAsync('py', ['-3', '-m', 'pip', 'install', '-U', 'yt-dlp[default]'], {
-          timeout: 120000,
-          windowsHide: true,
-        });
-      } catch (_) {
-        try {
-          await execFileAsync('python', ['-m', 'pip', 'install', '-U', 'yt-dlp[default]'], {
-            timeout: 120000,
-            windowsHide: true,
-          });
-        } catch (_) {}
-      }
-      return { success: true, message: (stdout || stderr || 'yt-dlp mis à jour').trim() };
-  } catch (err: any) {
+async function updateYtDlpWithPip(): Promise<string> {
+  const candidates: Array<{ command: string; args: string[] }> = process.platform === 'win32'
+    ? [
+        { command: 'py', args: ['-3', '-m', 'pip', 'install', '-U', 'yt-dlp[default]'] },
+        { command: 'python', args: ['-m', 'pip', 'install', '-U', 'yt-dlp[default]'] },
+      ]
+    : [
+        { command: 'python3', args: ['-m', 'pip', 'install', '-U', 'yt-dlp[default]'] },
+        { command: 'python', args: ['-m', 'pip', 'install', '-U', 'yt-dlp[default]'] },
+      ];
+
+  let lastError: unknown;
+  for (const candidate of candidates) {
     try {
-      const { stdout } = await execFileAsync('python', ['-m', 'pip', 'install', '-U', 'yt-dlp[default]'], {
+      const { stdout, stderr } = await execFileAsync(candidate.command, candidate.args, {
         timeout: 120000,
         windowsHide: true,
       });
-      return { success: true, message: stdout.trim() };
+      return (stdout || stderr || 'yt-dlp mis à jour avec pip').trim();
+    } catch (err) {
+      lastError = err;
+    }
+  }
+
+  throw lastError instanceof Error ? lastError : new Error('Python/pip introuvable');
+}
+
+export async function updateYtDlp(): Promise<{ success: boolean; message: string }> {
+  const ytDlp = findYtDlpPath();
+  const pipManaged = /[/\\]scripts[/\\]yt-dlp(?:\.exe)?$/i.test(ytDlp);
+
+  if (pipManaged) {
+    try {
+      return { success: true, message: await updateYtDlpWithPip() };
+    } catch (err: any) {
+      return { success: false, message: err.message || 'Échec de la mise à jour via pip' };
+    }
+  }
+
+  try {
+    const { stdout, stderr } = await execFileAsync(ytDlp, ['-U'], { timeout: 120000, windowsHide: true });
+    return { success: true, message: (stdout || stderr || 'yt-dlp mis à jour').trim() };
+  } catch (err: any) {
+    try {
+      return { success: true, message: await updateYtDlpWithPip() };
     } catch (pipErr: any) {
-      return { success: false, message: err.message || pipErr.message };
+      return { success: false, message: pipErr.message || err.message };
     }
   }
 }

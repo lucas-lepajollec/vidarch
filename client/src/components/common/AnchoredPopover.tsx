@@ -1,4 +1,4 @@
-import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 type Align = 'start' | 'end' | 'center';
@@ -30,7 +30,7 @@ export const AnchoredPopover: React.FC<AnchoredPopoverProps> = ({
   const popRef = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState({ top: 0, left: 0, maxHeight: 0, ready: false });
 
-  const place = () => {
+  const place = useCallback(() => {
     const anchor = anchorRef.current;
     const pop = popRef.current;
     if (!anchor || !pop) return;
@@ -71,7 +71,7 @@ export const AnchoredPopover: React.FC<AnchoredPopoverProps> = ({
     left = Math.min(Math.max(PAD, left), Math.max(PAD, vw - PAD - popW));
 
     setPos({ top, left, maxHeight, ready: true });
-  };
+  }, [align, anchorRef, offset, preferredSide]);
 
   useLayoutEffect(() => {
     if (!open) {
@@ -90,7 +90,7 @@ export const AnchoredPopover: React.FC<AnchoredPopoverProps> = ({
       window.removeEventListener('scroll', onWin, true);
       ro?.disconnect();
     };
-  }, [open, children, align, preferredSide, offset]);
+  }, [anchorRef, children, open, place]);
 
   useEffect(() => {
     if (!open) return;

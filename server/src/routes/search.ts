@@ -6,6 +6,7 @@ import { isLocalOnly } from '../utils/settings.js';
 import { applyChannelLocales, applyVideoLocales } from '../utils/contentLocale.js';
 
 const router = Router();
+const MAX_REMOTE_RESULTS = 50;
 
 router.get('/', async (req, res) => {
   const query = (req.query.q as string || '').trim();
@@ -50,7 +51,9 @@ router.get('/', async (req, res) => {
     }
 
     let youtubeResults: any[] = [];
-    const totalFetchCount = Math.min(offset + limit, 30);
+    // Fetch a small buffer for channel entities and already-downloaded videos,
+    // while keeping one hard upper bound for yt-dlp and the response cache.
+    const totalFetchCount = Math.min(offset + limit + 10, MAX_REMOTE_RESULTS);
     const localOnly = isLocalOnly();
     const wantRemote = !localOnly && (type === 'all' || type === 'youtube');
 
@@ -248,7 +251,9 @@ router.get('/', async (req, res) => {
       localVideos: applyVideoLocales(localVideos as any[]),
       youtubeVideos: applyVideoLocales(youtubeVideos as any[]),
       count: youtubeVideos.length,
-      hasMore: rawYoutubeVideos.length > (offset + limit),
+      hasMore:
+        offset + limit < MAX_REMOTE_RESULTS
+        && (rawYoutubeVideos.length > offset + limit || youtubeResults.length >= totalFetchCount),
     });
   } catch (err: any) {
     console.error('Search error:', err.message);

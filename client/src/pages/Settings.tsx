@@ -4,6 +4,7 @@ import {
   Loader2, 
   Upload, 
   ArrowLeft,
+  ChevronRight,
   ShieldCheck,
   Cpu,
   Sliders,
@@ -12,9 +13,7 @@ import {
   Trash2,
   Copy,
   Radio,
-  Folder,
   CheckCircle2,
-  ExternalLink,
   Lock,
   Globe,
   Tv2,
@@ -33,6 +32,7 @@ export const Settings: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [activeTab, setActiveTab] = useState<SettingsTab>('language');
+  const [mobileView, setMobileView] = useState<'menu' | 'detail'>('menu');
   const [isUpdatingYtdlp, setIsUpdatingYtdlp] = useState(false);
   const [updateMessage, setUpdateMessage] = useState<string | null>(null);
 
@@ -208,6 +208,12 @@ export const Settings: React.FC = () => {
     { id: 'security', label: t('settings.tabSecurity'), icon: Lock },
   ];
 
+  const openMobileTab = (tab: SettingsTab) => {
+    setActiveTab(tab);
+    setMobileView('detail');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   return (
     <div className="flex-1 flex flex-col md:flex-row min-h-[calc(100vh-3.5rem)] text-[#f4f7fb]">
       {/* Toast Notification */}
@@ -218,9 +224,43 @@ export const Settings: React.FC = () => {
         </div>
       )}
 
-      {/* Left Sidebar / Horizontal Tab bar on mobile (Classic YouTube Studio / Account Style) */}
-      <aside className="w-full md:w-64 border-b md:border-b-0 md:border-r border-[#18212c] px-3 py-3 sm:px-4 sm:py-4 md:px-6 md:pt-8 md:pb-6 flex-shrink-0 md:sticky md:top-14 md:h-[calc(100vh-3.5rem)] overflow-x-auto md:overflow-y-auto no-scrollbar bg-[#090d12]">
-        <div className="flex items-center justify-between md:flex-col md:items-stretch gap-2 md:gap-6 mb-2 md:mb-8">
+      {/* Mobile settings index: one clear entry page, then one dedicated section. */}
+      <section className={`${mobileView === 'menu' ? 'block' : 'hidden'} md:hidden w-full px-4 py-5 sm:px-6`}>
+        <button
+          onClick={goBack}
+          className="flex items-center gap-2 text-xs font-semibold text-[#9ba9b8] hover:text-white py-2 rounded-lg transition cursor-pointer"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span>{t('settings.back')}</span>
+        </button>
+
+        <div className="mt-5 mb-6">
+          <h1 className="text-2xl font-bold text-white tracking-tight">{t('settings.title')}</h1>
+        </div>
+
+        <nav className="grid grid-cols-1 gap-2.5">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            return (
+              <button
+                key={item.id}
+                onClick={() => openMobileTab(item.id)}
+                className="w-full min-h-16 flex items-center gap-3.5 px-4 py-3.5 rounded-2xl border border-[#1d2834] bg-[#0f151d] hover:bg-[#141d27] text-left transition cursor-pointer"
+              >
+                <span className="w-9 h-9 rounded-xl bg-[#18212c] text-[#b7c2ce] flex items-center justify-center shrink-0">
+                  <Icon className="w-[18px] h-[18px]" />
+                </span>
+                <span className="flex-1 min-w-0 text-sm font-semibold text-[#f4f7fb]">{item.label}</span>
+                <ChevronRight className="w-4 h-4 text-[#657383] shrink-0" />
+              </button>
+            );
+          })}
+        </nav>
+      </section>
+
+      {/* Persistent settings navigation on desktop. */}
+      <aside className="hidden md:block w-64 border-r border-[#18212c] px-6 pt-8 pb-6 flex-shrink-0 sticky top-14 h-[calc(100vh-3.5rem)] overflow-y-auto no-scrollbar bg-[#090d12]">
+        <div className="flex flex-col items-stretch gap-6 mb-8">
           <button
             onClick={goBack}
             className="flex items-center gap-1.5 text-xs font-semibold text-[#aaa] hover:text-white px-2 py-1.5 rounded-lg hover:bg-[#18212c] transition cursor-pointer self-start"
@@ -229,12 +269,12 @@ export const Settings: React.FC = () => {
             <span>{t('settings.back')}</span>
           </button>
 
-          <h2 className="hidden md:block text-sm font-bold uppercase tracking-wider px-3 text-[#aaa]">
+          <h2 className="text-sm font-bold uppercase tracking-wider px-3 text-[#aaa]">
             {t('settings.title')}
           </h2>
         </div>
 
-        <nav className="flex md:flex-col gap-1.5 md:gap-1 overflow-x-auto no-scrollbar pb-1 md:pb-0">
+        <nav className="flex flex-col gap-1">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
@@ -242,7 +282,7 @@ export const Settings: React.FC = () => {
               <button
                 key={item.id}
                 onClick={() => setActiveTab(item.id)}
-                className={`flex-shrink-0 md:w-full flex items-center gap-2.5 sm:gap-3 px-3 py-2 sm:py-2.5 rounded-xl text-xs font-medium transition cursor-pointer whitespace-nowrap ${
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium transition cursor-pointer whitespace-nowrap ${
                   isActive
                     ? 'bg-[#18212c] text-white font-bold'
                     : 'text-[#aaa] hover:bg-[#0f151d] hover:text-white'
@@ -257,7 +297,19 @@ export const Settings: React.FC = () => {
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 p-4 sm:p-6 md:p-10 max-w-4xl">
+      <main className={`${mobileView === 'detail' ? 'block' : 'hidden'} md:block flex-1 p-4 sm:p-6 md:p-10 max-w-4xl`}>
+        <div className="md:hidden mb-6 pb-4 border-b border-[#18212c]">
+          <button
+            onClick={() => {
+              setMobileView('menu');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            className="flex items-center gap-2 text-sm font-semibold text-[#d8dfe7] hover:text-white py-1.5 cursor-pointer"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>{t('settings.title')}</span>
+          </button>
+        </div>
         
         {/* TAB 1: GÉNÉRAL */}
         {activeTab === 'language' && (

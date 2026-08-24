@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { 
   Home, 
   Tv2, 
@@ -61,6 +61,23 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isOverlay = false, onC
   const { activeTask } = useDownloadQueue();
   const { t } = useI18n();
 
+  useEffect(() => {
+    if (!isOverlay || !isOpen) return;
+
+    const previousBodyOverflow = document.body.style.overflow;
+    const previousDocumentOverflow = document.documentElement.style.overflow;
+    const previousOverscroll = document.documentElement.style.overscrollBehavior;
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+    document.documentElement.style.overscrollBehavior = 'none';
+
+    return () => {
+      document.body.style.overflow = previousBodyOverflow;
+      document.documentElement.style.overflow = previousDocumentOverflow;
+      document.documentElement.style.overscrollBehavior = previousOverscroll;
+    };
+  }, [isOpen, isOverlay]);
+
   const sidebarSubs = subscriptions.filter(
     (channel) => channel.id !== myChannel?.id && !String(channel.id).startsWith('custom_')
   );
@@ -90,7 +107,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isOverlay = false, onC
   // OVERLAY DRAWER (When on watch page or small screens)
   if (isOverlay) {
     return (
-      <div className={`fixed inset-0 z-50 flex select-none ${isOpen ? 'pointer-events-auto' : 'pointer-events-none'}`}>
+      <div
+        className={`fixed inset-0 z-50 flex select-none ${isOpen ? 'pointer-events-auto' : 'pointer-events-none'}`}
+        aria-hidden={!isOpen}
+        inert={!isOpen}
+      >
         <div 
           onClick={onClose}
           className={`fixed inset-0 bg-black/70 backdrop-blur-[2px] transition-opacity duration-300 ease-out-smooth ${
@@ -128,7 +149,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isOverlay = false, onC
           </div>
 
           {/* Drawer Content */}
-          <div className="flex-1 min-h-0 px-3 py-3 flex flex-col text-sm">
+          <div className="flex-1 min-h-0 px-3 py-3 flex flex-col text-sm overflow-y-auto lg:overflow-hidden">
             {/* Primary Navigation */}
             <div className="space-y-1 pb-3 border-b border-[#18212c]">
               {navItems.map((item) => {
@@ -203,7 +224,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isOverlay = false, onC
             </div>
 
             {/* Subscriptions List */}
-            <div className="py-2 flex-1 min-h-0 overflow-y-auto">
+            <div className="hidden lg:flex lg:flex-col py-2 flex-1 min-h-0 overflow-y-auto">
               <div className="flex items-center justify-between px-3 py-1.5 text-[#f4f7fb] font-semibold text-sm">
                 <span>{t('nav.subscriptions')}</span>
                 {!localOnly && scanEnabled && (
@@ -241,6 +262,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isOverlay = false, onC
               )}
             </div>
 
+            <div className="flex-1 lg:hidden" aria-hidden="true" />
+
             {/* Settings */}
             <div className="pt-2 border-t border-[#18212c] space-y-1 flex-shrink-0">
               <ModeSwitch />
@@ -260,9 +283,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isOverlay = false, onC
 
   // STANDARD PERSISTENT SIDEBAR (Home, Subscriptions, Library, etc. - Desktop only)
   const compactSidebar = (
-      <div className={`absolute inset-y-0 left-0 w-[72px] flex flex-col items-center py-3 gap-1 transition-opacity duration-100 ${
+      <div
+        className={`absolute inset-y-0 left-0 w-[72px] flex flex-col items-center py-3 gap-1 transition-opacity duration-100 ${
         isOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'
-      }`}>
+        }`}
+        aria-hidden={isOpen}
+        inert={isOpen}
+      >
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = nav.page === item.id;
@@ -326,9 +353,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isOverlay = false, onC
     >
       {compactSidebar}
 
-      <div className={`absolute inset-y-0 left-0 w-[240px] flex flex-col overflow-y-auto px-3 py-3 text-sm transition-opacity duration-100 ${
+      <div
+        className={`absolute inset-y-0 left-0 w-[240px] flex flex-col overflow-y-auto px-3 py-3 text-sm transition-opacity duration-100 ${
         isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
-      }`}>
+        }`}
+        aria-hidden={!isOpen}
+        inert={!isOpen}
+      >
       {/* Primary Section */}
       <div className="space-y-1 pb-3 border-b border-[#18212c]">
         {navItems.map((item) => {

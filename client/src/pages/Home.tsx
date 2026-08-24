@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import type { Video } from '../types';
 import { VideoCard } from '../components/video/VideoCard';
 import { useMyTube } from '../context/MyTubeContext';
@@ -8,33 +8,51 @@ interface HomeFeedData {
   downloaded: Video[];
   subscriptionsUndownloaded: Video[];
   recentSearches: Video[];
+  totals: {
+    downloaded: number;
+    subscriptionsUndownloaded: number;
+    recentSearches: number;
+  };
 }
 
+const HOME_SECTION_LIMIT = 8;
+
 export const Home: React.FC = () => {
-  const { goTo, dataVersion, localOnly } = useMyTube();
+  const { dataVersion, localOnly } = useMyTube();
   const { t } = useI18n();
   const [feed, setFeed] = useState<HomeFeedData>({
     downloaded: [],
     subscriptionsUndownloaded: [],
     recentSearches: [],
+    totals: {
+      downloaded: 0,
+      subscriptionsUndownloaded: 0,
+      recentSearches: 0,
+    },
   });
   const [filteredVideos, setFilteredVideos] = useState<Video[]>([]);
   const [selectedFilter, setSelectedFilter] = useState<'all' | 'downloaded' | 'subscriptions' | 'recent' | 'unwatched'>('all');
   const [isLoading, setIsLoading] = useState(true);
 
-  const loadFeed = async () => {
-    const firstLoad = !feed.downloaded.length && !filteredVideos.length;
-    if (firstLoad) setIsLoading(true);
+  const loadFeed = useCallback(async () => {
+    setIsLoading(true);
     try {
       if (selectedFilter === 'all') {
         const res = await fetch('/api/videos/home-feed');
         if (res.ok) {
           const data = await res.json();
-          setFeed(data);
+          setFeed({
+            ...data,
+            totals: data.totals || {
+              downloaded: data.downloaded?.length || 0,
+              subscriptionsUndownloaded: data.subscriptionsUndownloaded?.length || 0,
+              recentSearches: data.recentSearches?.length || 0,
+            },
+          });
         }
       } else {
-        const tabParam = selectedFilter === 'recent' ? 'recent' : selectedFilter;
-        const res = await fetch(`/api/videos?tab=${tabParam}`);
+        const tabParam = selectedFilter === 'subscriptions' ? 'subscription-discoveries' : selectedFilter;
+        const res = await fetch(`/api/videos?tab=${tabParam}&limit=100`);
         if (res.ok) {
           const data = await res.json();
           setFilteredVideos(data);
@@ -45,11 +63,11 @@ export const Home: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [selectedFilter]);
 
   useEffect(() => {
-    loadFeed();
-  }, [selectedFilter, dataVersion]);
+    void loadFeed();
+  }, [dataVersion, loadFeed]);
 
   const hasAnyContent = feed.downloaded.length > 0 || feed.subscriptionsUndownloaded.length > 0 || feed.recentSearches.length > 0 || filteredVideos.length > 0;
 
@@ -59,8 +77,11 @@ export const Home: React.FC = () => {
       <div className="va-filter-rail flex items-center gap-1.5 overflow-x-auto no-scrollbar select-none">
         {[
           { id: 'all', label: t('home.filterAll') },
-          { id: 'downloaded', label: t('home.filterDownloaded', { count: feed.downloaded.length }) },
-          ...(!localOnly ? [{ id: 'subscriptions', label: t('home.filterSubs', { count: feed.subscriptionsUndownloaded.length }) }] : []),
+          { id: 'downloaded', label: t('home.filterDownloaded', { count: feed.totals.downloaded }) },
+          ...(!localOnly ? [
+            { id: 'subscriptions', label: t('home.filterSubs', { count: feed.totals.subscriptionsUndownloaded }) },
+            { id: 'recent', label: t('home.recentTitle') },
+          ] : []),
           { id: 'unwatched', label: t('home.filterUnwatched') },
         ].map((filter) => (
           <button
@@ -124,18 +145,20 @@ export const Home: React.FC = () => {
               <div className="flex items-baseline justify-between gap-4">
                 <h2 className="va-section-heading text-lg font-semibold text-white tracking-tight">
                   {t('home.downloadedTitle')}
-                  <span className="ml-2 text-sm font-normal text-[#657383]">{feed.downloaded.length}</span>
+                  <span className="ml-2 text-sm font-normal text-[#657383]">{feed.totals.downloaded}</span>
                 </h2>
-                <button
-                  onClick={() => goTo('library')}
-                  className="text-xs font-medium text-[#aaa] hover:text-white transition cursor-pointer shrink-0"
-                >
-                  {t('home.showAll')}
-                </button>
+                {feed.totals.downloaded > HOME_SECTION_LIMIT && (
+                  <button
+                    onClick={() => setSelectedFilter('downloaded')}
+                    className="text-xs font-medium text-[#aaa] hover:text-white transition cursor-pointer shrink-0"
+                  >
+                    {t('home.showAll')}
+                  </button>
+                )}
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-8">
-                {feed.downloaded.map((video) => (
+                {feed.downloaded.slice(0, HOME_SECTION_LIMIT).map((video) => (
                   <VideoCard key={video.id} video={video} onDelete={loadFeed} />
                 ))}
               </div>
@@ -148,33 +171,46 @@ export const Home: React.FC = () => {
               <div className="flex items-baseline justify-between gap-4">
                 <h2 className="va-section-heading text-lg font-semibold text-white tracking-tight">
                   {t('home.subsTitle')}
-                  <span className="ml-2 text-sm font-normal text-[#657383]">{feed.subscriptionsUndownloaded.length}</span>
+                  <span className="ml-2 text-sm font-normal text-[#657383]">{feed.totals.subscriptionsUndownloaded}</span>
                 </h2>
-                <button
-                  onClick={() => goTo('subscriptions')}
-                  className="text-xs font-medium text-[#aaa] hover:text-white transition cursor-pointer shrink-0"
-                >
-                  {t('home.manageChannels')}
-                </button>
+                {feed.totals.subscriptionsUndownloaded > HOME_SECTION_LIMIT && (
+                  <button
+                    onClick={() => setSelectedFilter('subscriptions')}
+                    className="text-xs font-medium text-[#aaa] hover:text-white transition cursor-pointer shrink-0"
+                  >
+                    {t('home.showAll')}
+                  </button>
+                )}
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-8">
-                {feed.subscriptionsUndownloaded.map((video) => (
+                {feed.subscriptionsUndownloaded.slice(0, HOME_SECTION_LIMIT).map((video) => (
                   <VideoCard key={video.id} video={video} onDelete={loadFeed} />
                 ))}
               </div>
             </div>
           )}
 
-          {/* 3. 10 Dernières Vidéos Apparues dans les Recherches */}
+          {/* 3. Découvertes récentes issues des recherches */}
           {!localOnly && feed.recentSearches.length > 0 && (
             <div className="space-y-4">
-              <h2 className="va-section-heading text-lg font-semibold text-white tracking-tight">
-                {t('home.recentTitle')}
-              </h2>
+              <div className="flex items-baseline justify-between gap-4">
+                <h2 className="va-section-heading text-lg font-semibold text-white tracking-tight">
+                  {t('home.recentTitle')}
+                  <span className="ml-2 text-sm font-normal text-[#657383]">{feed.totals.recentSearches}</span>
+                </h2>
+                {feed.totals.recentSearches > HOME_SECTION_LIMIT && (
+                  <button
+                    onClick={() => setSelectedFilter('recent')}
+                    className="text-xs font-medium text-[#aaa] hover:text-white transition cursor-pointer shrink-0"
+                  >
+                    {t('home.showAll')}
+                  </button>
+                )}
+              </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-8">
-                {feed.recentSearches.map((video) => (
+                {feed.recentSearches.slice(0, HOME_SECTION_LIMIT).map((video) => (
                   <VideoCard key={video.id} video={video} onDelete={loadFeed} />
                 ))}
               </div>

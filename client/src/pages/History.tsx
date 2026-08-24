@@ -1,14 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   History as HistoryIcon, 
   Trash2, 
   Search as SearchIcon, 
-  X, 
-  Play, 
-  Clock,
-  ExternalLink,
-  ChevronRight,
-  ListFilter
+  X
 } from 'lucide-react';
 import type { Video } from '../types';
 import { useMyTube } from '../context/MyTubeContext';
@@ -31,34 +26,38 @@ export const HistoryPage: React.FC = () => {
   const [searches, setSearches] = useState<SearchHistoryItem[]>([]);
   const [searchFilter, setSearchFilter] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setIsLoading(true);
+    setLoadError(null);
     try {
-      const [vRes, sRes] = await Promise.all([
-        fetch('/api/history/videos'),
-        fetch('/api/history/searches'),
-      ]);
+      const vRes = await fetch('/api/history/videos');
+      if (!vRes.ok) throw new Error(t('history.loadError'));
+      const vData = await vRes.json();
+      setVideos(vData);
 
-      if (vRes.ok) {
-        const vData = await vRes.json();
-        setVideos(vData);
+      if (localOnly) {
+        setSearches([]);
+        return;
       }
-      if (sRes.ok) {
-        const sData = await sRes.json();
-        setSearches(sData);
-      }
+
+      const sRes = await fetch('/api/history/searches');
+      if (!sRes.ok) throw new Error(t('history.loadError'));
+      const sData = await sRes.json();
+      setSearches(sData);
     } catch (err) {
       console.error('Error fetching history:', err);
+      setLoadError(err instanceof Error ? err.message : t('history.loadError'));
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [localOnly, t]);
 
   useEffect(() => {
-    loadData();
+    void loadData();
     if (localOnly) setActiveTab('videos');
-  }, [dataVersion, localOnly]);
+  }, [dataVersion, loadData, localOnly]);
 
   const handleClearVideosHistory = async () => {
     if (!confirm(t('history.clearVideosConfirm'))) return;
@@ -127,6 +126,23 @@ export const HistoryPage: React.FC = () => {
       return dateStr;
     }
   };
+
+  if (loadError && !isLoading) {
+    return (
+      <div className="flex-1 p-6 w-full flex items-center justify-center min-h-[70vh] text-[#f4f7fb]">
+        <div role="alert" className="max-w-sm rounded-2xl border border-[#263241] bg-[#0f151d] p-6 text-center shadow-2xl">
+          <h1 className="text-base font-bold text-white">{t('history.loadError')}</h1>
+          <button
+            type="button"
+            onClick={() => void loadData()}
+            className="mt-5 rounded-xl bg-[#18212c] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#243142]"
+          >
+            {t('common.retry')}
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 w-full px-4 sm:px-6 pt-6 pb-8 flex flex-col lg:flex-row gap-8 text-[#f4f7fb]">

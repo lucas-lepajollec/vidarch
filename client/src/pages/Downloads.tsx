@@ -26,21 +26,21 @@ export const Downloads: React.FC = () => {
     try {
       await fetch(`/api/downloads/${id}/cancel`, { method: 'POST' });
       await refreshQueue();
-    } catch (_) {}
+    } catch {}
   };
 
   const handleRetry = async (id: string) => {
     try {
       await fetch(`/api/downloads/${id}/retry`, { method: 'POST' });
       await refreshQueue();
-    } catch (_) {}
+    } catch {}
   };
 
   const handleDelete = async (id: string) => {
     try {
       await fetch(`/api/downloads/${id}`, { method: 'DELETE' });
       await refreshQueue();
-    } catch (_) {}
+    } catch {}
   };
 
   const handleCancelAll = async () => {
@@ -48,14 +48,14 @@ export const Downloads: React.FC = () => {
     try {
       await fetch('/api/downloads/cancel-all', { method: 'POST' });
       await refreshQueue();
-    } catch (_) {}
+    } catch {}
   };
 
   const handleClearCompleted = async () => {
     try {
       await fetch('/api/downloads/clear', { method: 'POST' });
       await refreshQueue();
-    } catch (_) {}
+    } catch {}
   };
 
   const activeTasks = queue.filter(task => task.status === 'downloading' || task.status === 'processing' || task.status === 'queued');

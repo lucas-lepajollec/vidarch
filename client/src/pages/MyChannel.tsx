@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Camera,
   Check,
@@ -79,7 +79,7 @@ export const MyChannel: React.FC = () => {
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const switchBtnRef = useRef<HTMLButtonElement>(null);
 
-  const loadPage = async (silent = false) => {
+  const loadPage = useCallback(async (silent = false) => {
     if (!silent) setIsLoading(true);
     setError(null);
     try {
@@ -117,11 +117,11 @@ export const MyChannel: React.FC = () => {
     } finally {
       if (!silent) setIsLoading(false);
     }
-  };
+  }, [localOnly, t]);
 
   useEffect(() => {
-    loadPage();
-  }, [dataVersion]);
+    void loadPage();
+  }, [dataVersion, loadPage]);
 
   const persistProfile = async (patch: Record<string, string>) => {
     if (!channel) return false;

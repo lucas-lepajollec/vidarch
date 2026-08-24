@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Loader2, Check, AlertCircle, Sparkles } from 'lucide-react';
+import { X, Loader2, Check, AlertCircle } from 'lucide-react';
 import { useMyTube } from '../../context/MyTubeContext';
 import { ImageUploadField } from './ImageUploadField';
 import { useI18n } from '../../i18n/I18nProvider';

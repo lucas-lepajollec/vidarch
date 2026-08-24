@@ -119,11 +119,11 @@ export const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = React.memo(({
     }
   };
 
-  const skip = (seconds: number) => {
+  const skip = useCallback((seconds: number) => {
     if (videoRef.current) {
       videoRef.current.currentTime = Math.max(0, Math.min(duration, videoRef.current.currentTime + seconds));
     }
-  };
+  }, [duration]);
 
   const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = parseFloat(e.target.value);
@@ -137,7 +137,7 @@ export const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = React.memo(({
     }
   };
 
-  const toggleMute = () => {
+  const toggleMute = useCallback(() => {
     const next = !isMuted;
     setIsMuted(next);
     writePlayerPrefs({ muted: next, volume });
@@ -145,7 +145,7 @@ export const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = React.memo(({
       videoRef.current.muted = next;
       videoRef.current.volume = volume;
     }
-  };
+  }, [isMuted, volume]);
 
   const handleSpeedChange = (rate: number) => {
     setPlaybackRate(rate);
@@ -216,7 +216,7 @@ export const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = React.memo(({
         video.webkitEnterFullscreen();
         return;
       }
-    } catch (_) {}
+    } catch {}
 
     const target = container || video;
     void requestNativeFullscreen(target).catch(() => {
@@ -243,7 +243,7 @@ export const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = React.memo(({
           is_watched: duration > 0 && time >= duration * 0.9,
         }),
       });
-    } catch (_) {}
+    } catch {}
   }, [video.id, duration]);
 
   const bumpControls = useCallback((visible = true) => {
@@ -329,7 +329,7 @@ export const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = React.memo(({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isPlaying, isMuted, isFullscreen, onToggleTheatre, bumpControls]);
+  }, [bumpControls, isFullscreen, isMuted, isPlaying, onToggleTheatre, skip, toggleMute]);
 
   useEffect(() => {
     setFrameRatio(16 / 9);
@@ -397,7 +397,7 @@ export const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = React.memo(({
     if (video.watch_progress && videoRef.current) {
       videoRef.current.currentTime = video.watch_progress;
     }
-  }, [video.id]);
+  }, [video.id, video.watch_progress]);
 
   useEffect(() => {
     return () => {
@@ -530,7 +530,7 @@ export const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = React.memo(({
               skip(-10);
               bumpControls(true);
             }}
-            className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-black/55 backdrop-blur-md border border-white/15 flex items-center justify-center text-white hover:bg-black/70 transition cursor-pointer"
+            className="va-player-jump w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center text-white cursor-pointer"
             title={t('player.rewind')}
           >
             <RotateCcw className="w-5 h-5 sm:w-6 sm:h-6" />
@@ -542,7 +542,7 @@ export const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = React.memo(({
               togglePlay();
               bumpControls(true);
             }}
-            className="w-16 h-16 sm:w-[4.5rem] sm:h-[4.5rem] rounded-full bg-black/60 backdrop-blur-md border border-white/20 flex items-center justify-center text-white shadow-2xl hover:scale-105 transition cursor-pointer"
+            className="va-player-primary w-16 h-16 sm:w-[4.5rem] sm:h-[4.5rem] flex items-center justify-center text-white cursor-pointer"
             title={isPlaying ? t('player.pause') : t('player.play')}
           >
             {isPlaying ? (
@@ -558,7 +558,7 @@ export const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = React.memo(({
               skip(10);
               bumpControls(true);
             }}
-            className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-black/55 backdrop-blur-md border border-white/15 flex items-center justify-center text-white hover:bg-black/70 transition cursor-pointer"
+            className="va-player-jump w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center text-white cursor-pointer"
             title={t('player.forward')}
           >
             <RotateCw className="w-5 h-5 sm:w-6 sm:h-6" />
