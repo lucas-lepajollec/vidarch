@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="assets/vidarch-logo.svg" width="72" height="72" alt="VidArch" />
+  <img src="assets/vidarch-logo.svg" width="88" height="88" alt="VidArch" />
   <h1>VidArch</h1>
   <p><strong>A modern, self-hosted YouTube archiver, subscriptions manager, and ad-free offline video player.</strong></p>
 
@@ -7,7 +7,7 @@
     <a href="https://github.com/lucas-lepajollec/vidarch/pkgs/container/vidarch"><img src="https://img.shields.io/badge/Docker-GHCR-2CA5E0?style=for-the-badge&logo=docker&logoColor=white" alt="Docker GHCR" /></a>
     <a href="https://nodejs.org/"><img src="https://img.shields.io/badge/Node.js-22-339933?style=for-the-badge&logo=node.js&logoColor=white" alt="Node.js" /></a>
     <a href="https://react.dev/"><img src="https://img.shields.io/badge/React-19-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" alt="React" /></a>
-    <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-5.7-007ACC?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript" /></a>
+    <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-6%20%2F%207-007ACC?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript 6 and 7" /></a>
     <a href="https://tailwindcss.com/"><img src="https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white" alt="Tailwind CSS" /></a>
     <a href="https://github.com/yt-dlp/yt-dlp"><img src="https://img.shields.io/badge/yt--dlp-powered-FF0000?style=for-the-badge&logo=youtube&logoColor=white" alt="yt-dlp" /></a>
     <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge" alt="MIT license" /></a>
@@ -65,12 +65,13 @@ services:
     container_name: vidarch
     restart: unless-stopped
     ports:
-      - "2499:2499"
+      - "127.0.0.1:2499:2499"
     environment:
       - PORT=2499
       - NODE_ENV=production
       - DATA_DIR=/app/data
       - DOWNLOADS_DIR=/app/downloads
+      - AUTH_PASSWORD=${AUTH_PASSWORD:-}
     volumes:
       - ./data:/app/data
       - ./downloads:/app/downloads
@@ -97,6 +98,16 @@ docker compose up -d
 
 Open **`http://localhost:2499`** in your browser.
 
+Docker and Docker Compose listen on localhost by default. To expose the Compose service on your LAN, set a password and deliberately override the bind address before starting it:
+
+```powershell
+$env:AUTH_PASSWORD="choose-a-long-password"
+$env:VIDARCH_BIND_ADDRESS="0.0.0.0"
+docker compose up -d
+```
+
+Keep the localhost default if VidArch is only used from the host or sits behind a local reverse proxy.
+
 ---
 
 ## 💻 Manual Installation (Local / Development)
@@ -108,19 +119,26 @@ Open **`http://localhost:2499`** in your browser.
 
 ### 1. Install dependencies
 ```bash
-# Install root and server dependencies
-npm install
+# Install the exact root and server dependencies from the lockfile
+npm ci
 
-# Install client frontend dependencies
-npm --prefix client install
+# Install the exact client dependencies from the lockfile
+npm --prefix client ci
 ```
 
 ### 2. Start development mode
 ```bash
 npm run dev
 ```
+- Local-only binding (default): accessible from this computer only.
 - Client dev server: `http://localhost:2499`
 - Server API: `http://localhost:2498`
+
+To deliberately expose the development servers on your LAN:
+```bash
+npm run dev:lan
+```
+This mode binds both the client and API to `0.0.0.0`. Configure authentication before using it on an untrusted network.
 
 ### 3. Production build & start
 ```bash
@@ -141,6 +159,7 @@ npm start
 | `YT_DLP_PATH` | Auto-detected | Custom absolute path to the `yt-dlp` binary |
 | `AUTH_PASSWORD` | _unset_ | If set, the UI and API require this password (session cookie, 30 days). You can also set it in **Settings → Sécurité**. |
 | `SESSION_SECRET` | auto-generated | HMAC secret for session cookies (otherwise stored in `data/.session_secret`) |
+| `VIDARCH_BIND_ADDRESS` | `127.0.0.1` (Compose) | Host address published by Docker Compose. Use `0.0.0.0` only for deliberate LAN exposure. |
 
 yt-dlp is kept **in the same process/container**. On startup (and every Sunday 04:15) VidArch runs `yt-dlp -U` when `auto_update_ytdlp` is enabled (default). A sidecar container is unnecessary for a homelab install.
 

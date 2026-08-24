@@ -66,6 +66,7 @@ export const Watch: React.FC = () => {
   const [related, setRelated] = useState<Video[]>([]);
   const [isTheatre, setIsTheatre] = useState(() => readPlayerPrefs().theatre);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [isSubscribing, setIsSubscribing] = useState(false);
   const [isHoveredSub, setIsHoveredSub] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
@@ -83,45 +84,57 @@ export const Watch: React.FC = () => {
   const shuffle = !!nav.playlistShuffle;
 
   const loadVideo = useCallback(async (silent = false) => {
-    if (!videoId) return;
+    if (!videoId) {
+      if (!silent) {
+        setLoadError(t('watch.loadError'));
+        setIsLoading(false);
+      }
+      return;
+    }
     if (!silent) {
       setIsLoading(true);
+      setLoadError(null);
       window.scrollTo(0, 0);
     }
     try {
       const res = await fetch(`/api/videos/${videoId}`);
-      if (res.ok) {
-        const data = await res.json();
-        setVideo((prev) => {
-          const next = data.video as Video;
-          if (silent && prev && prev.id === next.id) {
-            const keepStream = prev.is_downloaded === 1 && !!prev.local_video_path;
-            return keepStream
-              ? { ...next, is_downloaded: prev.is_downloaded, local_video_path: prev.local_video_path }
-              : { ...next };
-          }
-          return next;
-        });
-        setRelated(data.related || []);
+      if (!res.ok) throw new Error(t('watch.loadError'));
 
-        if (!silent) {
-          try {
-            await fetch(`/api/videos/${videoId}/progress`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                progress: Math.max(1, data.video?.watch_progress || 1),
-              }),
-            });
-          } catch (_) {}
+      const data = await res.json();
+      setVideo((prev) => {
+        const next = data.video as Video;
+        if (silent && prev && prev.id === next.id) {
+          const keepStream = prev.is_downloaded === 1 && !!prev.local_video_path;
+          return keepStream
+            ? { ...next, is_downloaded: prev.is_downloaded, local_video_path: prev.local_video_path }
+            : { ...next };
         }
+        return next;
+      });
+      setRelated(data.related || []);
+
+      if (!silent) {
+        try {
+          await fetch(`/api/videos/${videoId}/progress`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              progress: Math.max(1, data.video?.watch_progress || 1),
+            }),
+          });
+        } catch {}
       }
     } catch (err) {
       console.error('Error fetching video details:', err);
+      if (!silent) {
+        setVideo(null);
+        setRelated([]);
+        setLoadError(err instanceof Error ? err.message : t('watch.loadError'));
+      }
     } finally {
       if (!silent) setIsLoading(false);
     }
-  }, [videoId]);
+  }, [t, videoId]);
 
   loadVideoRef.current = loadVideo;
 
@@ -226,12 +239,29 @@ export const Watch: React.FC = () => {
     });
   };
 
-  if (isLoading || !video) {
+  if (isLoading) {
     return (
       <div className="flex-1 p-6 w-full max-w-[1800px] mx-auto flex items-center justify-center min-h-[70vh]">
         <div className="flex flex-col items-center gap-3">
           <div className="w-10 h-10 border-3 border-[#ff5a67] border-t-transparent rounded-full animate-spin" />
           <span className="text-xs text-[#aaa]">{t('watch.loading')}</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (loadError || !video) {
+    return (
+      <div className="flex-1 p-6 w-full max-w-[1800px] mx-auto flex items-center justify-center min-h-[70vh]">
+        <div role="alert" className="max-w-sm rounded-2xl border border-[#263241] bg-[#0f151d] p-6 text-center shadow-2xl">
+          <h1 className="text-base font-bold text-white">{t('watch.loadError')}</h1>
+          <button
+            type="button"
+            onClick={() => void loadVideo(false)}
+            className="mt-5 rounded-xl bg-[#18212c] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#243142]"
+          >
+            {t('common.retry')}
+          </button>
         </div>
       </div>
     );
@@ -261,15 +291,20 @@ export const Watch: React.FC = () => {
         body: JSON.stringify({ liked: nextLiked === 1 }),
       });
       notifyDataChanged();
-    } catch (_) {}
+    } catch {}
   };
 
   const handleSubscribeToggle = async () => {
-    if (!video.channel_id) return;
-    if (isSubscribed) {
-      await unsubscribeChannel(video.channel_id);
-    } else {
-      await subscribeChannel(`https://www.youtube.com/channel/${video.channel_id}`);
+    if (!video.channel_id || isSubscribing) return;
+    setIsSubscribing(true);
+    try {
+      if (isSubscribed) {
+        await unsubscribeChannel(video.channel_id);
+      } else {
+        await subscribeChannel(`https://www.youtube.com/channel/${video.channel_id}`);
+      }
+    } finally {
+      setIsSubscribing(false);
     }
   };
 

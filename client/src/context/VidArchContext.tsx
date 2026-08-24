@@ -1,5 +1,6 @@
+/* oxlint-disable react/only-export-components */
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
-import type { Video, Channel, DownloadTask, SystemStatus, PageRoute, NavigationState, AuthStatus } from '../types';
+import type { Channel, DownloadTask, SystemStatus, PageRoute, NavigationState, AuthStatus } from '../types';
 import { navToPath, pathToNav } from '../utils/routes';
 import { parseQualityNote } from '../utils/qualityNote';
 import { useI18n } from '../i18n/I18nProvider';
@@ -130,7 +131,7 @@ const DownloadQueueProvider: React.FC<{
         eventSource.addEventListener('queue', (e) => {
           try {
             setQueue(JSON.parse(e.data));
-          } catch (_) {}
+          } catch {}
         });
 
         eventSource.addEventListener('progress', (e) => {
@@ -143,7 +144,7 @@ const DownloadQueueProvider: React.FC<{
               eta: prog.eta,
               status: String(prog.status || '').includes('Traitement') ? 'processing' : 'downloading',
             } : item));
-          } catch (_) {}
+          } catch {}
         });
 
         eventSource.addEventListener('completed', (e) => {
@@ -153,7 +154,7 @@ const DownloadQueueProvider: React.FC<{
           notifyDataChanged();
           try {
             onCompleted(JSON.parse(e.data));
-          } catch (_) {}
+          } catch {}
         });
 
         eventSource.addEventListener('failed', () => {
@@ -166,7 +167,7 @@ const DownloadQueueProvider: React.FC<{
           if (reconnectTimeout) clearTimeout(reconnectTimeout);
           reconnectTimeout = setTimeout(connectSSE, 3000);
         };
-      } catch (_) {
+      } catch {
         reconnectTimeout = setTimeout(connectSSE, 3000);
       }
     };
@@ -276,7 +277,7 @@ export const VidArchProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setLocalOnlyState(value);
     try {
       await persistSettings({ local_only: value ? 'true' : 'false' });
-    } catch (_) {
+    } catch {
       setLocalOnlyState(!value);
       return;
     }
@@ -287,7 +288,7 @@ export const VidArchProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setScanEnabledState(value);
     try {
       await persistSettings({ scan_enabled: value ? 'true' : 'false' });
-    } catch (_) {
+    } catch {
       setScanEnabledState(!value);
       return;
     }
@@ -298,7 +299,7 @@ export const VidArchProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setLanguage(lang);
     try {
       await persistSettings({ ui_language: lang });
-    } catch (_) {}
+    } catch {}
     notifyDataChanged();
     try {
       const [subsRes, mineRes] = await Promise.all([
@@ -307,7 +308,7 @@ export const VidArchProvider: React.FC<{ children: React.ReactNode }> = ({ child
       ]);
       if (subsRes.ok) setSubscriptions(await subsRes.json());
       if (mineRes.ok) setMyChannel(await mineRes.json());
-    } catch (_) {}
+    } catch {}
   }, [persistSettings, setLanguage, notifyDataChanged]);
 
   const openImportModal = useCallback(() => {
@@ -369,7 +370,7 @@ export const VidArchProvider: React.FC<{ children: React.ReactNode }> = ({ child
         });
         return;
       }
-    } catch (_) {}
+    } catch {}
     setAuth((prev) => ({ ...prev, loading: false }));
   }, []);
 
@@ -380,7 +381,7 @@ export const VidArchProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const logout = useCallback(async () => {
     try {
       await fetch('/api/auth/logout', { method: 'POST' });
-    } catch (_) {}
+    } catch {}
     await refreshAuth();
   }, [refreshAuth]);
 

@@ -13,6 +13,7 @@ import {
 import { ensureChannelVideoCount, hydrateOriginalVideos } from '../utils/innertube.js';
 
 const router = Router();
+const HOME_SECTION_LIMIT = 8;
 
 // GET videos list with filtering
 router.get('/', (req, res) => {
@@ -22,6 +23,20 @@ router.get('/', (req, res) => {
   const offset = Math.max(0, parseInt(req.query.offset as string || '0', 10));
 
   try {
+    if (tab === 'recent' && !isLocalOnly()) {
+      const recentVideos = db.prepare(`
+        SELECT r.*, r.video_id as id,
+               COALESCE((SELECT is_downloaded FROM videos v WHERE v.id = r.video_id), 0) as is_downloaded,
+               (SELECT local_thumbnail_path FROM videos v WHERE v.id = r.video_id) as local_thumbnail_path,
+               c.avatar_url as channel_avatar
+        FROM recent_search_videos r
+        LEFT JOIN channels c ON r.channel_id = c.id
+        ORDER BY r.searched_at DESC
+        LIMIT ? OFFSET ?
+      `).all(limit, offset);
+      return res.json(applyVideoLocales(recentVideos as any[]));
+    }
+
     let query = `
       SELECT v.*, c.avatar_url as channel_avatar, c.handle as channel_handle 
       FROM videos v 
@@ -37,9 +52,13 @@ router.get('/', (req, res) => {
 
     if (tab === 'downloaded') {
       query += ' AND v.is_downloaded = 1';
-    } else if (tab === 'subscriptions') {
+    } else if (tab === 'subscriptions' || tab === 'subscription-discoveries') {
       query += ' AND v.channel_id IN (SELECT channel_id FROM subscriptions)';
-      if (isLocalOnly()) query += ' AND v.is_downloaded = 1';
+      if (tab === 'subscription-discoveries') {
+        query += ' AND v.is_downloaded = 0';
+      } else if (isLocalOnly()) {
+        query += ' AND v.is_downloaded = 1';
+      }
     } else if (tab === 'history') {
       query += ' AND v.watch_progress > 0';
     } else if (tab === 'liked') {
@@ -76,8 +95,8 @@ router.get('/home-feed', async (_req, res) => {
       LEFT JOIN channels c ON v.channel_id = c.id
       WHERE v.is_downloaded = 1
       ORDER BY v.downloaded_at DESC, v.created_at DESC
-      LIMIT 20
-    `).all();
+      LIMIT ?
+    `).all(HOME_SECTION_LIMIT);
 
     const localOnly = isLocalOnly();
 
@@ -89,10 +108,10 @@ router.get('/home-feed', async (_req, res) => {
       WHERE v.is_downloaded = 0 
         AND v.channel_id IN (SELECT channel_id FROM subscriptions)
       ORDER BY v.upload_date DESC, v.created_at DESC
-      LIMIT 20
-    `).all();
+      LIMIT ?
+    `).all(HOME_SECTION_LIMIT);
 
-    // 3. Last 10 videos that appeared in recent searches
+    // 3. Latest videos that appeared in recent searches
     const recentSearches = localOnly ? [] : db.prepare(`
       SELECT r.*, r.video_id as id,
              COALESCE((SELECT is_downloaded FROM videos v WHERE v.id = r.video_id), 0) as is_downloaded,
@@ -101,8 +120,26 @@ router.get('/home-feed', async (_req, res) => {
       FROM recent_search_videos r
       LEFT JOIN channels c ON r.channel_id = c.id
       ORDER BY r.searched_at DESC
-      LIMIT 10
-    `).all();
+      LIMIT ?
+    `).all(HOME_SECTION_LIMIT);
+
+    const totals = {
+      downloaded: Number((db.prepare(`
+        SELECT COUNT(*) as count
+        FROM videos
+        WHERE is_downloaded = 1
+      `).get() as { count?: number } | undefined)?.count || 0),
+      subscriptionsUndownloaded: localOnly ? 0 : Number((db.prepare(`
+        SELECT COUNT(*) as count
+        FROM videos
+        WHERE is_downloaded = 0
+          AND channel_id IN (SELECT channel_id FROM subscriptions)
+      `).get() as { count?: number } | undefined)?.count || 0),
+      recentSearches: localOnly ? 0 : Number((db.prepare(`
+        SELECT COUNT(*) as count
+        FROM recent_search_videos
+      `).get() as { count?: number } | undefined)?.count || 0),
+    };
 
     if (!localOnly) {
       await hydrateOriginalVideos([
@@ -115,6 +152,7 @@ router.get('/home-feed', async (_req, res) => {
       downloaded: applyVideoLocales(downloaded as any[]),
       subscriptionsUndownloaded: applyVideoLocales(subscriptionsUndownloaded as any[]),
       recentSearches: applyVideoLocales(recentSearches as any[]),
+      totals,
     });
   } catch (err: any) {
     res.status(500).json({ error: err.message });

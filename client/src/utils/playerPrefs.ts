@@ -41,7 +41,7 @@ export function writePlayerPrefs(patch: Partial<PlayerPrefs>): PlayerPrefs {
   next.volume = clamp(Number(next.volume) || 0, 0, 1);
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-  } catch (_) {}
+  } catch {}
   return next;
 }
 

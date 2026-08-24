@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ArrowLeft,
   ListVideo,
@@ -23,7 +23,7 @@ export const PlaylistDetail: React.FC = () => {
 
   const isLiked = playlistId === 'liked';
 
-  const load = async (silent = false) => {
+  const load = useCallback(async (silent = false) => {
     if (!playlistId) return;
     if (!silent) setIsLoading(true);
     try {
@@ -41,11 +41,11 @@ export const PlaylistDetail: React.FC = () => {
     } finally {
       if (!silent) setIsLoading(false);
     }
-  };
+  }, [playlistId]);
 
   useEffect(() => {
     void load(false);
-  }, [playlistId]);
+  }, [load]);
 
   useEffect(() => {
     if (skipVersionRefresh.current) {
@@ -53,7 +53,7 @@ export const PlaylistDetail: React.FC = () => {
       return;
     }
     void load(true);
-  }, [dataVersion]);
+  }, [dataVersion, load]);
 
   const handleRemove = async (videoId: string, e: React.MouseEvent) => {
     e.stopPropagation();

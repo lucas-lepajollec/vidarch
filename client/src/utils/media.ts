@@ -48,7 +48,7 @@ export function sanitizeThumbUrl(url?: string | null): string | undefined {
       u.hash = '';
       return u.toString();
     }
-  } catch (_) {}
+  } catch {}
   return url;
 }
 

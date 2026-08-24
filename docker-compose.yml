@@ -11,14 +11,13 @@ services:
     container_name: vidarch
     restart: unless-stopped
     ports:
-      - "2499:2499"
+      - "${VIDARCH_BIND_ADDRESS:-127.0.0.1}:2499:2499"
     environment:
       - PORT=2499
       - NODE_ENV=production
       - DATA_DIR=/app/data
       - DOWNLOADS_DIR=/app/downloads
-      # Optional: lock the UI/API behind a password
-      # - AUTH_PASSWORD=change-me
+      - AUTH_PASSWORD=${AUTH_PASSWORD:-}
     volumes:
       # Persistent SQLite database & cookies.txt
       - ./data:/app/data

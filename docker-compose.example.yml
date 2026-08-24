@@ -9,14 +9,14 @@ services:
     container_name: vidarch
     restart: unless-stopped
     ports:
-      # Port mapped on host machine : internal container port
-      - "2499:2499"
+      # Localhost by default. Set VIDARCH_BIND_ADDRESS=0.0.0.0 for deliberate LAN exposure.
+      - "${VIDARCH_BIND_ADDRESS:-127.0.0.1}:2499:2499"
     environment:
       - PORT=2499
       - NODE_ENV=production
       - DATA_DIR=/app/data
       - DOWNLOADS_DIR=/app/downloads
-      # - AUTH_PASSWORD=change-me
+      - AUTH_PASSWORD=${AUTH_PASSWORD:-}
     volumes:
       # Persistent SQLite database (vidarch.db) and optional cookies.txt
       - ./data:/app/data

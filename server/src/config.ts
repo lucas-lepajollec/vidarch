@@ -26,6 +26,7 @@ if (fs.existsSync(legacyDbPath) && !fs.existsSync(DB_PATH)) {
 
 export const PORT = parseInt(process.env.PORT || '2498', 10);
 export const IS_PROD = process.env.NODE_ENV === 'production';
+export const HOST = process.env.HOST || (IS_PROD ? '0.0.0.0' : '127.0.0.1');
 
 ensureDir(DATA_DIR);
 ensureDir(DOWNLOADS_DIR);

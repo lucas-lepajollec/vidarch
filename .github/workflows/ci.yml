@@ -28,5 +28,27 @@ jobs:
       - name: Unit tests
         run: npm test
 
+      - name: Frontend lint
+        run: npm --prefix client run lint
+
       - name: Build Full Project (Frontend & Backend)
         run: npm run build
+
+      - name: Production dependency audit
+        run: |
+          npm audit --omit=dev --audit-level=high
+          npm --prefix client audit --omit=dev --audit-level=high
+
+      - name: Validate Docker Compose
+        run: docker compose config --quiet
+
+  container:
+    name: Docker image
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Build container
+        run: docker build --tag vidarch:ci .

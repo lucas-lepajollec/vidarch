@@ -1,3 +1,4 @@
+/* oxlint-disable react/only-export-components */
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import {
   BCP47,
@@ -16,7 +17,7 @@ function readStoredLanguage(): UiLanguage {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (isUiLanguage(stored)) return stored;
-  } catch (_) {}
+  } catch {}
   return 'en';
 }
 
@@ -38,7 +39,7 @@ export const I18nProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setLanguageState(lang);
     try {
       localStorage.setItem(STORAGE_KEY, lang);
-    } catch (_) {}
+    } catch {}
   }, []);
 
   useEffect(() => {

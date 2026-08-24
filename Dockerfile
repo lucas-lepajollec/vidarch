@@ -7,7 +7,7 @@
 FROM node:22-alpine AS client-builder
 WORKDIR /app/client
 COPY client/package*.json ./
-RUN npm install
+RUN npm ci
 COPY client/ ./
 RUN npm run build
 
@@ -21,11 +21,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /app
 COPY package*.json ./
 COPY server/ ./server/
-RUN npm install
+RUN npm ci
 RUN npx tsc -p server/tsconfig.json
+RUN npm prune --omit=dev
 
 # Stage 3: Production Runtime (Clean & Lightweight)
 FROM node:22-bookworm-slim AS runner
+
+ARG YT_DLP_VERSION=2026.08.19
 
 # Install runtime system dependencies: python3, ffmpeg, ca-certificates, curl
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -35,8 +38,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Install standalone yt-dlp binary
-RUN curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp \
+# Install a pinned standalone yt-dlp binary for reproducible images
+RUN curl -fL --retry 3 "https://github.com/yt-dlp/yt-dlp/releases/download/${YT_DLP_VERSION}/yt-dlp" -o /usr/local/bin/yt-dlp \
     && chmod a+rx /usr/local/bin/yt-dlp
 
 WORKDIR /app

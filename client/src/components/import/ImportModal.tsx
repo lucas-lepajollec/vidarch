@@ -9,11 +9,7 @@ import {
   Check, 
   AlertCircle, 
   DownloadCloud, 
-  CheckCircle2,
-  Plus,
-  Tv2,
-  Sliders,
-  Sparkles
+  CheckCircle2
 } from 'lucide-react';
 import { useMyTube } from '../../context/MyTubeContext';
 import { ImageUploadField } from '../channel/ImageUploadField';
@@ -57,7 +53,7 @@ export const ImportModal: React.FC = () => {
   const [isCreatingNewChannel, setIsCreatingNewChannel] = useState(false);
   const [newChannelTitle, setNewChannelTitle] = useState('');
   const [newChannelHandle, setNewChannelHandle] = useState('');
-  const [newChannelDesc, setNewChannelDesc] = useState('');
+  const newChannelDesc = '';
   const [newChannelAvatarUrl, setNewChannelAvatarUrl] = useState('');
   const [newChannelBannerUrl, setNewChannelBannerUrl] = useState('');
 
@@ -128,7 +124,7 @@ export const ImportModal: React.FC = () => {
         const err = await res.json();
         setUrlError(err.error || t('import.channelBlocked'));
       }
-    } catch (err: any) {
+    } catch {
       setUrlError(t('common.connectionError'));
     } finally {
       setIsInspectingUrl(false);
@@ -185,7 +181,7 @@ export const ImportModal: React.FC = () => {
           }
         }
       }
-    } catch (_) {}
+    } catch {}
     finally {
       setIsFetchingYtMeta(false);
     }
@@ -258,7 +254,7 @@ export const ImportModal: React.FC = () => {
           try {
             const err = JSON.parse(xhr.responseText);
             setUploadError(err.error || t('common.genericError'));
-          } catch (_) {
+          } catch {
             setUploadError(t('common.error'));
           }
         }

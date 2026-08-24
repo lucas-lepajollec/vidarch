@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="../assets/vidarch-logo.svg" width="56" height="56" alt="VidArch" />
+  <img src="../assets/vidarch-logo.svg" width="68" height="68" alt="VidArch" />
 </p>
 
 # VidArch client

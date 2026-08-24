@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Tv2, 
   HardDrive, 
@@ -47,7 +47,7 @@ export const ChannelDetail: React.FC = () => {
 
   const channelId = nav.channelId;
 
-  const loadChannelData = async (silent = false) => {
+  const loadChannelData = useCallback(async (silent = false) => {
     if (!channelId) return;
     if (!silent) setIsLoading(true);
     setError(null);
@@ -80,17 +80,17 @@ export const ChannelDetail: React.FC = () => {
     } finally {
       if (!silent) setIsLoading(false);
     }
-  };
+  }, [channelId, localOnly, t]);
 
   useEffect(() => {
-    loadChannelData();
-  }, [channelId, dataVersion]);
+    void loadChannelData();
+  }, [dataVersion, loadChannelData]);
 
   useEffect(() => {
     if (channel?.id && myChannel?.id && channel.id === myChannel.id) {
       goTo('mychannel');
     }
-  }, [channel?.id, myChannel?.id]);
+  }, [channel?.id, goTo, myChannel?.id]);
 
   // Load more videos pagination
   const handleLoadMore = async () => {

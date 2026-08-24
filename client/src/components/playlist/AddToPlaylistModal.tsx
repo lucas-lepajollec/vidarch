@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Check, ListPlus, Loader2, Plus, ThumbsUp, X } from 'lucide-react';
 import type { PlaylistSummary } from '../../types';
@@ -32,7 +32,7 @@ export const AddToPlaylistModal: React.FC<AddToPlaylistModalProps> = ({
   const [newTitle, setNewTitle] = useState('');
   const [isCreating, setIsCreating] = useState(false);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setIsLoading(true);
     try {
       const res = await fetch(`/api/playlists?contains=${encodeURIComponent(videoId)}`);
@@ -42,14 +42,14 @@ export const AddToPlaylistModal: React.FC<AddToPlaylistModalProps> = ({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [videoId]);
 
   useEffect(() => {
     if (!open || !videoId) return;
     setCreating(false);
     setNewTitle('');
     void load();
-  }, [open, videoId]);
+  }, [load, open, videoId]);
 
   useEffect(() => {
     if (!open) return;

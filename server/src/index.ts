@@ -5,7 +5,7 @@ import rateLimit from 'express-rate-limit';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
-import { PORT, DOWNLOADS_DIR, ASSETS_DIR, ROOT_DIR, IS_PROD, DB_PATH } from './config.js';
+import { PORT, HOST, DOWNLOADS_DIR, ASSETS_DIR, ROOT_DIR, IS_PROD, DB_PATH } from './config.js';
 import { initDatabase, db } from './db/database.js';
 import { authGuard } from './middleware/auth.js';
 import { isAuthRequired } from './services/auth.js';
@@ -198,11 +198,11 @@ app.use((err: any, _req: express.Request, res: express.Response, _next: express.
   res.status(status).json({ error: message });
 });
 
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`VidArch Server running on http://0.0.0.0:${PORT} [${IS_PROD ? 'PRODUCTION' : 'DEVELOPMENT'}]`);
+app.listen(PORT, HOST, () => {
+  console.log(`VidArch Server running on http://${HOST}:${PORT} [${IS_PROD ? 'PRODUCTION' : 'DEVELOPMENT'}]`);
   console.log(`Downloads directory: ${DOWNLOADS_DIR}`);
   console.log(`Database: ${DB_PATH}`);
-  if (!isAuthRequired()) {
+  if (!isAuthRequired() && HOST !== '127.0.0.1' && HOST !== 'localhost') {
     console.warn('AUTH: no password configured. Set AUTH_PASSWORD or a password in Settings before exposing this host.');
   }
   bootstrapBackgroundJobs();
@@ -221,7 +221,7 @@ function bootstrapBackgroundJobs() {
   scannerService.initCron();
 
   const autoUpdate = readSetting('auto_update_ytdlp', 'true') !== 'false';
-  if (autoUpdate) {
+  if (autoUpdate && process.env.VIDARCH_DEV_MODE !== '1') {
     setTimeout(() => {
       updateYtDlp()
         .then((r) => console.log('yt-dlp auto-update:', r.message))

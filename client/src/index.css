@@ -80,15 +80,12 @@
   box-shadow: 0 12px 42px rgba(0, 0, 0, 0.2);
 }
 
-.va-header::after {
-  content: "";
-  position: absolute;
-  left: 4.5rem;
-  bottom: -1px;
-  width: 4.75rem;
-  height: 2px;
-  border-radius: 999px;
-  background: linear-gradient(90deg, var(--va-accent), rgba(255, 90, 103, 0));
+@media (min-width: 768px) {
+  .va-header {
+    background: rgba(9, 13, 18, 0.97) !important;
+    backdrop-filter: blur(22px) saturate(1.08);
+    -webkit-backdrop-filter: blur(22px) saturate(1.08);
+  }
 }
 
 .va-logo-mark {
@@ -115,6 +112,12 @@
   border-color: rgba(255, 90, 103, 0.55) !important;
   background: rgba(17, 24, 33, 0.98);
   box-shadow: 0 0 0 3px rgba(255, 90, 103, 0.09), 0 14px 30px rgba(0, 0, 0, 0.22);
+}
+
+@media (min-width: 768px) {
+  .va-search-shell {
+    background: rgba(15, 21, 29, 0.96);
+  }
 }
 
 .va-search-button {
@@ -159,7 +162,7 @@
   max-width: 100%;
   border: 1px solid var(--va-border-subtle);
   border-radius: 13px;
-  background: rgba(15, 21, 29, 0.7);
+  background: rgba(15, 21, 29, 0.94);
   backdrop-filter: blur(14px);
 }
 
@@ -196,6 +199,47 @@
   box-shadow: 0 18px 38px -20px rgba(0, 0, 0, 0.88);
 }
 
+.va-player-jump,
+.va-player-primary {
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  transition: transform 160ms ease, background 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.va-player-jump {
+  border-radius: 17px;
+  background: rgba(9, 13, 18, 0.82);
+  box-shadow: 0 14px 34px -16px rgba(0, 0, 0, 0.9);
+}
+
+.va-player-primary {
+  border-radius: 20px;
+  background: linear-gradient(145deg, #ff6874, #e33e52);
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 18px 40px -14px rgba(227, 62, 82, 0.65);
+}
+
+@media (hover: hover) {
+  .va-player-jump:hover {
+    transform: translateY(-2px);
+    background: rgba(17, 24, 33, 0.96);
+    border-color: rgba(255, 255, 255, 0.22);
+    box-shadow: 0 18px 38px -14px rgba(0, 0, 0, 0.92);
+  }
+
+  .va-player-primary:hover {
+    transform: translateY(-2px) scale(1.04);
+    background: linear-gradient(145deg, #ff7580, #ed465b);
+    box-shadow: 0 22px 48px -14px rgba(227, 62, 82, 0.76);
+  }
+}
+
+.va-player-jump:active,
+.va-player-primary:active {
+  transform: scale(0.96);
+}
+
 .va-state-badge {
   display: inline-flex;
   align-items: center;
@@ -226,7 +270,7 @@
 
 .va-mode-switch {
   border: 1px solid var(--va-border-subtle);
-  background: rgba(15, 21, 29, 0.72);
+  background: rgba(15, 21, 29, 0.94);
 }
 
 .va-mode-switch:hover {
@@ -236,13 +280,13 @@
 
 .va-description-panel {
   border: 1px solid var(--va-border-subtle);
-  background: linear-gradient(145deg, rgba(24, 33, 44, 0.84), rgba(15, 21, 29, 0.74)) !important;
+  background: linear-gradient(145deg, rgba(24, 33, 44, 0.96), rgba(15, 21, 29, 0.94)) !important;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
 }
 
 /* Glassmorphism helpers */
 .glass-panel {
-  background: rgba(24, 24, 24, 0.75);
+  background: rgba(15, 21, 29, 0.95);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -251,7 +295,7 @@
 .va-menu,
 .glass-dropdown {
   background:
-    linear-gradient(145deg, rgba(17, 24, 33, 0.985), rgba(9, 13, 18, 0.975));
+    linear-gradient(145deg, #111821, #090d12);
   backdrop-filter: blur(30px) saturate(1.22);
   -webkit-backdrop-filter: blur(30px) saturate(1.22);
   border: 1px solid rgba(150, 176, 204, 0.16);

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { 
   Search as SearchIcon, 
   DownloadCloud, 
@@ -32,6 +32,8 @@ interface ChannelResult {
   url?: string;
   language?: string;
 }
+
+const REMOTE_RESULTS_PAGE_SIZE = 20;
 
 const PeekVideoRow: React.FC<{
   videos: Video[];
@@ -131,36 +133,36 @@ export const SearchPage: React.FC = () => {
 
   const query = nav.query || '';
 
-  const performSearch = async () => {
+  const performSearch = useCallback(async () => {
     if (!query.trim()) return;
     setIsLoading(true);
     try {
       const searchType = localOnly ? 'local' : 'all';
-      const res = await fetch(`/api/search?q=${encodeURIComponent(query)}&type=${searchType}&offset=0&limit=15`);
+      const res = await fetch(`/api/search?q=${encodeURIComponent(query)}&type=${searchType}&offset=0&limit=${REMOTE_RESULTS_PAGE_SIZE}`);
       if (res.ok) {
         const data = await res.json();
         setChannels(data.channels || []);
         setLocalVideos(data.localVideos || []);
         const ytVids = data.youtubeVideos || data.youtubeResults || [];
         setYoutubeVideos(localOnly ? [] : ytVids);
-        setHasMore(!localOnly && ytVids.length >= 10);
+        setHasMore(!localOnly && data.hasMore === true);
       }
     } catch (err) {
       console.error('Search error:', err);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [localOnly, query]);
 
   useEffect(() => {
-    performSearch();
-  }, [query, localOnly]);
+    void performSearch();
+  }, [performSearch]);
 
   const handleLoadMore = async () => {
     if (!query.trim() || isLoadingMore || !hasMore || localOnly) return;
     setIsLoadingMore(true);
     try {
-      const res = await fetch(`/api/search?q=${encodeURIComponent(query)}&type=all&offset=${youtubeVideos.length}&limit=15`);
+      const res = await fetch(`/api/search?q=${encodeURIComponent(query)}&type=all&offset=${youtubeVideos.length}&limit=${REMOTE_RESULTS_PAGE_SIZE}`);
       if (res.ok) {
         const data = await res.json();
         const newVids: SearchResultItem[] = data.youtubeVideos || [];
@@ -171,9 +173,7 @@ export const SearchPage: React.FC = () => {
             return [...prev, ...filtered];
           });
         }
-        if (newVids.length === 0 || data.hasMore === false) {
-          setHasMore(false);
-        }
+        setHasMore(newVids.length > 0 && data.hasMore === true);
       } else {
         setHasMore(false);
       }
