@@ -98,15 +98,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isOverlay = false, onC
           }`}
         />
 
-        <aside className={`relative z-50 w-64 max-w-[80vw] h-full bg-[#0f0f0f] border-r border-[#272727] flex flex-col shadow-2xl overflow-y-auto transition-transform duration-300 ease-out-smooth ${
+        <aside className={`va-sidebar relative z-50 w-64 max-w-[80vw] h-full bg-[#090d12] border-r border-[#18212c] flex flex-col shadow-2xl overflow-hidden transition-transform duration-300 ease-out-smooth ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}>
           {/* Drawer Header with Logo & Close */}
-          <div className="h-14 flex items-center justify-between px-4 border-b border-[#272727] flex-shrink-0">
+          <div className="h-14 flex items-center justify-between px-4 border-b border-[#18212c] flex-shrink-0">
             <div className="flex items-center gap-3">
               <button
                 onClick={onClose}
-                className="p-2 hover:bg-[#272727] rounded-full text-white cursor-pointer transition"
+                className="p-2 hover:bg-[#18212c] rounded-full text-white cursor-pointer transition"
                 title={t('nav.closeMenu')}
               >
                 <Menu className="w-5 h-5" />
@@ -121,16 +121,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isOverlay = false, onC
 
             <button
               onClick={onClose}
-              className="p-2 text-[#aaa] hover:text-white rounded-full hover:bg-[#272727] transition"
+              className="p-2 text-[#aaa] hover:text-white rounded-full hover:bg-[#18212c] transition"
             >
               <X className="w-4 h-4" />
             </button>
           </div>
 
           {/* Drawer Content */}
-          <div className="flex-1 px-3 py-3 space-y-4 overflow-y-auto text-sm">
+          <div className="flex-1 min-h-0 px-3 py-3 flex flex-col text-sm">
             {/* Primary Navigation */}
-            <div className="space-y-1 pb-3 border-b border-[#272727]">
+            <div className="space-y-1 pb-3 border-b border-[#18212c]">
               {navItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = nav.page === item.id;
@@ -140,11 +140,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isOverlay = false, onC
                     onClick={() => handleItemClick(item.id)}
                     className={`w-full flex items-center gap-5 px-3 py-2.5 rounded-xl transition cursor-pointer text-left font-medium ${
                       isActive
-                        ? 'bg-[#272727] text-white font-semibold'
-                        : 'text-[#f1f1f1] hover:bg-[#272727]/60'
+                        ? 'va-nav-active text-white font-semibold'
+                        : 'text-[#f4f7fb] hover:bg-[#18212c]/60'
                     }`}
                   >
-                    <Icon className={`w-5 h-5 ${isActive ? 'text-[#ff0033]' : 'text-[#f1f1f1]'}`} />
+                    <Icon className={`w-5 h-5 ${isActive ? 'text-[#ff5a67]' : 'text-[#f4f7fb]'}`} />
                     <span className="flex-1 truncate">{item.label}</span>
                     {item.id === 'downloads' && activeTask && (
                       <span className="text-[10px] tabular-nums font-semibold text-white">
@@ -157,10 +157,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isOverlay = false, onC
             </div>
 
             {/* Library Navigation */}
-            <div className="py-2 border-b border-[#272727] space-y-1">
+            <div className="py-2 border-b border-[#18212c] space-y-1">
               <div 
                 onClick={() => handleItemClick('library')}
-                className="flex items-center justify-between px-3 py-1.5 text-[#f1f1f1] font-semibold text-sm cursor-pointer hover:text-white group"
+                className="flex items-center justify-between px-3 py-1.5 text-[#f4f7fb] font-semibold text-sm cursor-pointer hover:text-white group"
               >
                 <span>{t('nav.you')}</span>
                 <ChevronRight className="w-4 h-4 text-[#aaa] group-hover:translate-x-0.5 transition-transform" />
@@ -174,8 +174,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isOverlay = false, onC
                 }}
                 className={`w-full flex items-center gap-5 px-3 py-2.5 rounded-xl transition cursor-pointer text-left ${
                   nav.page === 'mychannel'
-                    ? 'bg-[#272727] text-white font-semibold'
-                    : 'text-[#f1f1f1] hover:bg-[#272727]/60'
+                    ? 'va-nav-active text-white font-semibold'
+                    : 'text-[#f4f7fb] hover:bg-[#18212c]/60'
                 }`}
               >
                 <YourChannelGlyph channel={myChannel} />
@@ -191,8 +191,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isOverlay = false, onC
                     onClick={() => handleItemClick(item.id)}
                     className={`w-full flex items-center gap-5 px-3 py-2.5 rounded-xl transition cursor-pointer text-left ${
                       isActive
-                        ? 'bg-[#272727] text-white font-semibold'
-                        : 'text-[#f1f1f1] hover:bg-[#272727]/60'
+                        ? 'va-nav-active text-white font-semibold'
+                        : 'text-[#f4f7fb] hover:bg-[#18212c]/60'
                     }`}
                   >
                     <Icon className="w-5 h-5 text-[#aaa]" />
@@ -203,14 +203,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isOverlay = false, onC
             </div>
 
             {/* Subscriptions List */}
-            <div className="py-2 flex-1">
-              <div className="flex items-center justify-between px-3 py-1.5 text-[#f1f1f1] font-semibold text-sm">
+            <div className="py-2 flex-1 min-h-0 overflow-y-auto">
+              <div className="flex items-center justify-between px-3 py-1.5 text-[#f4f7fb] font-semibold text-sm">
                 <span>{t('nav.subscriptions')}</span>
                 {!localOnly && scanEnabled && (
                 <button
                   onClick={triggerScan}
                   disabled={isScanning}
-                  className={`p-1 rounded-full hover:bg-[#272727] cursor-pointer transition-colors duration-200 ${
+                  className={`p-1 rounded-full hover:bg-[#18212c] cursor-pointer transition-colors duration-200 ${
                     isScanning ? 'text-white' : 'text-[#888] hover:text-white'
                   }`}
                   title={isScanning ? t('nav.scanning') : t('nav.scan')}
@@ -226,7 +226,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isOverlay = false, onC
                     <button
                       key={channel.id}
                       onClick={() => handleChannelClick(channel.id)}
-                      className="w-full flex items-center gap-3 px-3 py-2 rounded-xl transition cursor-pointer text-left text-xs text-[#f1f1f1] hover:bg-[#272727]/60"
+                      className="w-full flex items-center gap-3 px-3 py-2 rounded-xl transition cursor-pointer text-left text-xs text-[#f4f7fb] hover:bg-[#18212c]/60"
                     >
                       <ChannelAvatar channelId={channel.id} url={channel.avatar_url} title={channel.title} className="w-6 h-6 rounded-full" textClassName="text-[10px]" />
                       <span className="min-w-0 flex-1">
@@ -242,11 +242,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isOverlay = false, onC
             </div>
 
             {/* Settings */}
-            <div className="pt-2 border-t border-[#272727] space-y-1">
+            <div className="pt-2 border-t border-[#18212c] space-y-1 flex-shrink-0">
               <ModeSwitch />
               <button
                 onClick={() => handleItemClick('settings')}
-                className="w-full flex items-center gap-5 px-3 py-2.5 rounded-xl transition-colors duration-200 cursor-pointer text-left text-[#aaa] hover:bg-[#272727]/60 hover:text-white"
+                className="w-full flex items-center gap-5 px-3 py-2.5 rounded-xl transition-colors duration-200 cursor-pointer text-left text-[#aaa] hover:bg-[#18212c]/60 hover:text-white"
               >
                 <SettingsIcon className="w-5 h-5" />
                 <span>{t('nav.settings')}</span>
@@ -259,13 +259,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isOverlay = false, onC
   }
 
   // STANDARD PERSISTENT SIDEBAR (Home, Subscriptions, Library, etc. - Desktop only)
-  if (!isOpen) {
-    // Mini icon-only sidebar (fixed to viewport left on desktop)
-    return (
-      <aside 
-        className="hidden lg:flex fixed top-14 left-0 bottom-0 w-18 bg-[#0f0f0f] border-r border-[#272727] flex-col items-center py-3 gap-1 select-none z-40 transition-[width] duration-300 ease-out-smooth"
-        style={{ width: '72px' }}
-      >
+  const compactSidebar = (
+      <div className={`absolute inset-y-0 left-0 w-[72px] flex flex-col items-center py-3 gap-1 transition-opacity duration-100 ${
+        isOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'
+      }`}>
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = nav.page === item.id;
@@ -274,7 +271,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isOverlay = false, onC
               key={item.id}
               onClick={() => goTo(item.id)}
               className={`w-14 py-3 flex flex-col items-center justify-center rounded-xl transition text-[10px] gap-1.5 cursor-pointer ${
-                isActive ? 'bg-[#272727] text-white font-semibold' : 'text-[#aaa] hover:bg-[#272727]/60 hover:text-white'
+                isActive ? 'va-nav-active text-white font-semibold' : 'text-[#aaa] hover:bg-[#18212c]/60 hover:text-white'
               }`}
               title={item.label}
             >
@@ -283,18 +280,57 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isOverlay = false, onC
             </button>
           );
         })}
-        <ModeSwitch compact />
-      </aside>
-    );
-  }
+
+        <div className="w-10 h-px bg-[#18212c] my-2 flex-shrink-0" />
+
+        {libraryItems.map((item) => {
+          const Icon = item.icon;
+          const isActive = nav.page === item.id;
+          return (
+            <button
+              key={item.id}
+              onClick={() => goTo(item.id)}
+              className={`w-14 py-2.5 flex flex-col items-center justify-center rounded-xl transition text-[10px] gap-1 cursor-pointer ${
+                isActive ? 'va-nav-active text-white font-semibold' : 'text-[#aaa] hover:bg-[#18212c]/60 hover:text-white'
+              }`}
+              title={item.label}
+            >
+              <Icon className="w-5 h-5" />
+              <span className="truncate max-w-[56px]">{item.label}</span>
+            </button>
+          );
+        })}
+
+        <div className="mt-auto flex flex-col items-center gap-1">
+          <ModeSwitch compact />
+          <button
+            onClick={() => goTo('settings')}
+            className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors duration-200 cursor-pointer ${
+              nav.page === 'settings'
+                ? 'va-nav-active text-white'
+                : 'text-[#aaa] hover:bg-[#18212c]/60 hover:text-white'
+            }`}
+            title={t('nav.settings')}
+            aria-label={t('nav.settings')}
+          >
+            <SettingsIcon className="w-5 h-5" />
+          </button>
+        </div>
+      </div>
+  );
 
   return (
     <aside 
-      className="hidden lg:flex fixed top-14 left-0 bottom-0 w-60 bg-[#0f0f0f] border-r border-[#272727] flex-col overflow-y-auto px-3 py-3 select-none z-40 text-sm transition-[width] duration-300 ease-out-smooth"
-      style={{ width: '240px' }}
+      className="va-sidebar hidden lg:block fixed top-14 left-0 bottom-0 bg-[#090d12] border-r border-[#18212c] overflow-hidden select-none z-40 transition-[width] duration-200 ease-out-smooth"
+      style={{ width: isOpen ? '240px' : '72px' }}
     >
+      {compactSidebar}
+
+      <div className={`absolute inset-y-0 left-0 w-[240px] flex flex-col overflow-y-auto px-3 py-3 text-sm transition-opacity duration-100 ${
+        isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+      }`}>
       {/* Primary Section */}
-      <div className="space-y-1 pb-3 border-b border-[#272727]">
+      <div className="space-y-1 pb-3 border-b border-[#18212c]">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = nav.page === item.id;
@@ -304,11 +340,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isOverlay = false, onC
               onClick={() => goTo(item.id)}
               className={`w-full flex items-center gap-5 px-3 py-2.5 rounded-xl transition cursor-pointer text-left font-medium ${
                 isActive
-                  ? 'bg-[#272727] text-white font-semibold shadow-sm'
-                  : 'text-[#f1f1f1] hover:bg-[#272727]/60'
+                  ? 'va-nav-active text-white font-semibold shadow-sm'
+                  : 'text-[#f4f7fb] hover:bg-[#18212c]/60'
               }`}
             >
-              <Icon className={`w-5 h-5 ${isActive ? 'text-[#ff0033]' : 'text-[#f1f1f1]'}`} />
+              <Icon className={`w-5 h-5 ${isActive ? 'text-[#ff5a67]' : 'text-[#f4f7fb]'}`} />
               <span className="flex-1 truncate">{item.label}</span>
               {item.id === 'downloads' && activeTask && (
                 <span className="text-[10px] tabular-nums font-semibold text-white">
@@ -321,10 +357,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isOverlay = false, onC
       </div>
 
       {/* Library / "Vous" Section */}
-      <div className="py-3 border-b border-[#272727] space-y-1">
+      <div className="py-3 border-b border-[#18212c] space-y-1">
         <div 
           onClick={() => goTo('library')}
-          className="flex items-center justify-between px-3 py-1.5 text-[#f1f1f1] font-semibold text-sm cursor-pointer hover:text-white group"
+          className="flex items-center justify-between px-3 py-1.5 text-[#f4f7fb] font-semibold text-sm cursor-pointer hover:text-white group"
         >
           <span>{t('nav.you')}</span>
           <ChevronRight className="w-4 h-4 text-[#aaa] group-hover:translate-x-0.5 transition-transform" />
@@ -335,8 +371,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isOverlay = false, onC
           onClick={() => goTo('mychannel')}
           className={`w-full flex items-center gap-5 px-3 py-2.5 rounded-xl transition cursor-pointer text-left ${
             nav.page === 'mychannel'
-              ? 'bg-[#272727] text-white font-semibold'
-              : 'text-[#f1f1f1] hover:bg-[#272727]/60'
+              ? 'va-nav-active text-white font-semibold'
+              : 'text-[#f4f7fb] hover:bg-[#18212c]/60'
           }`}
         >
           <YourChannelGlyph channel={myChannel} />
@@ -352,8 +388,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isOverlay = false, onC
               onClick={() => goTo(item.id)}
               className={`w-full flex items-center gap-5 px-3 py-2.5 rounded-xl transition cursor-pointer text-left ${
                 isActive
-                  ? 'bg-[#272727] text-white font-semibold'
-                  : 'text-[#f1f1f1] hover:bg-[#272727]/60'
+                  ? 'va-nav-active text-white font-semibold'
+                  : 'text-[#f4f7fb] hover:bg-[#18212c]/60'
               }`}
             >
               <Icon className="w-5 h-5 text-[#aaa]" />
@@ -364,14 +400,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isOverlay = false, onC
       </div>
 
       {/* Subscriptions Section */}
-      <div className="py-3 border-b border-[#272727] flex-1">
-        <div className="flex items-center justify-between px-3 py-1.5 text-[#f1f1f1] font-semibold text-sm">
+      <div className="py-3 border-b border-[#18212c] flex-1">
+        <div className="flex items-center justify-between px-3 py-1.5 text-[#f4f7fb] font-semibold text-sm">
           <span>{t('nav.subscriptions')}</span>
           {!localOnly && scanEnabled && (
             <button
               onClick={triggerScan}
               disabled={isScanning}
-              className={`p-1 rounded-full hover:bg-[#272727] cursor-pointer transition-colors duration-200 ${
+              className={`p-1 rounded-full hover:bg-[#18212c] cursor-pointer transition-colors duration-200 ${
                 isScanning ? 'text-white' : 'text-[#888] hover:text-white'
               }`}
               title={isScanning ? t('nav.scanning') : t('nav.scan')}
@@ -400,8 +436,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isOverlay = false, onC
                   onClick={() => goTo('channel', { channelId: channel.id })}
                   className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl transition cursor-pointer text-left text-xs ${
                     isCurrentChannel
-                      ? 'bg-[#272727] text-white font-medium'
-                      : 'text-[#f1f1f1] hover:bg-[#272727]/60'
+                      ? 'va-nav-active text-white font-medium'
+                      : 'text-[#f4f7fb] hover:bg-[#18212c]/60'
                   }`}
                 >
                   <ChannelAvatar channelId={channel.id} url={channel.avatar_url} title={channel.title} className="w-6 h-6 rounded-full" textClassName="text-[10px]" />
@@ -412,7 +448,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isOverlay = false, onC
                     )}
                   </span>
                   {hasNew && (
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#3ea6ff] flex-shrink-0" title={t('nav.newVideos')} />
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#73c7e8] flex-shrink-0" title={t('nav.newVideos')} />
                   )}
                 </button>
               );
@@ -428,13 +464,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isOverlay = false, onC
           onClick={() => goTo('settings')}
           className={`w-full flex items-center gap-5 px-3 py-2.5 rounded-xl transition-colors duration-200 cursor-pointer text-left ${
             nav.page === 'settings'
-              ? 'bg-[#272727] text-white font-semibold'
-              : 'text-[#aaa] hover:bg-[#272727]/60 hover:text-white'
+              ? 'va-nav-active text-white font-semibold'
+              : 'text-[#aaa] hover:bg-[#18212c]/60 hover:text-white'
           }`}
         >
           <SettingsIcon className="w-5 h-5" />
           <span>{t('nav.settings')}</span>
         </button>
+      </div>
       </div>
     </aside>
   );

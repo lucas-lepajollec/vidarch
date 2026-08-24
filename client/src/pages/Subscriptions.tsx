@@ -68,7 +68,7 @@ export const Subscriptions: React.FC = () => {
                 onClick={() => goTo('channel', { channelId: ch.id })}
                 className="flex flex-col items-center gap-2 flex-shrink-0 group cursor-pointer"
               >
-                <div className="relative w-14 h-14 rounded-full p-0.5 border-2 border-white/10 group-hover:border-[#ff0033] transition-colors">
+                <div className="relative w-14 h-14 rounded-full p-0.5 border-2 border-white/10 group-hover:border-[#ff5a67] transition-colors">
                   <ChannelAvatar
                     channelId={ch.id}
                     url={ch.avatar_url}
@@ -77,7 +77,7 @@ export const Subscriptions: React.FC = () => {
                     textClassName="text-base"
                   />
                   {ch.auto_download === 1 && (
-                    <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-emerald-500 rounded-full border-2 border-[#0f0f0f]" title={t('subs.autoOn')} />
+                    <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-emerald-500 rounded-full border-2 border-[#090d12]" title={t('subs.autoOn')} />
                   )}
                 </div>
                 <span className="text-[11px] text-[#aaa] group-hover:text-white max-w-[70px] truncate text-center transition">
@@ -94,7 +94,7 @@ export const Subscriptions: React.FC = () => {
       {/* Empty State (Clean YouTube Native Style) */}
       {subscriptions.length === 0 && !isLoading && (
         <div className="py-20 flex flex-col items-center justify-center text-center max-w-lg mx-auto space-y-4">
-          <div className="w-20 h-20 rounded-full bg-[#272727] flex items-center justify-center text-[#aaa]">
+          <div className="w-20 h-20 rounded-full bg-[#18212c] flex items-center justify-center text-[#aaa]">
             <Tv2 className="w-10 h-10" />
           </div>
           <div>
@@ -105,12 +105,12 @@ export const Subscriptions: React.FC = () => {
           </div>
 
           <div className="pt-2 flex flex-wrap items-center justify-center gap-2">
-            <span className="text-xs text-[#717171] w-full mb-1">{t('subs.suggestions')}</span>
+            <span className="text-xs text-[#657383] w-full mb-1">{t('subs.suggestions')}</span>
             {['@Veritasium', '@Underscore_', '@Kurzgesagt', '@ScienceEtonnante', '@MKBHD'].map((s) => (
               <button
                 key={s}
                 onClick={() => goTo('search', { query: s })}
-                className="bg-[#272727] hover:bg-[#383838] text-xs text-[#ddd] px-3.5 py-1.5 rounded-full border border-white/5 transition cursor-pointer"
+                className="bg-[#18212c] hover:bg-[#23303e] text-xs text-[#ddd] px-3.5 py-1.5 rounded-full border border-white/5 transition cursor-pointer"
               >
                 {s}
               </button>
@@ -137,12 +137,12 @@ export const Subscriptions: React.FC = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-8 animate-pulse">
           {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
             <div key={n} className="space-y-3">
-              <div className="w-full aspect-video bg-[#272727] rounded-xl" />
+              <div className="w-full aspect-video bg-[#18212c] rounded-xl" />
               <div className="flex gap-3">
-                <div className="w-9 h-9 rounded-full bg-[#272727] flex-shrink-0" />
+                <div className="w-9 h-9 rounded-full bg-[#18212c] flex-shrink-0" />
                 <div className="flex-1 space-y-2">
-                  <div className="h-3.5 bg-[#272727] rounded w-5/6" />
-                  <div className="h-3 bg-[#272727] rounded w-3/5" />
+                  <div className="h-3.5 bg-[#18212c] rounded w-5/6" />
+                  <div className="h-3 bg-[#18212c] rounded w-3/5" />
                 </div>
               </div>
             </div>

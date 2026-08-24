@@ -80,10 +80,10 @@ export const EditChannelModal: React.FC = () => {
         if (e.target === e.currentTarget && !isSaving) closeEditChannelModal();
       }}
     >
-      <div className="w-full max-w-lg bg-[#212121] border border-[#383838] rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden text-[#f1f1f1]">
+      <div className="w-full max-w-lg bg-[#111821] border border-[#23303e] rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden text-[#f4f7fb]">
         
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-5 border-b border-[#303030]">
+        <div className="flex items-center justify-between px-6 py-5 border-b border-[#24303d]">
           <div>
             <h2 className="text-lg font-bold text-white tracking-tight">
               {t('edit.title')}
@@ -111,7 +111,7 @@ export const EditChannelModal: React.FC = () => {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               required
-              className="w-full bg-[#121212] border border-[#383838] focus:border-white text-white text-xs rounded-xl px-4 py-3 outline-none transition"
+              className="w-full bg-[#0c1118] border border-[#23303e] focus:border-white text-white text-xs rounded-xl px-4 py-3 outline-none transition"
             />
           </div>
 
@@ -123,7 +123,7 @@ export const EditChannelModal: React.FC = () => {
               type="text"
               value={handle}
               onChange={(e) => setHandle(e.target.value)}
-              className="w-full bg-[#121212] border border-[#383838] focus:border-white text-white text-xs rounded-xl px-4 py-3 outline-none transition"
+              className="w-full bg-[#0c1118] border border-[#23303e] focus:border-white text-white text-xs rounded-xl px-4 py-3 outline-none transition"
             />
           </div>
 
@@ -135,7 +135,7 @@ export const EditChannelModal: React.FC = () => {
               rows={3}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full bg-[#121212] border border-[#383838] focus:border-white text-white text-xs rounded-xl p-3.5 outline-none transition"
+              className="w-full bg-[#0c1118] border border-[#23303e] focus:border-white text-white text-xs rounded-xl p-3.5 outline-none transition"
             />
           </div>
 
@@ -164,7 +164,7 @@ export const EditChannelModal: React.FC = () => {
             </div>
           )}
 
-          <div className="flex justify-end gap-3 pt-4 border-t border-[#303030]">
+          <div className="flex justify-end gap-3 pt-4 border-t border-[#24303d]">
             <button
               type="button"
               onClick={closeEditChannelModal}

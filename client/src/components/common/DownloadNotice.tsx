@@ -30,7 +30,7 @@ export const DownloadNotice: React.FC = () => {
         else goTo('downloads');
         dismissDownloadNotice();
       }}
-      className="fixed bottom-20 sm:bottom-6 right-4 sm:right-6 z-[80] max-w-sm text-left bg-[#212121] border border-[#383838] text-white text-xs font-medium px-4 py-3 rounded-xl shadow-2xl flex items-start gap-2.5 page-enter cursor-pointer hover:bg-[#2a2a2a] transition-colors duration-200"
+      className="fixed bottom-20 sm:bottom-6 right-4 sm:right-6 z-[80] max-w-sm text-left bg-[#111821] border border-[#23303e] text-white text-xs font-medium px-4 py-3 rounded-xl shadow-2xl flex items-start gap-2.5 page-enter cursor-pointer hover:bg-[#2a2a2a] transition-colors duration-200"
     >
       <span className={`mt-1.5 w-2 h-2 rounded-full flex-shrink-0 ${downloadNotice.direction === 'lower' ? 'bg-amber-400' : 'bg-sky-400'}`} />
       <span className="leading-snug">{text}</span>

@@ -84,8 +84,8 @@ export const AutoDownloadControl: React.FC<{
           compact ? 'px-3 py-2' : 'px-4 py-2.5'
         } ${
           active
-            ? 'bg-[#ff0033] hover:bg-[#e6002e] text-white shadow-sm'
-            : 'bg-[#272727] hover:bg-[#383838] text-white border border-white/5'
+            ? 'bg-[#ff5a67] hover:bg-[#e6002e] text-white shadow-sm'
+            : 'bg-[#18212c] hover:bg-[#23303e] text-white border border-white/5'
         }`}
       >
         {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
@@ -99,7 +99,7 @@ export const AutoDownloadControl: React.FC<{
         anchorRef={btnRef}
         align="end"
         preferredSide="bottom"
-        className="w-72 max-w-[calc(100vw-16px)]"
+        className="va-auto-download-menu w-[340px] max-w-[calc(100vw-16px)]"
       >
           <p className="va-menu-label">{t('channel.autoDownload')}</p>
           {options.map((option) => {
@@ -112,10 +112,10 @@ export const AutoDownloadControl: React.FC<{
                 className={`va-menu-item items-start ${selected ? 'is-active' : ''}`}
               >
                 <span className="min-w-0 flex-1">
-                  <span className="block">{option.label}</span>
+                  <span className="block font-semibold leading-snug">{option.label}</span>
                   <span className="va-menu-hint">{option.hint}</span>
                 </span>
-                {selected ? <Check className="w-3.5 h-3.5 text-white/50 flex-shrink-0 mt-0.5" /> : null}
+                {selected ? <Check className="w-4 h-4 text-white/45 flex-shrink-0 mt-0.5" /> : null}
               </button>
             );
           })}

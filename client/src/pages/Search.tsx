@@ -51,13 +51,34 @@ const PeekVideoRow: React.FC<{
   useEffect(() => {
     const el = scrollerRef.current;
     if (!el) return;
+
+    const handleWheel = (event: WheelEvent) => {
+      if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return;
+
+      const maxScrollLeft = el.scrollWidth - el.clientWidth;
+      if (maxScrollLeft <= 0) return;
+
+      const nextScrollLeft = Math.max(
+        0,
+        Math.min(maxScrollLeft, el.scrollLeft + event.deltaY),
+      );
+
+      // Keep normal page scrolling available once the row reaches either end.
+      if (Math.abs(nextScrollLeft - el.scrollLeft) < 1) return;
+
+      event.preventDefault();
+      el.scrollLeft = nextScrollLeft;
+    };
+
     updatePeek();
     el.addEventListener('scroll', updatePeek, { passive: true });
+    el.addEventListener('wheel', handleWheel, { passive: false });
     const ro = new ResizeObserver(updatePeek);
     ro.observe(el);
     window.addEventListener('resize', updatePeek);
     return () => {
       el.removeEventListener('scroll', updatePeek);
+      el.removeEventListener('wheel', handleWheel);
       ro.disconnect();
       window.removeEventListener('resize', updatePeek);
     };
@@ -67,7 +88,7 @@ const PeekVideoRow: React.FC<{
     <div className="relative -mx-1 px-1">
       <div
         ref={scrollerRef}
-        className="flex gap-3 overflow-x-auto no-scrollbar snap-x snap-mandatory pb-1"
+        className="flex gap-3 overflow-x-auto no-scrollbar snap-x snap-mandatory scroll-smooth pb-1"
       >
         {videos.map((video) => (
           <div
@@ -75,7 +96,7 @@ const PeekVideoRow: React.FC<{
             className={`snap-start shrink-0 ${
               videos.length === 1
                 ? 'w-full max-w-md'
-                : 'w-[calc((100%-0.75rem)/1.5)] sm:w-[calc((100%-1.5rem)/2.5)] xl:w-[calc((100%-2.25rem)/3.5)]'
+                : 'w-[calc((100%-0.75rem)/1.5)] sm:w-[calc((100%-1.5rem)/2.5)] xl:w-[calc((100%-3rem)/4.5)]'
             }`}
           >
             <VideoCard
@@ -86,10 +107,10 @@ const PeekVideoRow: React.FC<{
         ))}
       </div>
       {canScrollLeft && (
-        <div className="pointer-events-none absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-[#0f0f0f] to-transparent" />
+        <div className="pointer-events-none absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-[#090d12] to-transparent" />
       )}
       {canScrollRight && (
-        <div className="pointer-events-none absolute inset-y-0 right-0 w-14 sm:w-16 bg-gradient-to-l from-[#0f0f0f] via-[#0f0f0f]/80 to-transparent" />
+        <div className="pointer-events-none absolute inset-y-0 right-0 w-10 sm:w-12 bg-gradient-to-l from-[#090d12] via-[#090d12]/70 to-transparent" />
       )}
     </div>
   );
@@ -209,7 +230,7 @@ export const SearchPage: React.FC = () => {
             className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition cursor-pointer ${
               selectedFilter === filter.id
                 ? 'bg-white text-black font-bold shadow-sm'
-                : 'bg-[#272727] hover:bg-[#383838] text-[#f1f1f1]'
+                : 'bg-[#18212c] hover:bg-[#23303e] text-[#f4f7fb]'
             }`}
           >
             {filter.label}
@@ -220,13 +241,13 @@ export const SearchPage: React.FC = () => {
       {/* Loading State */}
       {isLoading && (
         <div className="flex flex-col items-center justify-center py-24 gap-3">
-          <Loader2 className="w-8 h-8 text-[#ff0033] animate-spin" />
+          <Loader2 className="w-8 h-8 text-[#ff5a67] animate-spin" />
         </div>
       )}
 
       {!isLoading && !hasAnyResults && (
         <div className="py-24 text-center max-w-md mx-auto space-y-2">
-          <SearchIcon className="w-12 h-12 text-[#717171] mx-auto mb-2" />
+          <SearchIcon className="w-12 h-12 text-[#657383] mx-auto mb-2" />
           <h3 className="font-bold text-base text-white">{t('search.empty')} “{query}”</h3>
           <p className="text-xs text-[#aaa]">
             {localOnly ? t('search.emptyLocal') : t('search.empty')}
@@ -235,7 +256,7 @@ export const SearchPage: React.FC = () => {
       )}
 
       {!isLoading && (
-        <div className="max-w-6xl space-y-6">
+        <div className="w-full space-y-6">
           {/* ========================================================================= */}
           {/* 1. TOP SECTION: CHANNELS RESULTS (Dissociated round logo at the top)      */}
           {/* ========================================================================= */}
@@ -250,7 +271,7 @@ export const SearchPage: React.FC = () => {
                   <div
                     key={ch.id}
                     onClick={() => goTo('channel', { channelId: ch.id })}
-                    className="flex flex-col sm:flex-row items-center justify-between gap-6 p-4 sm:p-6 rounded-2xl hover:bg-[#181818] transition cursor-pointer group"
+                    className="flex flex-col sm:flex-row items-center justify-between gap-6 p-4 sm:p-6 rounded-2xl hover:bg-[#0f151d] transition cursor-pointer group"
                   >
                     {/* Left: Big Circular Logo Avatar + Channel Info */}
                     <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 text-center sm:text-left min-w-0">
@@ -259,14 +280,14 @@ export const SearchPage: React.FC = () => {
                         channelId={ch.id}
                         url={ch.avatarUrl}
                         title={ch.title}
-                        className="w-28 h-28 sm:w-36 sm:h-36 rounded-full border-2 border-[#272727] shadow-lg group-hover:scale-105 transition-transform duration-200"
+                        className="w-28 h-28 sm:w-36 sm:h-36 rounded-full border-2 border-[#18212c] shadow-lg group-hover:scale-105 transition-transform duration-200"
                         textClassName="text-4xl"
                       />
 
                       {/* Info */}
                       <div className="space-y-1.5 my-auto">
                         <div className="flex items-center justify-center sm:justify-start gap-1.5">
-                          <h2 className="text-lg sm:text-xl font-bold text-white group-hover:text-[#3ea6ff] transition">
+                          <h2 className="text-lg sm:text-xl font-bold text-white group-hover:text-[#73c7e8] transition">
                             {ch.title}
                           </h2>
                           <CheckCircle2 className="w-4 h-4 text-[#aaa] fill-current" />
@@ -308,11 +329,11 @@ export const SearchPage: React.FC = () => {
                         disabled={isThisSubscribing}
                         className={`min-w-[130px] px-5 py-2.5 rounded-full text-xs font-semibold transition-all duration-200 cursor-pointer flex items-center justify-center gap-2 shadow-sm ${
                           isThisSubscribing
-                            ? 'opacity-80 cursor-wait bg-[#272727] text-white'
+                            ? 'opacity-80 cursor-wait bg-[#18212c] text-white'
                             : isSub
                               ? isThisHovered
                                 ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30'
-                                : 'bg-[#272727] hover:bg-[#383838] text-white'
+                                : 'bg-[#18212c] hover:bg-[#23303e] text-white'
                               : 'bg-white hover:bg-white/90 text-black font-bold'
                         }`}
                       >
@@ -329,7 +350,7 @@ export const SearchPage: React.FC = () => {
                             </>
                           ) : (
                             <>
-                              <Check className="w-3.5 h-3.5 text-[#3ea6ff]" />
+                              <Check className="w-3.5 h-3.5 text-[#73c7e8]" />
                               <span>{t('search.subscribed')}</span>
                             </>
                           )
@@ -375,10 +396,10 @@ export const SearchPage: React.FC = () => {
                   <div
                     key={item.id}
                     onClick={() => goTo('watch', { videoId: item.id })}
-                    className="flex flex-col sm:flex-row gap-4 p-3 rounded-2xl hover:bg-[#181818] transition cursor-pointer group"
+                    className="flex flex-col sm:flex-row gap-4 p-3 rounded-2xl hover:bg-[#0f151d] transition cursor-pointer group"
                   >
                     {/* Big YouTube Video Thumbnail */}
-                      <div className="relative w-full sm:w-80 md:w-96 aspect-video rounded-xl overflow-hidden bg-[#272727] flex-shrink-0 shadow-sm">
+                      <div className="relative w-full sm:w-80 md:w-96 aspect-video rounded-xl overflow-hidden bg-[#18212c] flex-shrink-0 shadow-sm">
                         <MediaThumb
                           video={{ id: item.id, thumbnail_url: item.thumbnailUrl }}
                           alt={item.title}
@@ -398,7 +419,7 @@ export const SearchPage: React.FC = () => {
                     <div className="flex-1 flex flex-col justify-between py-1 min-w-0">
                       <div>
                         {/* Title */}
-                        <h3 className="font-semibold text-sm sm:text-base text-white group-hover:text-[#3ea6ff] line-clamp-2 leading-snug">
+                        <h3 className="font-semibold text-sm sm:text-base text-white group-hover:text-[#73c7e8] line-clamp-2 leading-snug">
                           {item.title}
                         </h3>
 
@@ -436,7 +457,7 @@ export const SearchPage: React.FC = () => {
 
                         {/* Description Preview */}
                         {item.description && (
-                          <ExpandableText text={item.description} className="text-xs text-[#717171]" />
+                          <ExpandableText text={item.description} className="text-xs text-[#657383]" />
                         )}
                       </div>
 
@@ -452,7 +473,7 @@ export const SearchPage: React.FC = () => {
                             thumbnailUrl: item.thumbnailUrl,
                             durationString: item.durationString,
                           })}
-                          className="bg-[#ff0033] hover:bg-[#cc0029] text-white text-xs font-semibold px-4 py-1.5 rounded-full flex items-center gap-1.5 shadow transition cursor-pointer"
+                          className="bg-[#ff5a67] hover:bg-[#d63c50] text-white text-xs font-semibold px-4 py-1.5 rounded-full flex items-center gap-1.5 shadow transition cursor-pointer"
                         >
                           <DownloadCloud className="w-3.5 h-3.5" />
                           <span>{t('search.download')}</span>
@@ -460,7 +481,7 @@ export const SearchPage: React.FC = () => {
 
                         <button
                           onClick={() => goTo('watch', { videoId: item.id })}
-                          className="bg-[#272727] hover:bg-[#383838] text-white text-xs font-medium px-3.5 py-1.5 rounded-full flex items-center gap-1.5 transition cursor-pointer"
+                          className="bg-[#18212c] hover:bg-[#23303e] text-white text-xs font-medium px-3.5 py-1.5 rounded-full flex items-center gap-1.5 transition cursor-pointer"
                         >
                           <Play className="w-3.5 h-3.5" />
                           <span>{t('common.watch')}</span>
@@ -470,7 +491,7 @@ export const SearchPage: React.FC = () => {
                           href={item.url}
                           target="_blank"
                           rel="noreferrer"
-                          className="p-1.5 text-[#aaa] hover:text-white rounded-full hover:bg-[#272727] transition"
+                          className="p-1.5 text-[#aaa] hover:text-white rounded-full hover:bg-[#18212c] transition"
                           title={t('card.openYoutube')}
                         >
                           <ExternalLink className="w-4 h-4" />
@@ -486,11 +507,11 @@ export const SearchPage: React.FC = () => {
                     <button
                       onClick={handleLoadMore}
                       disabled={isLoadingMore}
-                      className="flex items-center gap-2.5 px-6 py-3 rounded-full bg-[#272727] hover:bg-[#383838] text-white text-xs font-semibold transition cursor-pointer shadow-sm border border-white/5 active:scale-98"
+                      className="flex items-center gap-2.5 px-6 py-3 rounded-full bg-[#18212c] hover:bg-[#23303e] text-white text-xs font-semibold transition cursor-pointer shadow-sm border border-white/5 active:scale-98"
                     >
                       {isLoadingMore ? (
                         <>
-                          <Loader2 className="w-4 h-4 text-[#ff0033] animate-spin" />
+                          <Loader2 className="w-4 h-4 text-[#ff5a67] animate-spin" />
                           <span>{t('search.loadingMore')}</span>
                         </>
                       ) : (
@@ -500,7 +521,7 @@ export const SearchPage: React.FC = () => {
                         </>
                       )}
                     </button>
-                    <span className="text-[11px] text-[#717171]">
+                    <span className="text-[11px] text-[#657383]">
                       {t('search.onlineShown', { count: youtubeVideos.length })}
                     </span>
                   </div>

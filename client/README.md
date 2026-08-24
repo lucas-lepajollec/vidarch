@@ -1,4 +1,8 @@
-# React + TypeScript + Vite
+<p align="center">
+  <img src="../assets/vidarch-logo.svg" width="56" height="56" alt="VidArch" />
+</p>
+
+# VidArch client
 
 This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
 

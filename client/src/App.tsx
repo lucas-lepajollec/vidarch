@@ -24,7 +24,7 @@ const MyChannel = lazy(() => import('./pages/MyChannel').then((m) => ({ default:
 
 const PageFallback = (
   <div className="flex-1 flex items-center justify-center min-h-[50vh]">
-    <div className="w-10 h-10 border-2 border-[#ff0033] border-t-transparent rounded-full animate-spin" />
+    <div className="w-10 h-10 border-2 border-[#ff5a67] border-t-transparent rounded-full animate-spin" />
   </div>
 );
 
@@ -84,8 +84,8 @@ const MainContent: React.FC = () => {
 
   if (auth.loading) {
     return (
-      <div className="min-h-screen bg-[#0f0f0f] flex items-center justify-center">
-        <div className="w-10 h-10 border-2 border-[#ff0033] border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen bg-[#090d12] flex items-center justify-center">
+        <div className="w-10 h-10 border-2 border-[#ff5a67] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -103,7 +103,7 @@ const MainContent: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#0f0f0f] text-[#f1f1f1] flex flex-col selection:bg-[#ff0033] selection:text-white">
+    <div className="vidarch-shell min-h-screen bg-[#090d12] text-[#f4f7fb] flex flex-col selection:bg-[#ff5a67] selection:text-white">
       {/* Top Fixed Header */}
       <Header onToggleSidebar={handleToggleSidebar} />
 
@@ -121,7 +121,7 @@ const MainContent: React.FC = () => {
 
       {/* Main Content Area */}
       <main 
-        className={`flex-1 pt-14 min-h-screen flex flex-col ml-0 transition-[margin] duration-300 ease-out-smooth ${
+        className={`flex-1 pt-14 min-h-screen flex flex-col ml-0 transition-[margin] duration-200 ease-out-smooth ${
           showPersistentSidebar ? (isSidebarOpen ? 'lg:ml-60' : 'lg:ml-[72px]') : 'lg:ml-0'
         }`}
       >

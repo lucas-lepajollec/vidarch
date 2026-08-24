@@ -135,7 +135,7 @@ export const Library: React.FC = () => {
         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           
           {/* Mode Pill Bar */}
-          <div className="flex items-center p-1 bg-[#181818] border border-[#303030] rounded-2xl gap-1">
+          <div className="flex items-center p-1 bg-[#0f151d] border border-[#24303d] rounded-2xl gap-1">
             <button
               onClick={() => {
                 setViewMode('grid');
@@ -201,7 +201,7 @@ export const Library: React.FC = () => {
                 value={folderSearchQuery}
                 onChange={(e) => setFolderSearchQuery(e.target.value)}
                 placeholder={t('library.searchFolder')}
-                className="bg-[#181818] border border-[#303030] hover:border-[#444] focus:border-white text-xs text-white rounded-xl pl-8 pr-3.5 py-2 outline-none transition w-44 sm:w-56"
+                className="bg-[#0f151d] border border-[#24303d] hover:border-[#444] focus:border-white text-xs text-white rounded-xl pl-8 pr-3.5 py-2 outline-none transition w-44 sm:w-56"
               />
               <Search className="w-3.5 h-3.5 text-[#aaa] absolute left-2.5 top-1/2 -translate-y-1/2" />
             </div>
@@ -225,7 +225,7 @@ export const Library: React.FC = () => {
 
           {filteredVideos.length === 0 && !isLoading && (
             <div className="py-20 text-center max-w-md mx-auto space-y-3">
-              <div className="w-16 h-16 rounded-full bg-[#272727] flex items-center justify-center text-[#aaa] mx-auto">
+              <div className="w-16 h-16 rounded-full bg-[#18212c] flex items-center justify-center text-[#aaa] mx-auto">
                 <HardDrive className="w-8 h-8" />
               </div>
               <h3 className="font-bold text-base text-white">{t('library.emptyTitle')}</h3>
@@ -258,7 +258,7 @@ export const Library: React.FC = () => {
                       className="group cursor-pointer flex flex-col select-none"
                     >
                       {/* Top: 16:9 Cover Thumbnail with YouTube Playlist Style Overlay */}
-                      <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-[#161616] border border-[#272727] group-hover:border-[#3a3a3a] transition-colors">
+                      <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-[#0e151d]">
                         {latestVideo ? (
                           <MediaThumb
                             video={latestVideo}
@@ -297,7 +297,7 @@ export const Library: React.FC = () => {
 
                       {/* Bottom Info Row (Channel Avatar + Title + Path) */}
                       <div className="flex items-start gap-3 mt-3 px-0.5">
-                        <div className="w-9 h-9 rounded-full bg-[#272727] flex items-center justify-center flex-shrink-0 overflow-hidden border border-white/10 mt-0.5">
+                        <div className="w-9 h-9 rounded-full bg-[#18212c] flex items-center justify-center flex-shrink-0 overflow-hidden border border-white/10 mt-0.5">
                           {folder.channelAvatar ? (
                             <ChannelAvatar
                               channelId={folder.videos.find((v) => v.channel_id)?.channel_id}
@@ -307,18 +307,18 @@ export const Library: React.FC = () => {
                               textClassName="text-lg"
                             />
                           ) : (
-                            <Folder className="w-4 h-4 text-[#ff0033]" />
+                            <Folder className="w-4 h-4 text-[#ff5a67]" />
                           )}
                         </div>
 
                         <div className="flex-1 min-w-0">
-                          <h3 className="font-bold text-sm text-white group-hover:text-[#3ea6ff] transition truncate">
+                          <h3 className="font-bold text-sm text-white group-hover:text-[#73c7e8] transition truncate">
                             {folder.folderName}
                           </h3>
                           <div className="text-[11px] text-[#aaa] flex items-center gap-1.5 mt-0.5">
                             <span>{t('library.videos', { count: folder.videoCount })}</span>
                           </div>
-                          <span className="text-[10px] text-[#717171] font-mono block truncate mt-0.5">
+                          <span className="text-[10px] text-[#657383] font-mono block truncate mt-0.5">
                             downloads/{folder.folderName}/
                           </span>
                         </div>
@@ -330,7 +330,7 @@ export const Library: React.FC = () => {
 
               {filteredFolders.length === 0 && !isLoadingFolders && (
                 <div className="py-20 text-center max-w-md mx-auto space-y-3">
-                  <div className="w-16 h-16 rounded-full bg-[#272727] flex items-center justify-center text-[#aaa] mx-auto">
+                  <div className="w-16 h-16 rounded-full bg-[#18212c] flex items-center justify-center text-[#aaa] mx-auto">
                     <Folder className="w-8 h-8" />
                   </div>
                   <h3 className="font-bold text-base text-white">{t('library.noFolder')}</h3>
@@ -347,11 +347,11 @@ export const Library: React.FC = () => {
             <div className="space-y-6 animate-in fade-in duration-150">
               
               {/* Folder Navigation Breadcrumb Header */}
-              <div className="flex flex-wrap items-center justify-between gap-4 p-4 bg-[#181818] border border-[#272727] rounded-3xl">
+              <div className="flex flex-wrap items-center justify-between gap-4 p-4 bg-[#0f151d] border border-[#18212c] rounded-3xl">
                 <div className="flex items-center gap-3 min-w-0">
                   <button
                     onClick={() => setSelectedFolder(null)}
-                    className="p-2.5 rounded-full bg-[#272727] hover:bg-[#383838] text-white transition cursor-pointer flex-shrink-0 flex items-center justify-center"
+                    className="p-2.5 rounded-full bg-[#18212c] hover:bg-[#23303e] text-white transition cursor-pointer flex-shrink-0 flex items-center justify-center"
                     title={t('library.backFolders')}
                   >
                     <ArrowLeft className="w-4 h-4" />
@@ -367,7 +367,7 @@ export const Library: React.FC = () => {
                         className="w-full h-full rounded-2xl"
                       />
                     ) : (
-                      <FolderOpen className="w-5 h-5 text-[#ff0033]" />
+                      <FolderOpen className="w-5 h-5 text-[#ff5a67]" />
                     )}
                   </div>
 

@@ -1,5 +1,6 @@
 <div align="center">
-  <h1>🎬 VidArch</h1>
+  <img src="assets/vidarch-logo.svg" width="72" height="72" alt="VidArch" />
+  <h1>VidArch</h1>
   <p><strong>A modern, self-hosted YouTube archiver, subscriptions manager, and ad-free offline video player.</strong></p>
 
   <p>

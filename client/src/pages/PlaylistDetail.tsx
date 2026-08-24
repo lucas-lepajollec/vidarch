@@ -80,12 +80,12 @@ export const PlaylistDetail: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 w-full px-4 sm:px-6 pt-6 pb-8 flex flex-col lg:flex-row gap-8 text-[#f1f1f1]">
+    <div className="flex-1 w-full px-4 sm:px-6 pt-6 pb-8 flex flex-col lg:flex-row gap-8 text-[#f4f7fb]">
       <div className="w-full lg:w-88 flex-shrink-0">
-        <div className={`border border-[#272727] p-6 rounded-3xl shadow-xl lg:sticky lg:top-18 space-y-4 ${
+        <div className={`border border-[#18212c] p-6 rounded-3xl shadow-xl lg:sticky lg:top-18 space-y-4 ${
           isLiked
-            ? 'bg-gradient-to-b from-[#2a1a1a] via-[#1c1818] to-[#121212]'
-            : 'bg-gradient-to-b from-[#242424] via-[#1a1a1a] to-[#121212]'
+            ? 'bg-gradient-to-b from-[#2a1a1a] via-[#1c1818] to-[#0c1118]'
+            : 'bg-gradient-to-b from-[#242424] via-[#1a1a1a] to-[#0c1118]'
         }`}>
           <button
             type="button"
@@ -96,7 +96,7 @@ export const PlaylistDetail: React.FC = () => {
             {t('pl.title')}
           </button>
 
-          <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-[#222] shadow-lg border border-white/10">
+          <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-[#222] shadow-lg">
             {firstVideo ? (
               <MediaThumb
                 video={firstVideo}
@@ -104,7 +104,7 @@ export const PlaylistDetail: React.FC = () => {
                 className="w-full h-full object-cover"
               />
             ) : (
-              <div className={`w-full h-full flex items-center justify-center ${isLiked ? 'text-[#ff0033]' : 'text-[#aaa]'}`}>
+              <div className={`w-full h-full flex items-center justify-center ${isLiked ? 'text-[#ff5a67]' : 'text-[#aaa]'}`}>
                 {isLiked ? <ThumbsUp className="w-12 h-12" /> : <ListVideo className="w-12 h-12" />}
               </div>
             )}
@@ -144,7 +144,7 @@ export const PlaylistDetail: React.FC = () => {
                   const random = videos[Math.floor(Math.random() * videos.length)];
                   if (random) openWatch(random.id, true);
                 }}
-                className="bg-[#272727] hover:bg-[#383838] text-white p-2.5 rounded-full transition cursor-pointer"
+                className="bg-[#18212c] hover:bg-[#23303e] text-white p-2.5 rounded-full transition cursor-pointer"
                 title={t('liked.shuffle')}
               >
                 <Shuffle className="w-4 h-4" />
@@ -161,7 +161,7 @@ export const PlaylistDetail: React.FC = () => {
               <div
                 key={video.id}
                 onClick={() => openWatch(video.id)}
-                className="flex items-center gap-4 p-2 rounded-2xl hover:bg-[#181818] transition group cursor-pointer"
+                className="flex items-center gap-4 p-2 rounded-2xl hover:bg-[#0f151d] transition group cursor-pointer"
               >
                 <span className="w-5 text-center text-xs font-semibold text-[#888] flex-shrink-0">
                   {idx + 1}
@@ -181,7 +181,7 @@ export const PlaylistDetail: React.FC = () => {
                 </div>
 
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-xs sm:text-sm font-semibold text-white group-hover:text-[#3ea6ff] line-clamp-2 leading-snug">
+                  <h3 className="text-xs sm:text-sm font-semibold text-white group-hover:text-[#73c7e8] line-clamp-2 leading-snug">
                     {video.title}
                   </h3>
                   <p className="text-xs text-[#aaa] mt-1 truncate">
@@ -201,7 +201,7 @@ export const PlaylistDetail: React.FC = () => {
           </div>
         ) : !isLoading && (
           <div className="py-20 text-center max-w-md mx-auto space-y-3">
-            <div className="w-16 h-16 rounded-full bg-[#272727] flex items-center justify-center text-[#aaa] mx-auto">
+            <div className="w-16 h-16 rounded-full bg-[#18212c] flex items-center justify-center text-[#aaa] mx-auto">
               {isLiked ? <ThumbsUp className="w-8 h-8" /> : <ListVideo className="w-8 h-8" />}
             </div>
             <h3 className="font-bold text-base text-white">

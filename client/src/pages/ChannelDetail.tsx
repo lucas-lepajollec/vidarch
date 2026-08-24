@@ -127,7 +127,7 @@ export const ChannelDetail: React.FC = () => {
     return (
       <div className="flex-1 w-full px-6 py-12 flex items-center justify-center min-h-[60vh]">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-10 h-10 border-3 border-[#ff0033] border-t-transparent rounded-full animate-spin" />
+          <div className="w-10 h-10 border-3 border-[#ff5a67] border-t-transparent rounded-full animate-spin" />
           <span className="text-xs text-[#aaa]">{t('channel.loadingInfo')}</span>
         </div>
       </div>
@@ -137,7 +137,7 @@ export const ChannelDetail: React.FC = () => {
   if (channel?.id && myChannel?.id && channel.id === myChannel.id) {
     return (
       <div className="flex-1 w-full px-6 py-12 flex items-center justify-center min-h-[60vh]">
-        <div className="w-10 h-10 border-3 border-[#ff0033] border-t-transparent rounded-full animate-spin" />
+        <div className="w-10 h-10 border-3 border-[#ff5a67] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -145,7 +145,7 @@ export const ChannelDetail: React.FC = () => {
   if (error || !channel) {
     return (
       <div className="flex-1 w-full px-6 py-16 flex flex-col items-center justify-center text-center space-y-4">
-        <div className="w-16 h-16 rounded-full bg-[#272727] flex items-center justify-center text-[#aaa]">
+        <div className="w-16 h-16 rounded-full bg-[#18212c] flex items-center justify-center text-[#aaa]">
           <Tv2 className="w-8 h-8" />
         </div>
         <h2 className="text-lg font-bold text-white">{error || t('channel.notFound')}</h2>
@@ -187,11 +187,11 @@ export const ChannelDetail: React.FC = () => {
     <div className="flex-1 w-full px-4 sm:px-6 pt-6 pb-8 space-y-4 sm:space-y-6">
       {/* Banner */}
       {resolvedBanner ? (
-        <div className="w-full h-28 sm:h-44 md:h-60 rounded-xl sm:rounded-2xl overflow-hidden bg-[#181818] shadow-md">
+        <div className="w-full h-28 sm:h-44 md:h-60 rounded-xl sm:rounded-2xl overflow-hidden bg-[#0f151d] shadow-md">
           <img src={resolvedBanner} alt={t('edit.banner')} className="w-full h-full object-cover" />
         </div>
       ) : (
-        <div className="w-full h-20 sm:h-28 rounded-xl sm:rounded-2xl bg-gradient-to-r from-[#181818] via-[#202020] to-[#141414] border border-white/5 flex items-center justify-center">
+        <div className="w-full h-20 sm:h-28 rounded-xl sm:rounded-2xl bg-gradient-to-r from-[#0f151d] via-[#202020] to-[#0d131b] border border-white/5 flex items-center justify-center">
           <div className="flex items-center gap-2 text-white/20 text-xs font-semibold uppercase tracking-widest">
             <Sparkles className="w-4 h-4" />
             <span>{channel.title}</span>
@@ -265,11 +265,11 @@ export const ChannelDetail: React.FC = () => {
             disabled={isSubscribing}
             className={`min-w-[120px] px-5 py-2.5 rounded-full text-xs font-semibold transition-all duration-200 cursor-pointer flex items-center justify-center gap-2 shadow-sm ${
               isSubscribing
-                ? 'opacity-70 cursor-wait bg-[#272727] text-white'
+                ? 'opacity-70 cursor-wait bg-[#18212c] text-white'
                 : isSubscribed
                   ? isHoveredSubscribed
                     ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30'
-                    : 'bg-[#272727] hover:bg-[#383838] text-white'
+                    : 'bg-[#18212c] hover:bg-[#23303e] text-white'
                   : 'bg-white hover:bg-white/90 text-black shadow-md font-bold'
             }`}
           >
@@ -283,7 +283,7 @@ export const ChannelDetail: React.FC = () => {
                 </>
               ) : (
                 <>
-                  <Check className="w-3.5 h-3.5 text-[#3ea6ff]" />
+                  <Check className="w-3.5 h-3.5 text-[#73c7e8]" />
                   <span>{t('channel.subscribed')}</span>
                 </>
               )
@@ -297,7 +297,7 @@ export const ChannelDetail: React.FC = () => {
       </div>
 
       {/* Channel Navigation Tabs (Scrollable on mobile) */}
-      <div className="flex items-center gap-4 sm:gap-6 text-xs sm:text-sm font-semibold select-none pt-2 overflow-x-auto no-scrollbar border-b border-[#272727]">
+      <div className="flex items-center gap-4 sm:gap-6 text-xs sm:text-sm font-semibold select-none pt-2 overflow-x-auto no-scrollbar border-b border-[#18212c]">
         <button
           onClick={() => setActiveTab('downloaded')}
           className={`pb-2.5 relative transition cursor-pointer flex-shrink-0 ${
@@ -342,8 +342,8 @@ export const ChannelDetail: React.FC = () => {
         <>
           {downloadedVideos.length === 0 ? (
             <div className="py-16 text-center max-w-md mx-auto space-y-3 px-4">
-              <div className="w-14 h-14 rounded-full bg-[#272727] flex items-center justify-center text-[#aaa] mx-auto">
-                <HardDrive className="w-7 h-7 text-[#717171]" />
+              <div className="w-14 h-14 rounded-full bg-[#18212c] flex items-center justify-center text-[#aaa] mx-auto">
+                <HardDrive className="w-7 h-7 text-[#657383]" />
               </div>
               <h3 className="font-semibold text-sm text-white">{t('channel.emptyTitle')}</h3>
               <p className="text-xs text-[#aaa] pb-2">
@@ -372,7 +372,7 @@ export const ChannelDetail: React.FC = () => {
         <div className="space-y-8">
           {detectedVideos.length === 0 ? (
             <div className="py-16 text-center max-w-md mx-auto space-y-2 px-4">
-              <Film className="w-10 h-10 text-[#717171] mx-auto mb-2" />
+              <Film className="w-10 h-10 text-[#657383] mx-auto mb-2" />
               <h3 className="font-semibold text-sm text-white">{t('channel.noOnlineVideos')}</h3>
             </div>
           ) : (
@@ -389,11 +389,11 @@ export const ChannelDetail: React.FC = () => {
                   <button
                     onClick={handleLoadMore}
                     disabled={isLoadingMore}
-                    className="flex items-center gap-2.5 px-6 py-3 rounded-full bg-[#272727] hover:bg-[#383838] text-white text-xs font-semibold transition cursor-pointer shadow-sm border border-white/5 active:scale-98"
+                    className="flex items-center gap-2.5 px-6 py-3 rounded-full bg-[#18212c] hover:bg-[#23303e] text-white text-xs font-semibold transition cursor-pointer shadow-sm border border-white/5 active:scale-98"
                   >
                     {isLoadingMore ? (
                       <>
-                        <Loader2 className="w-4 h-4 text-[#ff0033] animate-spin" />
+                        <Loader2 className="w-4 h-4 text-[#ff5a67] animate-spin" />
                         <span>{t('channel.loadingMore')}</span>
                       </>
                     ) : (
@@ -403,7 +403,7 @@ export const ChannelDetail: React.FC = () => {
                       </>
                     )}
                   </button>
-                  <span className="text-[11px] text-[#717171]">
+                  <span className="text-[11px] text-[#657383]">
                     {t('channel.shownOnline', { count: detectedVideos.length })}
                   </span>
                 </div>
