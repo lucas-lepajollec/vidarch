@@ -2,12 +2,12 @@
 .env.*
 .git
 .github
-data
-downloads
-dist
+/data
+/downloads
+/dist
 node_modules
-server
-scripts
+/server
+/scripts
 *.db
 *.sqlite*
 cookies.txt
