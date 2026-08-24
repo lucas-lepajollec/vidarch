@@ -20,7 +20,7 @@ export function localMediaUrl(rel?: string | null): string | undefined {
 }
 
 export function isLocalMediaUrl(url?: string | null): boolean {
-  return !!url && (url.startsWith('/media/') || url.startsWith('data:') || url.startsWith('blob:'));
+  return !!url && (url.startsWith('/media/') || url.startsWith('/demo/') || url.startsWith('data:') || url.startsWith('blob:'));
 }
 
 export function proxyThumbUrl(id: string): string {

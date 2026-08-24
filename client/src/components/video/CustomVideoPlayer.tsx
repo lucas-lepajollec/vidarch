@@ -19,6 +19,8 @@ import { useI18n } from '../../i18n/I18nProvider';
 import { resolveThumbnail } from '../../utils/media';
 import { AnchoredPopover } from '../common/AnchoredPopover';
 import { applyPlayerPrefs, readPlayerPrefs, writePlayerPrefs } from '../../utils/playerPrefs';
+import { isDemoMode } from '../../demo/config';
+import { DemoVideoSurface } from '../../demo/DemoVideoSurface';
 
 interface CustomVideoPlayerProps {
   video: Video;
@@ -449,6 +451,18 @@ export const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = React.memo(({
           </div>
         </div>
       </div>
+    );
+  }
+
+  if (isDemoMode) {
+    return (
+      <DemoVideoSurface
+        video={video}
+        isTheatre={isTheatre}
+        onToggleTheatre={onToggleTheatre}
+        autoPlay={autoPlay}
+        onEnded={onEnded}
+      />
     );
   }
 

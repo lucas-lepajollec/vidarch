@@ -1,0 +1,13 @@
+.env
+.env.*
+.git
+.github
+data
+downloads
+dist
+node_modules
+server
+scripts
+*.db
+*.sqlite*
+cookies.txt
