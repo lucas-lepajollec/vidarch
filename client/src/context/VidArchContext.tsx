@@ -5,6 +5,7 @@ import { navToPath, pathToNav } from '../utils/routes';
 import { parseQualityNote } from '../utils/qualityNote';
 import { useI18n } from '../i18n/I18nProvider';
 import type { UiLanguage } from '../i18n/messages';
+import { isDemoMode } from '../demo/config';
 
 export type { PageRoute, NavigationState };
 
@@ -125,6 +126,7 @@ const DownloadQueueProvider: React.FC<{
     let reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
 
     const connectSSE = () => {
+      if (isDemoMode) return;
       try {
         eventSource = new EventSource('/api/downloads/events');
 

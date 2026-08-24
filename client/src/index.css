@@ -1,5 +1,30 @@
 @import "tailwindcss";
 
+@keyframes demo-video-drift {
+  0% { transform: translate3d(-1.5%, 0, 0) scale(1.02); }
+  50% { transform: translate3d(1.5%, -1%, 0) scale(1.05); }
+  100% { transform: translate3d(-1.5%, 0, 0) scale(1.02); }
+}
+
+.demo-video-motion {
+  animation: demo-video-drift 8s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .demo-video-motion { animation: none; }
+}
+
+@media (max-height: 500px) and (orientation: landscape) {
+  .va-demo-badge {
+    inset: 4rem 0.75rem auto auto;
+    width: auto;
+  }
+
+  .va-demo-badge .va-demo-detail {
+    display: none;
+  }
+}
+
 @layer base {
   :root {
     --va-bg-primary: #090d12;

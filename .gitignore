@@ -13,6 +13,7 @@ yarn-error.log*
 # Production Builds
 dist/
 client/dist/
+client/dist-demo/
 *.tsbuildinfo
 
 # Persistent Media & Local Database

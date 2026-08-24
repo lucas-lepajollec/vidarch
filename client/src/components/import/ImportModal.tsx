@@ -16,6 +16,7 @@ import { ImageUploadField } from '../channel/ImageUploadField';
 import { MediaThumb } from '../common/MediaThumb';
 import { ChannelAvatar } from '../common/ChannelAvatar';
 import { useI18n } from '../../i18n/I18nProvider';
+import { isDemoMode } from '../../demo/config';
 
 export const ImportModal: React.FC = () => {
   const { 
@@ -315,7 +316,7 @@ export const ImportModal: React.FC = () => {
               <span>{t('import.tabUrlLabel')}</span>
             </button>
 
-            <button
+            {!isDemoMode && <button
               onClick={() => setActiveTab('file')}
               className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
                 activeTab === 'file'
@@ -325,7 +326,7 @@ export const ImportModal: React.FC = () => {
             >
               <UploadCloud className="w-3.5 h-3.5" />
               <span>{t('import.tabFileLabel')}</span>
-            </button>
+            </button>}
           </div>
         </div>
 
