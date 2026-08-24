@@ -14,24 +14,16 @@ export const VidArchMark: React.FC<{ className?: string }> = ({ className = '' }
     className={className}
     aria-hidden
   >
-    {/* Vault / arch — the archive */}
+    {/* A video stored in a compact archive box. */}
     <path
-      d="M7.25 25.75V14.1C7.25 9.15 11.05 5.6 16 5.6C20.95 5.6 24.75 9.15 24.75 14.1V25.75"
-      stroke="currentColor"
-      strokeWidth="2.2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
+      d="M6.2 6.5h19.6A2.2 2.2 0 0 1 28 8.7v2.8H4V8.7a2.2 2.2 0 0 1 2.2-2.2Z"
+      fill="currentColor"
     />
     <path
-      d="M7.25 25.75H24.75"
-      stroke="currentColor"
-      strokeWidth="2.2"
-      strokeLinecap="round"
+      d="M6 13h20v10.3a2.2 2.2 0 0 1-2.2 2.2H8.2A2.2 2.2 0 0 1 6 23.3V13Z"
+      fill="currentColor"
     />
-    {/* Stored reels / shelves */}
-    <rect x="11.15" y="12.15" width="9.7" height="2.05" rx="0.75" fill="currentColor" />
-    <rect x="11.15" y="16.1" width="9.7" height="2.05" rx="0.75" fill="#ff0033" />
-    <rect x="11.15" y="20.05" width="9.7" height="2.05" rx="0.75" fill="currentColor" />
+    <path d="m14 16 5.5 3.25L14 22.5V16Z" fill="white" />
   </svg>
 );
 
@@ -53,13 +45,13 @@ export const VidArchLogo: React.FC<VidArchLogoProps> = ({
   }[size];
 
   return (
-    <div className={`flex items-center gap-2.5 select-none ${className}`}>
-      <VidArchMark className={`${iconDimensions} flex-shrink-0 text-white`} />
+    <div className={`flex items-center gap-1.5 select-none ${className}`}>
+      <VidArchMark className={`va-logo-mark ${iconDimensions} flex-shrink-0`} />
       {wordmark && (
         <span
-          className={`font-semibold text-white ${textDimensions} tracking-[-0.035em] leading-none`}
+          className={`va-wordmark font-semibold text-white ${textDimensions} tracking-[-0.035em] leading-none`}
         >
-          VidArch
+          <span>Vid</span><span className="text-[#ff7180]">Arch</span>
         </span>
       )}
     </div>

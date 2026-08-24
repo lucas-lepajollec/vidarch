@@ -108,9 +108,9 @@ export const VideoCard: React.FC<VideoCardProps> = ({
       <>
       <div 
         onClick={handleCardClick}
-        className="flex gap-3.5 group cursor-pointer hover:bg-white/5 p-1.5 rounded-xl transition"
+        className="va-video-card flex gap-3.5 group cursor-pointer hover:bg-white/5 p-1.5 rounded-xl transition"
       >
-        <div className="relative w-52 aspect-video rounded-xl overflow-hidden bg-[#222] flex-shrink-0">
+        <div className="va-thumb relative w-52 aspect-video rounded-xl overflow-hidden bg-[#222] flex-shrink-0">
           <MediaThumb
             video={video}
             alt={video.title}
@@ -122,25 +122,25 @@ export const VideoCard: React.FC<VideoCardProps> = ({
             </span>
           )}
           {sizeLabel ? (
-            <span className="absolute top-1.5 left-1.5 bg-black/70 text-[#aaa] text-[9px] font-medium px-1.5 py-0.5 rounded-full">
+            <span className="va-state-badge is-local absolute top-1.5 left-1.5">
               {sizeLabel}
             </span>
           ) : !localOnly && !isDownloaded ? (
-            <span className="absolute top-1.5 left-1.5 bg-black/70 text-[#aaa] text-[9px] font-medium px-1.5 py-0.5 rounded-full">
+            <span className="va-state-badge is-online absolute top-1.5 left-1.5">
               {t('card.online')}
             </span>
           ) : null}
         </div>
         <div className="flex-1 min-w-0 flex items-start gap-1">
         <div className="flex-1 min-w-0 flex flex-col justify-start">
-          <h4 className="text-[13px] font-semibold text-[#f1f1f1] group-hover:text-white line-clamp-2 leading-snug">
+          <h4 className="text-[13px] font-semibold text-[#f4f7fb] group-hover:text-white line-clamp-2 leading-snug">
             {video.title}
           </h4>
-          <p className="text-xs text-[#aaa] mt-1 hover:text-[#f1f1f1] truncate">
+          <p className="text-xs text-[#aaa] mt-1 hover:text-[#f4f7fb] truncate">
             {video.channel_title}
           </p>
           {!hideMeta && (
-            <div className="text-[11px] text-[#717171] mt-0.5 flex items-center gap-1.5">
+            <div className="text-[11px] text-[#657383] mt-0.5 flex items-center gap-1.5">
               {video.view_count !== undefined && video.view_count !== null && (
                 <>
                   <span>{formatViews(video.view_count, locale)}</span>
@@ -211,11 +211,11 @@ export const VideoCard: React.FC<VideoCardProps> = ({
   }
 
   return (
-    <div className="flex flex-col group cursor-pointer">
+    <div className="va-video-card flex flex-col group cursor-pointer">
       {/* 16:9 Thumbnail Box */}
       <div 
         onClick={handleCardClick}
-        className="relative w-full aspect-video rounded-xl overflow-hidden bg-[#222] shadow-md border border-white/5 group-hover:border-white/20 transition duration-200"
+        className="va-thumb relative w-full aspect-video rounded-xl overflow-hidden bg-[#222] shadow-md transition duration-200"
       >
         <MediaThumb
           video={video}
@@ -231,18 +231,18 @@ export const VideoCard: React.FC<VideoCardProps> = ({
         )}
 
         {sizeLabel ? (
-          <span className="absolute top-1.5 left-1.5 bg-black/70 backdrop-blur-md text-[#aaa] text-[10px] font-medium px-2 py-0.5 rounded-full">
+          <span className="va-state-badge is-local absolute top-1.5 left-1.5">
             {sizeLabel}
           </span>
         ) : !localOnly && !isDownloaded ? (
-          <span className="absolute top-1.5 left-1.5 bg-black/70 backdrop-blur-md text-[#aaa] text-[10px] font-medium px-2 py-0.5 rounded-full">
+          <span className="va-state-badge is-online absolute top-1.5 left-1.5">
             {t('card.online')}
           </span>
         ) : null}
 
         {/* Hover Quick Action overlay */}
         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 pointer-events-none">
-          <div className="bg-white/90 text-black p-3 rounded-full transform group-hover:scale-110 transition shadow-xl">
+          <div className="bg-[#ff5a67] text-white p-3 rounded-[12px_12px_7px_12px] transform group-hover:scale-110 transition shadow-xl shadow-[#bd3448]/25">
             <Play className="w-5 h-5 fill-current ml-0.5" />
           </div>
         </div>
@@ -251,7 +251,7 @@ export const VideoCard: React.FC<VideoCardProps> = ({
         {!hideProgress && progressPercent > 0 && (
           <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/20">
             <div 
-              className="h-full bg-[#ff0033]" 
+              className="h-full bg-[#ff5a67]"
               style={{ width: `${progressPercent}%` }} 
             />
           </div>
@@ -273,7 +273,7 @@ export const VideoCard: React.FC<VideoCardProps> = ({
 
         {/* Title & Metadata */}
         <div className="flex-1 min-w-0" onClick={handleCardClick}>
-          <h3 className="text-sm font-semibold text-[#f1f1f1] group-hover:text-white line-clamp-2 leading-snug">
+          <h3 className="text-sm font-semibold text-[#f4f7fb] group-hover:text-white line-clamp-2 leading-snug">
             {video.title}
           </h3>
           <p 
@@ -281,12 +281,12 @@ export const VideoCard: React.FC<VideoCardProps> = ({
               e.stopPropagation();
               if (video.channel_id) goTo('channel', { channelId: video.channel_id });
             }}
-            className="text-xs text-[#aaa] hover:text-[#f1f1f1] mt-1 truncate transition"
+            className="text-xs text-[#aaa] hover:text-[#f4f7fb] mt-1 truncate transition"
           >
             {video.channel_title}
           </p>
           {!hideMeta && (
-          <div className="text-xs text-[#717171] mt-0.5 flex flex-wrap items-center gap-1.5">
+          <div className="text-xs text-[#657383] mt-0.5 flex flex-wrap items-center gap-1.5">
             {video.view_count !== undefined && video.view_count !== null && (
               <>
                 <span>{formatViews(video.view_count, locale)}</span>

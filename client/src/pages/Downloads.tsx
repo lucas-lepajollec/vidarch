@@ -96,7 +96,7 @@ export const Downloads: React.FC = () => {
     (filteredPastTasks.length > 0 || filter !== 'all');
 
   return (
-    <div className="flex-1 w-full px-4 sm:px-6 pt-6 pb-8 space-y-6 text-[#f1f1f1]">
+    <div className="flex-1 w-full px-4 sm:px-6 pt-6 pb-8 space-y-6 text-[#f4f7fb]">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-xl font-bold text-white tracking-tight">
@@ -120,7 +120,7 @@ export const Downloads: React.FC = () => {
           {pastTasks.length > 0 && (
             <button
               onClick={handleClearCompleted}
-              className="flex items-center gap-1.5 text-xs text-[#aaa] hover:text-white bg-[#272727] hover:bg-[#383838] px-4 py-2 rounded-full transition cursor-pointer font-medium"
+              className="flex items-center gap-1.5 text-xs text-[#aaa] hover:text-white bg-[#18212c] hover:bg-[#23303e] px-4 py-2 rounded-full transition cursor-pointer font-medium"
             >
               <Trash2 className="w-3.5 h-3.5" />
               <span>{t('downloads.clearDone')}</span>
@@ -142,7 +142,7 @@ export const Downloads: React.FC = () => {
             className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition cursor-pointer ${
               filter === chip.id
                 ? 'bg-white text-black font-bold shadow-sm'
-                : 'bg-[#272727] hover:bg-[#383838] text-[#f1f1f1]'
+                : 'bg-[#18212c] hover:bg-[#23303e] text-[#f4f7fb]'
             }`}
           >
             {chip.label}
@@ -154,7 +154,7 @@ export const Downloads: React.FC = () => {
         <div className="space-y-3">
           <h2 className="text-lg font-semibold text-white tracking-tight">
             {t('downloads.activeTitle')}
-            <span className="ml-2 text-sm font-normal text-[#717171]">{activeTasks.length}</span>
+            <span className="ml-2 text-sm font-normal text-[#657383]">{activeTasks.length}</span>
           </h2>
 
           <div className="space-y-1">
@@ -166,7 +166,7 @@ export const Downloads: React.FC = () => {
               return (
                 <div
                   key={task.id}
-                  className="flex gap-3 p-2 rounded-2xl hover:bg-[#181818] transition group"
+                  className="flex gap-3 p-2 rounded-2xl hover:bg-[#0f151d] transition group"
                 >
                   <div className="relative w-36 sm:w-44 aspect-video rounded-xl overflow-hidden bg-[#222] flex-shrink-0">
                     {task.video_id ? (
@@ -176,7 +176,7 @@ export const Downloads: React.FC = () => {
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <div className="w-full h-full bg-[#272727] flex items-center justify-center text-white/40">
+                      <div className="w-full h-full bg-[#18212c] flex items-center justify-center text-white/40">
                         <DownloadCloud className="w-5 h-5" />
                       </div>
                     )}
@@ -187,7 +187,7 @@ export const Downloads: React.FC = () => {
                     )}
                     <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-white/15">
                       <div
-                        className={`h-full progress-fill ${isQueued || isProcessing ? 'bg-[#aaa] animate-pulse-subtle' : 'bg-[#ff0033]'}`}
+                        className={`h-full progress-fill ${isQueued || isProcessing ? 'bg-[#aaa] animate-pulse-subtle' : 'bg-[#ff5a67]'}`}
                         style={{ width: isQueued || isProcessing ? '100%' : `${Math.max(4, percent)}%` }}
                       />
                     </div>
@@ -198,7 +198,7 @@ export const Downloads: React.FC = () => {
                       {task.title}
                     </h3>
                     <p className="text-xs text-[#aaa] mt-1 truncate">{task.channel_title}</p>
-                    <p className="text-[11px] text-[#717171] mt-1.5 truncate">
+                    <p className="text-[11px] text-[#657383] mt-1.5 truncate">
                       {isQueued ? (
                         <span className="inline-flex items-center gap-1.5">
                           <Clock className="w-3 h-3" />
@@ -240,7 +240,7 @@ export const Downloads: React.FC = () => {
         <div className="space-y-3">
           <h2 className="text-lg font-semibold text-white tracking-tight">
             {historyTitle}
-            <span className="ml-2 text-sm font-normal text-[#717171]">{filteredPastTasks.length}</span>
+            <span className="ml-2 text-sm font-normal text-[#657383]">{filteredPastTasks.length}</span>
           </h2>
 
           {filteredPastTasks.length > 0 ? (
@@ -258,7 +258,7 @@ export const Downloads: React.FC = () => {
                       if (canWatch) goTo('watch', { videoId: task.video_id });
                     }}
                     className={`flex items-start gap-3 p-2 rounded-2xl transition group ${
-                      canWatch ? 'hover:bg-[#181818] cursor-pointer' : 'hover:bg-[#181818]/60'
+                      canWatch ? 'hover:bg-[#0f151d] cursor-pointer' : 'hover:bg-[#0f151d]/60'
                     }`}
                   >
                     <div className="relative w-36 sm:w-44 aspect-video rounded-xl overflow-hidden bg-[#222] flex-shrink-0">
@@ -269,7 +269,7 @@ export const Downloads: React.FC = () => {
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         />
                       ) : (
-                        <div className="w-full h-full bg-[#272727] flex items-center justify-center text-white/40">
+                        <div className="w-full h-full bg-[#18212c] flex items-center justify-center text-white/40">
                           <DownloadCloud className="w-5 h-5" />
                         </div>
                       )}
@@ -281,11 +281,11 @@ export const Downloads: React.FC = () => {
                     </div>
 
                     <div className="flex-1 min-w-0 py-0.5">
-                      <h3 className={`text-sm font-semibold text-white line-clamp-2 leading-snug ${canWatch ? 'group-hover:text-[#3ea6ff]' : ''}`}>
+                      <h3 className={`text-sm font-semibold text-white line-clamp-2 leading-snug ${canWatch ? 'group-hover:text-[#73c7e8]' : ''}`}>
                         {task.title}
                       </h3>
                       <p className="text-xs text-[#aaa] mt-1 truncate">{task.channel_title}</p>
-                      <p className={`text-[11px] mt-1.5 ${isError ? 'text-rose-400/90' : 'text-[#717171]'}`}>
+                      <p className={`text-[11px] mt-1.5 ${isError ? 'text-rose-400/90' : 'text-[#657383]'}`}>
                         {isError
                           ? (task.error_message || t('downloads.failed'))
                           : task.status === 'canceled'
@@ -344,7 +344,7 @@ export const Downloads: React.FC = () => {
 
       {queue.length === 0 && (
         <div className="py-20 flex flex-col items-center justify-center text-center max-w-md mx-auto space-y-4">
-          <div className="w-20 h-20 rounded-full bg-[#272727] flex items-center justify-center text-[#aaa]">
+          <div className="w-20 h-20 rounded-full bg-[#18212c] flex items-center justify-center text-[#aaa]">
             <DownloadCloud className="w-10 h-10" />
           </div>
           <div>

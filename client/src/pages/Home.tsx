@@ -54,9 +54,9 @@ export const Home: React.FC = () => {
   const hasAnyContent = feed.downloaded.length > 0 || feed.subscriptionsUndownloaded.length > 0 || feed.recentSearches.length > 0 || filteredVideos.length > 0;
 
   return (
-    <div className="flex-1 w-full px-6 pt-6 pb-8 space-y-8">
+    <div className="flex-1 w-full px-4 sm:px-6 pt-6 pb-10 space-y-9">
       {hasAnyContent && (
-      <div className="flex items-center gap-2.5 overflow-x-auto pb-1 no-scrollbar select-none">
+      <div className="va-filter-rail flex items-center gap-1.5 overflow-x-auto no-scrollbar select-none">
         {[
           { id: 'all', label: t('home.filterAll') },
           { id: 'downloaded', label: t('home.filterDownloaded', { count: feed.downloaded.length }) },
@@ -66,10 +66,10 @@ export const Home: React.FC = () => {
           <button
             key={filter.id}
             onClick={() => setSelectedFilter(filter.id as any)}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition cursor-pointer ${
+            className={`va-filter px-3.5 py-1.5 text-xs font-semibold whitespace-nowrap transition cursor-pointer ${
               selectedFilter === filter.id
-                ? 'bg-white text-black font-bold shadow-sm'
-                : 'bg-[#272727] hover:bg-[#383838] text-[#f1f1f1]'
+                ? 'is-active font-bold'
+                : 'bg-[#18212c] hover:bg-[#23303e] text-[#f4f7fb]'
             }`}
           >
             {filter.label}
@@ -80,7 +80,7 @@ export const Home: React.FC = () => {
 
       {!hasAnyContent && !isLoading && (
         <div className="max-w-xl pt-10 sm:pt-16 md:pt-20">
-          <p className="text-[11px] font-semibold tracking-[0.22em] uppercase text-[#ff0033]">
+          <p className="text-[11px] font-semibold tracking-[0.22em] uppercase text-[#ff5a67]">
             {t('home.welcomeEyebrow')}
           </p>
           <h1 className="mt-4 text-3xl sm:text-[2.6rem] font-semibold text-white tracking-tight leading-[1.15]">
@@ -100,12 +100,12 @@ export const Home: React.FC = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-8 animate-pulse">
           {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
             <div key={n} className="space-y-3">
-              <div className="w-full aspect-video bg-[#272727] rounded-xl" />
+              <div className="w-full aspect-video bg-[#18212c] rounded-xl" />
               <div className="flex gap-3">
-                <div className="w-9 h-9 rounded-full bg-[#272727] flex-shrink-0" />
+                <div className="w-9 h-9 rounded-full bg-[#18212c] flex-shrink-0" />
                 <div className="flex-1 space-y-2">
-                  <div className="h-3.5 bg-[#272727] rounded w-5/6" />
-                  <div className="h-3 bg-[#272727] rounded w-3/5" />
+                  <div className="h-3.5 bg-[#18212c] rounded w-5/6" />
+                  <div className="h-3 bg-[#18212c] rounded w-3/5" />
                 </div>
               </div>
             </div>
@@ -122,9 +122,9 @@ export const Home: React.FC = () => {
           {feed.downloaded.length > 0 && (
             <div className="space-y-4">
               <div className="flex items-baseline justify-between gap-4">
-                <h2 className="text-lg font-semibold text-white tracking-tight">
+                <h2 className="va-section-heading text-lg font-semibold text-white tracking-tight">
                   {t('home.downloadedTitle')}
-                  <span className="ml-2 text-sm font-normal text-[#717171]">{feed.downloaded.length}</span>
+                  <span className="ml-2 text-sm font-normal text-[#657383]">{feed.downloaded.length}</span>
                 </h2>
                 <button
                   onClick={() => goTo('library')}
@@ -146,9 +146,9 @@ export const Home: React.FC = () => {
           {!localOnly && feed.subscriptionsUndownloaded.length > 0 && (
             <div className="space-y-4">
               <div className="flex items-baseline justify-between gap-4">
-                <h2 className="text-lg font-semibold text-white tracking-tight">
+                <h2 className="va-section-heading text-lg font-semibold text-white tracking-tight">
                   {t('home.subsTitle')}
-                  <span className="ml-2 text-sm font-normal text-[#717171]">{feed.subscriptionsUndownloaded.length}</span>
+                  <span className="ml-2 text-sm font-normal text-[#657383]">{feed.subscriptionsUndownloaded.length}</span>
                 </h2>
                 <button
                   onClick={() => goTo('subscriptions')}
@@ -169,7 +169,7 @@ export const Home: React.FC = () => {
           {/* 3. 10 Dernières Vidéos Apparues dans les Recherches */}
           {!localOnly && feed.recentSearches.length > 0 && (
             <div className="space-y-4">
-              <h2 className="text-lg font-semibold text-white tracking-tight">
+              <h2 className="va-section-heading text-lg font-semibold text-white tracking-tight">
                 {t('home.recentTitle')}
               </h2>
 

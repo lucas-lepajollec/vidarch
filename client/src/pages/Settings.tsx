@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Check, 
-  AlertCircle, 
   Loader2, 
   Upload, 
   ArrowLeft,
@@ -18,7 +17,8 @@ import {
   ExternalLink,
   Lock,
   Globe,
-  Tv2
+  Tv2,
+  Database
 } from 'lucide-react';
 import { useMyTube } from '../context/MyTubeContext';
 import { useI18n } from '../i18n/I18nProvider';
@@ -209,21 +209,21 @@ export const Settings: React.FC = () => {
   ];
 
   return (
-    <div className="flex-1 flex flex-col md:flex-row min-h-[calc(100vh-3.5rem)] text-[#f1f1f1]">
+    <div className="flex-1 flex flex-col md:flex-row min-h-[calc(100vh-3.5rem)] text-[#f4f7fb]">
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-[#212121] border border-[#383838] text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-2xl flex items-center gap-2.5 animate-in fade-in slide-in-from-bottom-2 duration-150">
-          <div className="w-2 h-2 rounded-full bg-emerald-400" />
+        <div className="fixed bottom-6 right-6 z-50 bg-[#111821] border border-[#23303e] text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-2xl flex items-center gap-2.5 animate-in fade-in slide-in-from-bottom-2 duration-150">
+          <div className="w-2 h-2 rounded-full bg-[#73c7e8]" />
           <span>{toastMessage}</span>
         </div>
       )}
 
       {/* Left Sidebar / Horizontal Tab bar on mobile (Classic YouTube Studio / Account Style) */}
-      <aside className="w-full md:w-64 border-b md:border-b-0 md:border-r border-[#272727] px-3 py-3 sm:px-4 sm:py-4 md:px-6 md:pt-8 md:pb-6 flex-shrink-0 md:sticky md:top-14 md:h-[calc(100vh-3.5rem)] overflow-x-auto md:overflow-y-auto no-scrollbar bg-[#0f0f0f]">
+      <aside className="w-full md:w-64 border-b md:border-b-0 md:border-r border-[#18212c] px-3 py-3 sm:px-4 sm:py-4 md:px-6 md:pt-8 md:pb-6 flex-shrink-0 md:sticky md:top-14 md:h-[calc(100vh-3.5rem)] overflow-x-auto md:overflow-y-auto no-scrollbar bg-[#090d12]">
         <div className="flex items-center justify-between md:flex-col md:items-stretch gap-2 md:gap-6 mb-2 md:mb-8">
           <button
             onClick={goBack}
-            className="flex items-center gap-1.5 text-xs font-semibold text-[#aaa] hover:text-white px-2 py-1.5 rounded-lg hover:bg-[#272727] transition cursor-pointer self-start"
+            className="flex items-center gap-1.5 text-xs font-semibold text-[#aaa] hover:text-white px-2 py-1.5 rounded-lg hover:bg-[#18212c] transition cursor-pointer self-start"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>{t('settings.back')}</span>
@@ -244,11 +244,11 @@ export const Settings: React.FC = () => {
                 onClick={() => setActiveTab(item.id)}
                 className={`flex-shrink-0 md:w-full flex items-center gap-2.5 sm:gap-3 px-3 py-2 sm:py-2.5 rounded-xl text-xs font-medium transition cursor-pointer whitespace-nowrap ${
                   isActive
-                    ? 'bg-[#272727] text-white font-bold'
-                    : 'text-[#aaa] hover:bg-[#181818] hover:text-white'
+                    ? 'bg-[#18212c] text-white font-bold'
+                    : 'text-[#aaa] hover:bg-[#0f151d] hover:text-white'
                 }`}
               >
-                <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-[#717171]'}`} />
+                <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-[#657383]'}`} />
                 <span>{item.label}</span>
               </button>
             );
@@ -267,7 +267,7 @@ export const Settings: React.FC = () => {
               <p className="text-xs text-[#aaa] mt-1">{t('settings.uiLanguageHint')}</p>
             </div>
 
-            <div className="divide-y divide-[#272727] border-t border-b border-[#272727]">
+            <div className="divide-y divide-[#18212c] border-t border-b border-[#18212c]">
               <div className="py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="space-y-0.5 max-w-lg">
                   <span className="text-sm font-semibold text-white block">{t('settings.uiLanguage')}</span>
@@ -296,7 +296,7 @@ export const Settings: React.FC = () => {
                 <button
                   onClick={() => { setLocalOnly(!localOnly); showToast(t('settings.saved')); }}
                   className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                    localOnly ? 'bg-[#ff0033]' : 'bg-[#272727]'
+                    localOnly ? 'bg-[#ff5a67]' : 'bg-[#18212c]'
                   }`}
                   title={localOnly ? t('settings.localOnlyOn') : t('settings.localOnlyOff')}
                 >
@@ -330,7 +330,7 @@ export const Settings: React.FC = () => {
               </p>
             </div>
 
-            <div className="divide-y divide-[#272727] border-t border-b border-[#272727]">
+            <div className="divide-y divide-[#18212c] border-t border-b border-[#18212c]">
               {/* Row: Résolution par défaut */}
               <div className="py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="space-y-0.5">
@@ -376,7 +376,7 @@ export const Settings: React.FC = () => {
                       handleSaveGeneralSettings(scanInterval, defaultResolution, nextVal);
                     }}
                     className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                      autoDownloadNewSubs ? 'bg-[#ff0033]' : 'bg-[#272727]'
+                      autoDownloadNewSubs ? 'bg-[#ff5a67]' : 'bg-[#18212c]'
                     }`}
                   >
                     <span
@@ -428,9 +428,9 @@ export const Settings: React.FC = () => {
                 <div className="flex-shrink-0">
                   <button
                     onClick={handleCopyPath}
-                    className="bg-[#272727] hover:bg-[#383838] text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition cursor-pointer flex items-center gap-1.5"
+                    className="bg-[#18212c] hover:bg-[#23303e] text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition cursor-pointer flex items-center gap-1.5"
                   >
-                    {copiedPath ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                    {copiedPath ? <Check className="w-3.5 h-3.5 text-[#73c7e8]" /> : <Copy className="w-3.5 h-3.5" />}
                     <span>{copiedPath ? t('settings.copied') : t('settings.copy')}</span>
                   </button>
                 </div>
@@ -449,7 +449,7 @@ export const Settings: React.FC = () => {
               </p>
             </div>
 
-            <div className="divide-y divide-[#272727] border-t border-b border-[#272727]">
+            <div className="divide-y divide-[#18212c] border-t border-b border-[#18212c]">
               <div className="py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="space-y-0.5 max-w-lg">
                   <span className="text-sm font-semibold text-white block">{t('settings.scanEnabled')}</span>
@@ -462,7 +462,7 @@ export const Settings: React.FC = () => {
                     type="button"
                     onClick={() => setScanEnabled(!scanEnabled)}
                     className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                      scanEnabled ? 'bg-[#ff0033]' : 'bg-[#272727]'
+                      scanEnabled ? 'bg-[#ff5a67]' : 'bg-[#18212c]'
                     }`}
                   >
                     <span
@@ -516,7 +516,7 @@ export const Settings: React.FC = () => {
                     disabled={isScanning}
                     className="bg-white hover:bg-white/90 text-black text-xs font-bold px-4 py-2 rounded-full transition cursor-pointer flex items-center gap-2 disabled:opacity-50"
                   >
-                    <Radio className={`w-3.5 h-3.5 ${isScanning ? 'animate-spin text-[#ff0033]' : 'text-black'}`} />
+                    <Radio className={`w-3.5 h-3.5 ${isScanning ? 'animate-spin text-[#ff5a67]' : 'text-black'}`} />
                     <span>{isScanning ? t('settings.scanning') : t('settings.scanNow')}</span>
                   </button>
                 </div>
@@ -536,7 +536,7 @@ export const Settings: React.FC = () => {
               </p>
             </div>
 
-            <div className="divide-y divide-[#272727] border-t border-b border-[#272727]">
+            <div className="divide-y divide-[#18212c] border-t border-b border-[#18212c]">
               {/* Row: Statut */}
               <div className="py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="space-y-0.5">
@@ -548,13 +548,13 @@ export const Settings: React.FC = () => {
 
                 <div className="flex-shrink-0">
                   {systemStatus?.hasCookies ? (
-                    <span className="inline-flex items-center gap-1.5 text-xs text-emerald-400 font-semibold bg-emerald-500/10 px-3 py-1.5 rounded-full border border-emerald-500/20">
-                      <Check className="w-3.5 h-3.5" />
+                    <span className="inline-flex items-center gap-2 text-xs text-[#c7d0da] font-medium bg-[#111821] px-3 py-2 rounded-lg border border-[#24303d]">
+                      <Check className="w-3.5 h-3.5 text-[#8794a3]" />
                       <span>{t('settings.cookiesActive')}</span>
                     </span>
                   ) : (
-                    <span className="inline-flex items-center gap-1.5 text-xs text-amber-400 font-semibold bg-amber-500/10 px-3 py-1.5 rounded-full border border-amber-500/20">
-                      <AlertCircle className="w-3.5 h-3.5" />
+                    <span className="inline-flex items-center gap-2 text-xs text-[#c7d0da] font-medium bg-[#111821] px-3 py-2 rounded-lg border border-[#24303d]">
+                      <Lock className="w-3.5 h-3.5 text-[#8794a3]" />
                       <span>{t('settings.anonymous')}</span>
                     </span>
                   )}
@@ -581,7 +581,7 @@ export const Settings: React.FC = () => {
 
                   <button
                     onClick={() => setShowCookiesEditor(!showCookiesEditor)}
-                    className="bg-[#272727] hover:bg-[#383838] text-white text-xs font-semibold px-4 py-2 rounded-full transition cursor-pointer"
+                    className="bg-[#18212c] hover:bg-[#23303e] text-white text-xs font-semibold px-4 py-2 rounded-full transition cursor-pointer"
                   >
                     {showCookiesEditor ? t('settings.hideEditor') : t('settings.manualEditor')}
                   </button>
@@ -599,7 +599,7 @@ export const Settings: React.FC = () => {
 
                 {/* Editor */}
                 {showCookiesEditor && (
-                  <div className="p-4 bg-[#141414] border border-[#272727] rounded-xl space-y-3">
+                  <div className="p-4 bg-[#0d131b] border border-[#18212c] rounded-xl space-y-3">
                     <textarea
                       rows={5}
                       value={cookiesText}
@@ -621,7 +621,7 @@ export const Settings: React.FC = () => {
 
                 {cookiesMessage && (
                   <div className={`p-3 rounded-lg text-xs flex items-center gap-2 ${
-                    cookiesMessage.type === 'success' ? 'text-emerald-400 bg-emerald-500/10' : 'text-red-400 bg-red-500/10'
+                    cookiesMessage.type === 'success' ? 'text-[#b8d9e6] bg-[#73c7e8]/10' : 'text-red-400 bg-red-500/10'
                   }`}>
                     <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
                     <span>{cookiesMessage.text}</span>
@@ -642,7 +642,7 @@ export const Settings: React.FC = () => {
               </p>
             </div>
 
-            <div className="divide-y divide-[#272727] border-t border-b border-[#272727]">
+            <div className="divide-y divide-[#18212c] border-t border-b border-[#18212c]">
               {/* Row: Espace disque */}
               <div className="py-5 flex items-center justify-between">
                 <div className="space-y-0.5">
@@ -678,9 +678,9 @@ export const Settings: React.FC = () => {
                   <button
                     onClick={handleCleanupCache}
                     disabled={isCleaningCache}
-                    className="bg-[#272727] hover:bg-[#383838] text-white text-xs font-semibold px-4 py-2 rounded-lg transition cursor-pointer flex items-center gap-2"
+                    className="bg-[#111821] hover:bg-[#18212c] border border-[#24303d] text-[#d8dfe7] text-xs font-semibold px-4 py-2 rounded-lg transition cursor-pointer flex items-center gap-2"
                   >
-                    {isCleaningCache ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5 text-amber-400" />}
+                    {isCleaningCache ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5 text-[#8794a3]" />}
                     <span>{isCleaningCache ? t('settings.cleaning') : t('settings.purgeCache')}</span>
                   </button>
                 </div>
@@ -688,7 +688,7 @@ export const Settings: React.FC = () => {
             </div>
 
             {cleanupResult && (
-              <div className="p-3 bg-emerald-500/10 text-emerald-400 text-xs rounded-lg flex items-center gap-2">
+              <div className="p-3 bg-[#73c7e8]/10 text-[#b8d9e6] text-xs rounded-lg flex items-center gap-2">
                 <Check className="w-4 h-4" />
                 <span>{cleanupResult}</span>
               </div>
@@ -706,7 +706,7 @@ export const Settings: React.FC = () => {
               </p>
             </div>
 
-            <div className="divide-y divide-[#272727] border-t border-b border-[#272727]">
+            <div className="divide-y divide-[#18212c] border-t border-b border-[#18212c]">
               {/* Row: yt-dlp version */}
               <div className="py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="space-y-0.5">
@@ -764,7 +764,7 @@ export const Settings: React.FC = () => {
                     });
                     showToast(next ? t('settings.autoOn') : t('settings.autoOff'));
                   }}
-                  className={`w-11 h-6 rounded-full transition ${autoUpdateYtdlp ? 'bg-emerald-500' : 'bg-[#333]'}`}
+                  className={`w-11 h-6 rounded-full transition ${autoUpdateYtdlp ? 'bg-[#73c7e8]/65' : 'bg-[#26313d]'}`}
                 >
                   <span className={`block w-5 h-5 bg-white rounded-full transition ${autoUpdateYtdlp ? 'translate-x-5' : 'translate-x-0.5'}`} />
                 </button>
@@ -774,14 +774,15 @@ export const Settings: React.FC = () => {
                   <span className="text-sm font-semibold text-white block">{t('settings.database')}</span>
                   <span className="text-xs text-[#aaa] block">{t('settings.databaseHint')}</span>
                 </div>
-                <span className="text-xs text-emerald-400 font-medium bg-emerald-500/10 px-2.5 py-1 rounded-full">
+                <span className="inline-flex items-center gap-2 text-xs text-[#c7d0da] font-medium bg-[#111821] border border-[#24303d] px-3 py-2 rounded-lg">
+                  <Database className="w-3.5 h-3.5 text-[#8794a3]" />
                   {t('settings.sqliteWal')}
                 </span>
               </div>
             </div>
 
             {updateMessage && (
-              <div className="p-3 bg-[#181818] border border-[#272727] text-xs font-mono text-[#ddd] rounded-lg">
+              <div className="p-3 bg-[#0f151d] border border-[#18212c] text-xs font-mono text-[#ddd] rounded-lg">
                 {updateMessage}
               </div>
             )}
@@ -797,7 +798,7 @@ export const Settings: React.FC = () => {
               </p>
             </div>
 
-            <div className="divide-y divide-[#272727] border-t border-b border-[#272727]">
+            <div className="divide-y divide-[#18212c] border-t border-b border-[#18212c]">
               <div className="py-5 space-y-3">
                 <span className="text-sm font-semibold text-white block">
                   {auth.envLocked ? t('settings.pwEnv') : auth.required ? t('settings.pwChange') : t('settings.pwEnable')}
@@ -815,7 +816,7 @@ export const Settings: React.FC = () => {
                         value={currentPassword}
                         onChange={(e) => setCurrentPassword(e.target.value)}
                         placeholder={t('settings.pwCurrent')}
-                        className="w-full bg-[#121212] border border-[#383838] text-sm rounded-xl px-3 py-2 outline-none focus:border-white"
+                        className="w-full bg-[#0c1118] border border-[#23303e] text-sm rounded-xl px-3 py-2 outline-none focus:border-white"
                       />
                     )}
                     <input
@@ -823,7 +824,7 @@ export const Settings: React.FC = () => {
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
                       placeholder={auth.required ? t('settings.pwNew') : t('settings.pwChoose')}
-                      className="w-full bg-[#121212] border border-[#383838] text-sm rounded-xl px-3 py-2 outline-none focus:border-white"
+                      className="w-full bg-[#0c1118] border border-[#23303e] text-sm rounded-xl px-3 py-2 outline-none focus:border-white"
                     />
                     <button
                       onClick={async () => {
@@ -896,7 +897,7 @@ export const Settings: React.FC = () => {
                   <span className="text-sm font-semibold text-white">{t('settings.session')}</span>
                   <button
                     onClick={() => logout()}
-                    className="text-xs bg-[#272727] hover:bg-[#383838] px-4 py-2 rounded-full"
+                    className="text-xs bg-[#18212c] hover:bg-[#23303e] px-4 py-2 rounded-full"
                   >
                     {t('settings.logout')}
                   </button>
@@ -907,8 +908,8 @@ export const Settings: React.FC = () => {
         )}
 
         {/* Legal Disclaimer Footer */}
-        <div className="pt-8 border-t border-[#272727]/60 text-center sm:text-left">
-          <p className="text-[11px] text-[#717171] leading-relaxed">
+        <div className="pt-8 border-t border-[#18212c]/60 text-center sm:text-left">
+          <p className="text-[11px] text-[#657383] leading-relaxed">
             {t('settings.legal')}
           </p>
         </div>

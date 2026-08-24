@@ -135,14 +135,14 @@ export const LinkedChannelsSettings: React.FC = () => {
 
   return (
     <div className="space-y-8">
-      <div className="space-y-4 border-t border-b border-[#272727] py-6">
+      <div className="space-y-4 border-t border-b border-[#18212c] py-6">
         <div>
           <h2 className="text-sm font-semibold text-white">{t('settings.primaryLinkTitle')}</h2>
           <p className="text-xs text-[#aaa] mt-1 leading-relaxed max-w-xl">{t('settings.primaryLinkHint')}</p>
         </div>
 
         {personal?.linked_youtube_id ? (
-          <div className="flex items-center justify-between gap-3 bg-[#181818] border border-[#272727] rounded-2xl p-3.5">
+          <div className="flex items-center justify-between gap-3 bg-[#0f151d] border border-[#18212c] rounded-2xl p-3.5">
             <div className="flex items-center gap-3 min-w-0">
               <ChannelAvatar
                 channelId={personal.id}
@@ -181,7 +181,7 @@ export const LinkedChannelsSettings: React.FC = () => {
               value={primaryHandle}
               onChange={(e) => setPrimaryHandle(e.target.value)}
               placeholder={t('mych.linkYtPlaceholder')}
-              className="flex-1 bg-[#121212] border border-[#383838] focus:border-white text-white text-xs rounded-xl px-3.5 py-2.5 outline-none transition"
+              className="flex-1 bg-[#0c1118] border border-[#23303e] focus:border-white text-white text-xs rounded-xl px-3.5 py-2.5 outline-none transition"
             />
             <button
               type="submit"
@@ -206,7 +206,7 @@ export const LinkedChannelsSettings: React.FC = () => {
             {extras.map((ch) => {
               const isActive = myChannel?.id === ch.id || ch.is_active_owner === 1;
               return (
-                <div key={ch.id} className="flex items-center justify-between gap-3 bg-[#181818] border border-[#272727] rounded-2xl p-3.5">
+                <div key={ch.id} className="flex items-center justify-between gap-3 bg-[#0f151d] border border-[#18212c] rounded-2xl p-3.5">
                   <div className="flex items-center gap-3 min-w-0">
                     <ChannelAvatar channelId={ch.id} url={ch.avatar_url} title={ch.title} className="w-10 h-10 rounded-full" />
                     <div className="min-w-0">
@@ -233,7 +233,7 @@ export const LinkedChannelsSettings: React.FC = () => {
                         {t('settings.switchChannel')}
                       </button>
                     )}
-                    {isActive && <Check className="w-4 h-4 text-[#ff0033] mr-1" />}
+                    {isActive && <Check className="w-4 h-4 text-[#ff5a67] mr-1" />}
                     <button
                       type="button"
                       onClick={() => handleExtraUnlink(ch.id, ch.title)}
@@ -255,12 +255,12 @@ export const LinkedChannelsSettings: React.FC = () => {
             value={extraHandle}
             onChange={(e) => setExtraHandle(e.target.value)}
             placeholder={t('mych.linkYtPlaceholder')}
-            className="flex-1 bg-[#121212] border border-[#383838] focus:border-white text-white text-xs rounded-xl px-3.5 py-2.5 outline-none transition"
+            className="flex-1 bg-[#0c1118] border border-[#23303e] focus:border-white text-white text-xs rounded-xl px-3.5 py-2.5 outline-none transition"
           />
           <button
             type="submit"
             disabled={isLinkingExtra || !extraHandle.trim()}
-            className="bg-[#272727] hover:bg-[#383838] text-white text-xs font-bold px-4 py-2.5 rounded-full transition cursor-pointer disabled:opacity-40 flex items-center justify-center gap-1.5 border border-white/5"
+            className="bg-[#18212c] hover:bg-[#23303e] text-white text-xs font-bold px-4 py-2.5 rounded-full transition cursor-pointer disabled:opacity-40 flex items-center justify-center gap-1.5 border border-white/5"
           >
             {isLinkingExtra ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Link2 className="w-3.5 h-3.5" />}
             <span>{t('settings.addChannel')}</span>

@@ -135,10 +135,10 @@ export const AddToPlaylistModal: React.FC<AddToPlaylistModalProps> = ({
       }}
     >
       <div
-        className="w-full max-w-md bg-[#212121] border border-[#383838] rounded-3xl shadow-2xl overflow-hidden text-[#f1f1f1]"
+        className="w-full max-w-md bg-[#111821] border border-[#23303e] rounded-3xl shadow-2xl overflow-hidden text-[#f4f7fb]"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[#303030]">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[#24303d]">
           <div>
             <h3 className="text-base font-bold text-white tracking-tight">{t('pl.saveTo')}</h3>
             <p className="text-xs text-[#aaa] mt-0.5">{t('pl.saveToHint')}</p>
@@ -169,7 +169,7 @@ export const AddToPlaylistModal: React.FC<AddToPlaylistModalProps> = ({
                   disabled={busyId === playlist.id}
                   className="w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl hover:bg-white/5 transition cursor-pointer text-left disabled:opacity-60"
                 >
-                  <div className="relative w-16 aspect-video rounded-lg overflow-hidden bg-[#121212] flex-shrink-0">
+                  <div className="relative w-16 aspect-video rounded-lg overflow-hidden bg-[#0c1118] flex-shrink-0">
                     {playlist.cover_video_id || playlist.cover_thumb ? (
                       <MediaThumb
                         video={{
@@ -195,7 +195,7 @@ export const AddToPlaylistModal: React.FC<AddToPlaylistModalProps> = ({
                   </div>
                   <span
                     className={`w-5 h-5 rounded-md border flex items-center justify-center flex-shrink-0 ${
-                      inList ? 'bg-white border-white text-black' : 'border-[#717171] text-transparent'
+                      inList ? 'bg-white border-white text-black' : 'border-[#657383] text-transparent'
                     }`}
                   >
                     {busyId === playlist.id ? (
@@ -210,7 +210,7 @@ export const AddToPlaylistModal: React.FC<AddToPlaylistModalProps> = ({
           )}
         </div>
 
-        <div className="border-t border-[#303030] px-4 py-3">
+        <div className="border-t border-[#24303d] px-4 py-3">
           {creating ? (
             <form onSubmit={createAndAdd} className="flex items-center gap-2">
               <input
@@ -219,7 +219,7 @@ export const AddToPlaylistModal: React.FC<AddToPlaylistModalProps> = ({
                 onChange={(e) => setNewTitle(e.target.value)}
                 maxLength={80}
                 placeholder={t('pl.namePlaceholder')}
-                className="flex-1 min-w-0 bg-[#181818] border border-[#383838] rounded-full px-3.5 py-2 text-sm text-white placeholder:text-[#717171] outline-none focus:border-white/40"
+                className="flex-1 min-w-0 bg-[#0f151d] border border-[#23303e] rounded-full px-3.5 py-2 text-sm text-white placeholder:text-[#657383] outline-none focus:border-white/40"
               />
               <button
                 type="submit"

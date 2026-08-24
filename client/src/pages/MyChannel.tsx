@@ -216,7 +216,7 @@ export const MyChannel: React.FC = () => {
     return (
       <div className="flex-1 w-full px-6 py-12 flex items-center justify-center min-h-[60vh]">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-10 h-10 border-3 border-[#ff0033] border-t-transparent rounded-full animate-spin" />
+          <div className="w-10 h-10 border-3 border-[#ff5a67] border-t-transparent rounded-full animate-spin" />
           <span className="text-xs text-[#aaa]">{t('channel.loadingInfo')}</span>
         </div>
       </div>
@@ -226,7 +226,7 @@ export const MyChannel: React.FC = () => {
   if (error || !channel) {
     return (
       <div className="flex-1 w-full px-6 py-16 flex flex-col items-center justify-center text-center space-y-4">
-        <div className="w-16 h-16 rounded-full bg-[#272727] flex items-center justify-center text-[#aaa]">
+        <div className="w-16 h-16 rounded-full bg-[#18212c] flex items-center justify-center text-[#aaa]">
           <User className="w-8 h-8" />
         </div>
         <h2 className="text-lg font-bold text-white">{error || t('channel.notFound')}</h2>
@@ -281,13 +281,13 @@ export const MyChannel: React.FC = () => {
               bannerInputRef.current?.click();
             }
           }}
-          className="group relative w-full h-28 sm:h-44 md:h-56 rounded-xl sm:rounded-2xl overflow-hidden bg-[#181818] border border-white/5 cursor-pointer"
+          className="group relative w-full h-28 sm:h-44 md:h-56 rounded-xl sm:rounded-2xl overflow-hidden bg-[#0f151d] border border-white/5 cursor-pointer"
           title={t('mych.changeBanner')}
         >
           {resolvedBanner ? (
             <img src={resolvedBanner} alt={t('edit.banner')} className="w-full h-full object-cover" />
           ) : (
-            <div className="w-full h-full bg-gradient-to-r from-[#181818] via-[#202020] to-[#141414] flex flex-col items-center justify-center gap-2 text-[#717171]">
+            <div className="w-full h-full bg-gradient-to-r from-[#0f151d] via-[#202020] to-[#0d131b] flex flex-col items-center justify-center gap-2 text-[#657383]">
               <ImageIcon className="w-6 h-6" />
               <span className="text-xs font-medium">{t('mych.addBanner')}</span>
             </div>
@@ -314,11 +314,11 @@ export const MyChannel: React.FC = () => {
           </div>
         </div>
       ) : resolvedBanner ? (
-        <div className="w-full h-28 sm:h-44 md:h-56 rounded-xl sm:rounded-2xl overflow-hidden bg-[#181818] shadow-md">
+        <div className="w-full h-28 sm:h-44 md:h-56 rounded-xl sm:rounded-2xl overflow-hidden bg-[#0f151d] shadow-md">
           <img src={resolvedBanner} alt={t('edit.banner')} className="w-full h-full object-cover" />
         </div>
       ) : (
-        <div className="w-full h-20 sm:h-28 rounded-xl sm:rounded-2xl bg-gradient-to-r from-[#181818] via-[#202020] to-[#141414] border border-white/5" />
+        <div className="w-full h-20 sm:h-28 rounded-xl sm:rounded-2xl bg-gradient-to-r from-[#0f151d] via-[#202020] to-[#0d131b] border border-white/5" />
       )}
 
       <form onSubmit={handleSaveProfile} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6 px-1">
@@ -346,7 +346,7 @@ export const MyChannel: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => handleResetImage('avatar')}
-                  className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-[#272727] border border-white/10 text-[#aaa] hover:text-white hover:bg-red-500/80 opacity-0 group-hover:opacity-100 transition flex items-center justify-center cursor-pointer z-10"
+                  className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-[#18212c] border border-white/10 text-[#aaa] hover:text-white hover:bg-red-500/80 opacity-0 group-hover:opacity-100 transition flex items-center justify-center cursor-pointer z-10"
                   title={t('mych.resetDefault')}
                 >
                   <Trash2 className="w-3.5 h-3.5" />
@@ -430,7 +430,7 @@ export const MyChannel: React.FC = () => {
           <button
             type="button"
             onClick={openImportModal}
-            className="bg-[#272727] hover:bg-[#383838] text-white text-xs font-semibold px-4 py-2.5 rounded-full transition cursor-pointer flex items-center gap-1.5 border border-white/5"
+            className="bg-[#18212c] hover:bg-[#23303e] text-white text-xs font-semibold px-4 py-2.5 rounded-full transition cursor-pointer flex items-center gap-1.5 border border-white/5"
           >
             <UploadCloud className="w-3.5 h-3.5 text-[#aaa]" />
             <span>{t('channel.upload')}</span>
@@ -441,7 +441,7 @@ export const MyChannel: React.FC = () => {
                 ref={switchBtnRef}
                 type="button"
                 onClick={() => setSwitchOpen((open) => !open)}
-                className="bg-[#272727] hover:bg-[#383838] text-white text-xs font-semibold px-4 py-2.5 rounded-full transition cursor-pointer flex items-center gap-1.5 border border-white/5"
+                className="bg-[#18212c] hover:bg-[#23303e] text-white text-xs font-semibold px-4 py-2.5 rounded-full transition cursor-pointer flex items-center gap-1.5 border border-white/5"
               >
                 <span>{t('settings.switchChannel')}</span>
                 <ChevronDown className="w-3.5 h-3.5 text-[#aaa]" />
@@ -499,7 +499,7 @@ export const MyChannel: React.FC = () => {
         </div>
       )}
 
-      <div className="flex items-center gap-4 sm:gap-6 text-xs sm:text-sm font-semibold select-none pt-2 overflow-x-auto no-scrollbar border-b border-[#272727]">
+      <div className="flex items-center gap-4 sm:gap-6 text-xs sm:text-sm font-semibold select-none pt-2 overflow-x-auto no-scrollbar border-b border-[#18212c]">
         <button
           onClick={() => setActiveTab('downloaded')}
           className={`pb-2.5 relative transition cursor-pointer flex-shrink-0 ${
@@ -536,8 +536,8 @@ export const MyChannel: React.FC = () => {
       {activeTab === 'downloaded' && (
         downloadedVideos.length === 0 ? (
           <div className="py-16 text-center max-w-md mx-auto space-y-3 px-4">
-            <div className="w-14 h-14 rounded-full bg-[#272727] flex items-center justify-center text-[#aaa] mx-auto">
-              <HardDrive className="w-7 h-7 text-[#717171]" />
+            <div className="w-14 h-14 rounded-full bg-[#18212c] flex items-center justify-center text-[#aaa] mx-auto">
+              <HardDrive className="w-7 h-7 text-[#657383]" />
             </div>
             <h3 className="font-semibold text-sm text-white">{t('mych.emptyOwnerTitle')}</h3>
             <p className="text-xs text-[#aaa] pb-2">{t('mych.emptyOwnerBody')}</p>
@@ -561,7 +561,7 @@ export const MyChannel: React.FC = () => {
         <div className="space-y-8">
           {detectedVideos.length === 0 ? (
             <div className="py-16 text-center max-w-md mx-auto space-y-2 px-4">
-              <Film className="w-10 h-10 text-[#717171] mx-auto mb-2" />
+              <Film className="w-10 h-10 text-[#657383] mx-auto mb-2" />
               <h3 className="font-semibold text-sm text-white">{t('channel.noOnlineVideos')}</h3>
             </div>
           ) : (
@@ -576,11 +576,11 @@ export const MyChannel: React.FC = () => {
                   <button
                     onClick={handleLoadMore}
                     disabled={isLoadingMore}
-                    className="flex items-center gap-2.5 px-6 py-3 rounded-full bg-[#272727] hover:bg-[#383838] text-white text-xs font-semibold transition cursor-pointer shadow-sm border border-white/5"
+                    className="flex items-center gap-2.5 px-6 py-3 rounded-full bg-[#18212c] hover:bg-[#23303e] text-white text-xs font-semibold transition cursor-pointer shadow-sm border border-white/5"
                   >
                     {isLoadingMore ? (
                       <>
-                        <Loader2 className="w-4 h-4 text-[#ff0033] animate-spin" />
+                        <Loader2 className="w-4 h-4 text-[#ff5a67] animate-spin" />
                         <span>{t('channel.loadingMore')}</span>
                       </>
                     ) : (
@@ -590,7 +590,7 @@ export const MyChannel: React.FC = () => {
                       </>
                     )}
                   </button>
-                  <span className="text-[11px] text-[#717171]">
+                  <span className="text-[11px] text-[#657383]">
                     {t('channel.shownOnline', { count: detectedVideos.length })}
                   </span>
                 </div>

@@ -284,10 +284,10 @@ export const ImportModal: React.FC = () => {
         if (e.target === e.currentTarget && !isUploading) closeImportModal();
       }}
     >
-      <div className="w-full max-w-xl bg-[#212121] border border-[#383838] rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden text-[#f1f1f1]">
+      <div className="w-full max-w-xl bg-[#111821] border border-[#23303e] rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden text-[#f4f7fb]">
         
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-5 border-b border-[#303030]">
+        <div className="flex items-center justify-between px-6 py-5 border-b border-[#24303d]">
           <div>
             <h2 className="text-lg font-bold text-white tracking-tight">
               {t('import.title')}
@@ -306,7 +306,7 @@ export const ImportModal: React.FC = () => {
 
         {/* Tab Selector (YouTube Studio Pill Bar) */}
         <div className="px-6 pt-4 pb-2">
-          <div className="flex items-center p-1 bg-[#141414] border border-[#303030] rounded-2xl gap-1">
+          <div className="flex items-center p-1 bg-[#0d131b] border border-[#24303d] rounded-2xl gap-1">
             <button
               onClick={() => setActiveTab('url')}
               className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
@@ -351,7 +351,7 @@ export const ImportModal: React.FC = () => {
                     value={urlInput}
                     onChange={(e) => setUrlInput(e.target.value)}
                     placeholder={localOnly ? t('import.urlPlaceholderLocal') : t('import.urlPlaceholder')}
-                    className="flex-1 bg-[#121212] border border-[#383838] focus:border-white text-white text-xs rounded-xl px-4 py-3 outline-none transition"
+                    className="flex-1 bg-[#0c1118] border border-[#23303e] focus:border-white text-white text-xs rounded-xl px-4 py-3 outline-none transition"
                   />
                   <button
                     type="submit"
@@ -372,9 +372,9 @@ export const ImportModal: React.FC = () => {
 
               {/* Inspected Preview: VIDEO */}
               {inspectedData?.type === 'video' && inspectedData.video && (
-                <div className="p-4 bg-[#141414] border border-[#333] rounded-2xl space-y-4 animate-in fade-in duration-150">
+                <div className="p-4 bg-[#0d131b] border border-[#333] rounded-2xl space-y-4 animate-in fade-in duration-150">
                   <div className="flex gap-3.5">
-                    <div className="relative w-36 aspect-video rounded-xl overflow-hidden bg-[#272727] flex-shrink-0 shadow-md">
+                    <div className="relative w-36 aspect-video rounded-xl overflow-hidden bg-[#18212c] flex-shrink-0 shadow-md">
                       <MediaThumb
                         video={{ id: inspectedData.video.id, thumbnailUrl: inspectedData.video.thumbnailUrl }}
                         alt={inspectedData.video.title}
@@ -387,13 +387,13 @@ export const ImportModal: React.FC = () => {
                       )}
                     </div>
                     <div className="flex-1 min-w-0 flex flex-col justify-center">
-                      <span className="text-[10px] font-semibold text-[#3ea6ff] uppercase tracking-wider block">{t('import.ytVideo')}</span>
+                      <span className="text-[10px] font-semibold text-[#73c7e8] uppercase tracking-wider block">{t('import.ytVideo')}</span>
                       <h4 className="font-bold text-xs text-white line-clamp-2 mt-0.5 leading-snug">{inspectedData.video.title}</h4>
                       <p className="text-xs text-[#aaa] mt-1 truncate">{inspectedData.video.channelTitle}</p>
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-end pt-3 border-t border-[#272727]">
+                  <div className="flex items-center justify-end pt-3 border-t border-[#18212c]">
                     <button
                       onClick={handleActionUrl}
                       className="bg-white hover:bg-white/90 text-black text-xs font-bold px-5 py-2.5 rounded-full transition cursor-pointer flex items-center gap-1.5 shadow"
@@ -407,9 +407,9 @@ export const ImportModal: React.FC = () => {
 
               {/* Inspected Preview: CHANNEL */}
               {inspectedData?.type === 'channel' && inspectedData.channel && (
-                <div className="p-4 bg-[#141414] border border-[#333] rounded-2xl space-y-4 animate-in fade-in duration-150">
+                <div className="p-4 bg-[#0d131b] border border-[#333] rounded-2xl space-y-4 animate-in fade-in duration-150">
                   <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 rounded-full overflow-hidden bg-[#272727] flex-shrink-0 shadow-md">
+                    <div className="w-14 h-14 rounded-full overflow-hidden bg-[#18212c] flex-shrink-0 shadow-md">
                       <ChannelAvatar
                         channelId={inspectedData.channel.id}
                         url={inspectedData.channel.avatarUrl}
@@ -425,13 +425,13 @@ export const ImportModal: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between pt-3 border-t border-[#272727]">
+                  <div className="flex items-center justify-between pt-3 border-t border-[#18212c]">
                     <label className="flex items-center gap-2 text-xs text-[#aaa] cursor-pointer">
                       <input
                         type="checkbox"
                         checked={autoDownloadChannel}
                         onChange={(e) => setAutoDownloadChannel(e.target.checked)}
-                        className="w-4 h-4 accent-[#ff0033] rounded"
+                        className="w-4 h-4 accent-[#ff5a67] rounded"
                       />
                       <span>{t('import.autoDownload')}</span>
                     </label>
@@ -468,10 +468,10 @@ export const ImportModal: React.FC = () => {
                 {!selectedFile ? (
                   <div
                     onClick={() => fileInputRef.current?.click()}
-                    className="border-2 border-dashed border-[#383838] hover:border-white/40 bg-[#141414] rounded-3xl p-8 flex flex-col items-center justify-center text-center gap-3 cursor-pointer transition group"
+                    className="border-2 border-dashed border-[#23303e] hover:border-white/40 bg-[#0d131b] rounded-3xl p-8 flex flex-col items-center justify-center text-center gap-3 cursor-pointer transition group"
                   >
-                    <div className="w-14 h-14 rounded-full bg-[#272727] text-white flex items-center justify-center group-hover:scale-105 transition shadow-md">
-                      <UploadCloud className="w-6 h-6 text-[#ff0033]" />
+                    <div className="w-14 h-14 rounded-full bg-[#18212c] text-white flex items-center justify-center group-hover:scale-105 transition shadow-md">
+                      <UploadCloud className="w-6 h-6 text-[#ff5a67]" />
                     </div>
                     <div className="space-y-1">
                       <span className="text-xs font-bold text-white block">{t('import.pickFile')}</span>
@@ -482,10 +482,10 @@ export const ImportModal: React.FC = () => {
                     </span>
                   </div>
                 ) : (
-                  <div className="p-4 bg-[#141414] border border-[#383838] rounded-2xl flex items-center justify-between">
+                  <div className="p-4 bg-[#0d131b] border border-[#23303e] rounded-2xl flex items-center justify-between">
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-10 h-10 rounded-xl bg-[#272727] flex items-center justify-center flex-shrink-0">
-                        <Film className="w-5 h-5 text-[#ff0033]" />
+                      <div className="w-10 h-10 rounded-xl bg-[#18212c] flex items-center justify-center flex-shrink-0">
+                        <Film className="w-5 h-5 text-[#ff5a67]" />
                       </div>
                       <div className="min-w-0">
                         <span className="text-xs font-bold text-white block truncate">{selectedFile.name}</span>
@@ -514,13 +514,13 @@ export const ImportModal: React.FC = () => {
                     value={originalYtUrl}
                     onChange={(e) => setOriginalYtUrl(e.target.value)}
                     placeholder="https://www.youtube.com/watch?v=..."
-                    className="flex-1 bg-[#121212] border border-[#383838] text-white text-xs rounded-xl px-4 py-2.5 outline-none focus:border-white"
+                    className="flex-1 bg-[#0c1118] border border-[#23303e] text-white text-xs rounded-xl px-4 py-2.5 outline-none focus:border-white"
                   />
                   <button
                     type="button"
                     onClick={handleFetchYtMetaForFile}
                     disabled={isFetchingYtMeta || !originalYtUrl.trim()}
-                    className="bg-[#2a2a2a] hover:bg-[#383838] text-white text-xs font-semibold px-4 py-2.5 rounded-xl transition cursor-pointer disabled:opacity-40"
+                    className="bg-[#2a2a2a] hover:bg-[#23303e] text-white text-xs font-semibold px-4 py-2.5 rounded-xl transition cursor-pointer disabled:opacity-40"
                   >
                     {isFetchingYtMeta ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <span>{t('import.fillMeta')}</span>}
                   </button>
@@ -537,7 +537,7 @@ export const ImportModal: React.FC = () => {
                     onChange={(e) => setCustomTitle(e.target.value)}
                     placeholder={t('import.videoTitlePh')}
                     required
-                    className="w-full bg-[#121212] border border-[#383838] text-white text-xs rounded-xl px-4 py-2.5 outline-none focus:border-white"
+                    className="w-full bg-[#0c1118] border border-[#23303e] text-white text-xs rounded-xl px-4 py-2.5 outline-none focus:border-white"
                   />
                 </div>
 
@@ -548,19 +548,19 @@ export const ImportModal: React.FC = () => {
                     value={customDescription}
                     onChange={(e) => setCustomDescription(e.target.value)}
                     placeholder={t('import.descriptionPh')}
-                    className="w-full bg-[#121212] border border-[#383838] text-white text-xs rounded-xl p-3 outline-none focus:border-white"
+                    className="w-full bg-[#0c1118] border border-[#23303e] text-white text-xs rounded-xl p-3 outline-none focus:border-white"
                   />
                 </div>
               </div>
 
               {/* Channel Association / Dedicated Space */}
-              <div className="p-4 bg-[#141414] border border-[#303030] rounded-2xl space-y-3">
+              <div className="p-4 bg-[#0d131b] border border-[#24303d] rounded-2xl space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-white">{t('import.destChannel')}</span>
                   <button
                     type="button"
                     onClick={() => setIsCreatingNewChannel(!isCreatingNewChannel)}
-                    className="text-xs font-semibold text-[#3ea6ff] hover:underline cursor-pointer"
+                    className="text-xs font-semibold text-[#73c7e8] hover:underline cursor-pointer"
                   >
                     {isCreatingNewChannel ? t('import.chooseExisting') : t('import.createSpace')}
                   </button>
@@ -588,14 +588,14 @@ export const ImportModal: React.FC = () => {
                         onChange={(e) => setNewChannelTitle(e.target.value)}
                         placeholder={t('import.spaceName')}
                         required={isCreatingNewChannel}
-                        className="bg-[#1e1e1e] border border-[#383838] text-white text-xs rounded-xl px-3 py-2 outline-none focus:border-white"
+                        className="bg-[#1e1e1e] border border-[#23303e] text-white text-xs rounded-xl px-3 py-2 outline-none focus:border-white"
                       />
                       <input
                         type="text"
                         value={newChannelHandle}
                         onChange={(e) => setNewChannelHandle(e.target.value)}
                         placeholder={t('import.spaceHandle')}
-                        className="bg-[#1e1e1e] border border-[#383838] text-white text-xs rounded-xl px-3 py-2 outline-none focus:border-white"
+                        className="bg-[#1e1e1e] border border-[#23303e] text-white text-xs rounded-xl px-3 py-2 outline-none focus:border-white"
                       />
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
@@ -621,14 +621,14 @@ export const ImportModal: React.FC = () => {
 
               {/* Upload Progress Bar */}
               {isUploading && (
-                <div className="space-y-1.5 p-3 bg-[#141414] border border-[#303030] rounded-2xl">
+                <div className="space-y-1.5 p-3 bg-[#0d131b] border border-[#24303d] rounded-2xl">
                   <div className="flex justify-between text-xs text-[#aaa]">
                     <span>{t('import.uploading')}</span>
                     <span className="font-bold text-white">{uploadProgress}%</span>
                   </div>
-                  <div className="w-full h-2 bg-[#272727] rounded-full overflow-hidden">
+                  <div className="w-full h-2 bg-[#18212c] rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-[#ff0033] transition-all duration-150 rounded-full"
+                      className="h-full bg-[#ff5a67] transition-all duration-150 rounded-full"
                       style={{ width: `${uploadProgress}%` }}
                     />
                   </div>

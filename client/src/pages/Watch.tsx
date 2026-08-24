@@ -230,7 +230,7 @@ export const Watch: React.FC = () => {
     return (
       <div className="flex-1 p-6 w-full max-w-[1800px] mx-auto flex items-center justify-center min-h-[70vh]">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-10 h-10 border-3 border-[#ff0033] border-t-transparent rounded-full animate-spin" />
+          <div className="w-10 h-10 border-3 border-[#ff5a67] border-t-transparent rounded-full animate-spin" />
           <span className="text-xs text-[#aaa]">{t('watch.loading')}</span>
         </div>
       </div>
@@ -298,7 +298,7 @@ export const Watch: React.FC = () => {
           {playerNode}
         </div>
         {showQueue && (
-          <div className="hidden lg:block w-[480px] flex-shrink-0 h-full bg-[#0f0f0f]">
+          <div className="hidden lg:block w-[480px] flex-shrink-0 h-full bg-[#090d12]">
             <PlaylistQueuePanel
               playlist={queuePlaylist!}
               videos={queueVideos}
@@ -354,7 +354,7 @@ export const Watch: React.FC = () => {
                   <div className="min-w-0">
                     <button
                       onClick={() => video.channel_id && goTo('channel', { channelId: video.channel_id })}
-                      className="font-bold text-white hover:text-[#3ea6ff] transition flex items-center gap-1.5 text-xs sm:text-sm cursor-pointer truncate"
+                      className="font-bold text-white hover:text-[#73c7e8] transition flex items-center gap-1.5 text-xs sm:text-sm cursor-pointer truncate"
                     >
                       <span className="truncate">{video.channel_title}</span>
                       <CheckCircle2 className="w-3.5 h-3.5 text-[#aaa] fill-current flex-shrink-0" />
@@ -378,11 +378,11 @@ export const Watch: React.FC = () => {
                     disabled={isSubscribing}
                     className={`ml-2 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs font-semibold transition-all duration-200 cursor-pointer flex items-center justify-center gap-1.5 shadow-sm flex-shrink-0 ${
                       isSubscribing
-                        ? 'opacity-80 cursor-wait bg-[#272727] text-white'
+                        ? 'opacity-80 cursor-wait bg-[#18212c] text-white'
                         : isSubscribed
                           ? isHoveredSub
                             ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30'
-                            : 'bg-[#272727] hover:bg-[#383838] text-white'
+                            : 'bg-[#18212c] hover:bg-[#23303e] text-white'
                           : 'bg-white hover:bg-white/90 text-black shadow-lg font-bold shadow-white/10'
                     }`}
                   >
@@ -399,7 +399,7 @@ export const Watch: React.FC = () => {
                         </>
                       ) : (
                         <>
-                          <Check className="w-3.5 h-3.5 text-[#3ea6ff]" />
+                          <Check className="w-3.5 h-3.5 text-[#73c7e8]" />
                           <span>{t('channel.subscribed')}</span>
                         </>
                       )
@@ -414,7 +414,7 @@ export const Watch: React.FC = () => {
               <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
                 <button
                   onClick={() => setShowPlaylistModal(true)}
-                  className="flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs font-semibold bg-[#272727] hover:bg-[#383838] text-[#f1f1f1] transition cursor-pointer flex-shrink-0"
+                  className="flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs font-semibold bg-[#18212c] hover:bg-[#23303e] text-[#f4f7fb] transition cursor-pointer flex-shrink-0"
                 >
                   <ListPlus className="w-3.5 sm:w-4 h-3.5 sm:h-4" />
                   <span>{t('watch.addToPlaylist')}</span>
@@ -424,8 +424,8 @@ export const Watch: React.FC = () => {
                   onClick={toggleLike}
                   className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center transition cursor-pointer flex-shrink-0 ${
                     video.liked === 1
-                      ? 'bg-[#3ea6ff]/20 text-[#3ea6ff] border border-[#3ea6ff]/30'
-                      : 'bg-[#272727] hover:bg-[#383838] text-[#f1f1f1]'
+                      ? 'bg-[#73c7e8]/20 text-[#73c7e8] border border-[#73c7e8]/30'
+                      : 'bg-[#18212c] hover:bg-[#23303e] text-[#f4f7fb]'
                   }`}
                   title={t('watch.like')}
                 >
@@ -436,7 +436,7 @@ export const Watch: React.FC = () => {
                 {isDownloaded ? (
                   <button
                     onClick={handleDelete}
-                    className="flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs font-semibold bg-[#272727] hover:bg-rose-900/40 text-rose-400 transition cursor-pointer flex-shrink-0"
+                    className="flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs font-semibold bg-[#18212c] hover:bg-rose-900/40 text-rose-400 transition cursor-pointer flex-shrink-0"
                     title={t('watch.deleteLocal')}
                   >
                     <Trash2 className="w-3.5 sm:w-4 h-3.5 sm:h-4" />
@@ -453,7 +453,7 @@ export const Watch: React.FC = () => {
                       thumbnailUrl: video.thumbnail_url,
                       durationString: video.duration_string,
                     })}
-                    className="flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs font-semibold bg-[#272727] hover:bg-[#383838] text-[#f1f1f1] transition-colors duration-200 cursor-pointer flex-shrink-0"
+                    className="flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs font-semibold bg-[#18212c] hover:bg-[#23303e] text-[#f4f7fb] transition-colors duration-200 cursor-pointer flex-shrink-0"
                   >
                     <DownloadCloud className="w-3.5 sm:w-4 h-3.5 sm:h-4" />
                     <span>{t('watch.download')}</span>
@@ -463,7 +463,7 @@ export const Watch: React.FC = () => {
                 {/* Share */}
                 <button
                   onClick={handleShare}
-                  className="flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs font-semibold bg-[#272727] hover:bg-[#383838] text-[#f1f1f1] transition cursor-pointer flex-shrink-0"
+                  className="flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs font-semibold bg-[#18212c] hover:bg-[#23303e] text-[#f4f7fb] transition cursor-pointer flex-shrink-0"
                 >
                   <Share2 className="w-3.5 sm:w-4 h-3.5 sm:h-4" />
                   <span>{copiedLink ? t('common.copied') : t('common.share')}</span>
@@ -474,7 +474,7 @@ export const Watch: React.FC = () => {
                   href={`https://www.youtube.com/watch?v=${video.id}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="p-1.5 sm:p-2 bg-[#272727] hover:bg-[#383838] text-[#aaa] hover:text-white rounded-full transition flex-shrink-0"
+                  className="p-1.5 sm:p-2 bg-[#18212c] hover:bg-[#23303e] text-[#aaa] hover:text-white rounded-full transition flex-shrink-0"
                   title={t('card.openYoutube')}
                 >
                   <ExternalLink className="w-3.5 sm:w-4 h-3.5 sm:h-4" />
@@ -483,20 +483,20 @@ export const Watch: React.FC = () => {
             </div>
 
             {/* Description & Stats Box */}
-            <div className="bg-[#272727]/60 hover:bg-[#272727] rounded-2xl p-3.5 sm:p-4 text-xs transition space-y-2">
+            <div className="va-description-panel bg-[#18212c]/60 hover:bg-[#18212c] rounded-2xl p-3.5 sm:p-4 text-xs transition space-y-2">
             <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[#aaa]">
               {video.view_count !== undefined && video.view_count !== null && (
                 <span className="font-semibold text-white">{formatViews(video.view_count, locale)}</span>
               )}
               {video.upload_date && (
                 <>
-                  <span className="text-[#717171]">•</span>
+                  <span className="text-[#657383]">•</span>
                   <span>{formatUploadDate(video.upload_date, locale)}</span>
                 </>
               )}
               {isDownloaded && video.file_size ? (
                 <>
-                  <span className="text-[#717171]">•</span>
+                  <span className="text-[#657383]">•</span>
                   <span>{formatFileSize(video.file_size, locale)}</span>
                 </>
               ) : null}
@@ -528,7 +528,7 @@ export const Watch: React.FC = () => {
               />
             </div>
           )}
-          <h2 className="text-sm font-bold text-white px-1">
+          <h2 className="va-section-heading text-sm font-bold text-white px-1">
             {t('watch.related')}
           </h2>
 

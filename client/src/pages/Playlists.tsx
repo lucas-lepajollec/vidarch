@@ -79,7 +79,7 @@ export const Playlists: React.FC = () => {
 
       {isLoading && playlists.length === 0 ? (
         <div className="flex items-center justify-center min-h-[40vh]">
-          <div className="w-10 h-10 border-2 border-[#ff0033] border-t-transparent rounded-full animate-spin" />
+          <div className="w-10 h-10 border-2 border-[#ff5a67] border-t-transparent rounded-full animate-spin" />
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-8">
@@ -89,7 +89,7 @@ export const Playlists: React.FC = () => {
               onClick={() => goTo('playlists', { playlistId: playlist.id })}
               className="text-left group cursor-pointer"
             >
-              <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-[#222] shadow-md border border-white/5 group-hover:border-white/20 transition">
+              <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-[#222] shadow-md">
                 {playlist.cover_video_id || playlist.cover_thumb ? (
                   <MediaThumb
                     video={{
@@ -104,8 +104,8 @@ export const Playlists: React.FC = () => {
                 ) : (
                   <div className={`w-full h-full flex items-center justify-center ${
                     playlist.id === 'liked'
-                      ? 'bg-gradient-to-br from-[#3d1a1a] via-[#1c1818] to-[#121212] text-[#ff0033]'
-                      : 'bg-gradient-to-br from-[#2a2a2a] to-[#121212] text-[#aaa]'
+                      ? 'bg-gradient-to-br from-[#3d1a1a] via-[#1c1818] to-[#0c1118] text-[#ff5a67]'
+                      : 'bg-gradient-to-br from-[#2a2a2a] to-[#0c1118] text-[#aaa]'
                   }`}>
                     {playlist.id === 'liked' ? <ThumbsUp className="w-10 h-10" /> : <ListVideo className="w-10 h-10" />}
                   </div>
@@ -115,7 +115,7 @@ export const Playlists: React.FC = () => {
                   <span className="text-sm font-bold tabular-nums">{playlist.video_count}</span>
                 </div>
                 {playlist.id === 'liked' && (
-                  <span className="absolute top-2 left-2 w-8 h-8 rounded-full bg-black/70 border border-white/10 flex items-center justify-center text-[#3ea6ff]">
+                  <span className="absolute top-2 left-2 w-8 h-8 rounded-full bg-black/70 border border-white/10 flex items-center justify-center text-[#73c7e8]">
                     <ThumbsUp className="w-3.5 h-3.5 fill-current" />
                   </span>
                 )}
@@ -130,7 +130,7 @@ export const Playlists: React.FC = () => {
                   </button>
                 )}
               </div>
-              <h3 className="mt-3 text-sm font-semibold text-[#f1f1f1] group-hover:text-white line-clamp-2 leading-snug">
+              <h3 className="mt-3 text-sm font-semibold text-[#f4f7fb] group-hover:text-white line-clamp-2 leading-snug">
                 {displayTitle(playlist, t)}
               </h3>
               <p className="text-xs text-[#aaa] mt-1">{t('pl.videoCount', { count: playlist.video_count })}</p>
@@ -141,7 +141,7 @@ export const Playlists: React.FC = () => {
             {creating ? (
               <form
                 onSubmit={createPlaylist}
-                className="w-full aspect-video rounded-xl border border-white/15 bg-[#181818] p-4 flex flex-col justify-center gap-3"
+                className="w-full aspect-video rounded-xl border border-white/15 bg-[#0f151d] p-4 flex flex-col justify-center gap-3"
               >
                 <input
                   autoFocus
@@ -149,7 +149,7 @@ export const Playlists: React.FC = () => {
                   onChange={(e) => setNewTitle(e.target.value)}
                   maxLength={80}
                   placeholder={t('pl.namePlaceholder')}
-                  className="w-full bg-[#121212] border border-[#383838] rounded-full px-3.5 py-2 text-sm text-white placeholder:text-[#717171] outline-none focus:border-white/40"
+                  className="w-full bg-[#0c1118] border border-[#23303e] rounded-full px-3.5 py-2 text-sm text-white placeholder:text-[#657383] outline-none focus:border-white/40"
                 />
                 <div className="flex items-center gap-2">
                   <button
@@ -165,7 +165,7 @@ export const Playlists: React.FC = () => {
                       setCreating(false);
                       setNewTitle('');
                     }}
-                    className="px-3 py-2 rounded-full bg-[#272727] text-xs font-semibold text-[#aaa] hover:text-white cursor-pointer"
+                    className="px-3 py-2 rounded-full bg-[#18212c] text-xs font-semibold text-[#aaa] hover:text-white cursor-pointer"
                   >
                     {t('common.cancel')}
                   </button>
@@ -175,7 +175,7 @@ export const Playlists: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setCreating(true)}
-                className="w-full aspect-video rounded-xl border border-dashed border-white/20 hover:border-white/40 bg-[#181818]/60 hover:bg-[#1f1f1f] flex flex-col items-center justify-center gap-2 text-[#aaa] hover:text-white transition cursor-pointer"
+                className="w-full aspect-video rounded-xl border border-dashed border-white/20 hover:border-white/40 bg-[#0f151d]/60 hover:bg-[#16202a] flex flex-col items-center justify-center gap-2 text-[#aaa] hover:text-white transition cursor-pointer"
               >
                 <span className="w-11 h-11 rounded-full bg-white/10 flex items-center justify-center">
                   <Plus className="w-5 h-5" />

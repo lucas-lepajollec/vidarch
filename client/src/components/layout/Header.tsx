@@ -47,7 +47,7 @@ const SearchHistoryList: React.FC<{
           type="button"
           onMouseDown={(e) => e.preventDefault()}
           onClick={() => onRemove(item.id)}
-          className="p-1.5 mr-0.5 rounded-lg text-[#8a8a8a] hover:text-white hover:bg-white/[0.06] cursor-pointer flex-shrink-0"
+          className="p-1.5 mr-0.5 rounded-lg text-[#8794a3] hover:text-white hover:bg-white/[0.06] cursor-pointer flex-shrink-0"
           title={removeLabel}
           aria-label={removeLabel}
         >
@@ -65,7 +65,7 @@ interface HeaderProps {
 const MenuProgress: React.FC<{ value?: number; indeterminate?: boolean }> = ({ value, indeterminate }) => (
   <span className="mt-1.5 block h-0.5 w-full rounded-full bg-white/10 overflow-hidden">
     <span
-      className={`block h-full rounded-full bg-[#3ea6ff] ${indeterminate ? 'menu-progress-indeterminate' : 'progress-fill'}`}
+      className={`block h-full rounded-full bg-[#73c7e8] ${indeterminate ? 'menu-progress-indeterminate' : 'progress-fill'}`}
       style={indeterminate ? undefined : { width: `${Math.min(100, Math.max(4, value || 0))}%` }}
     />
   </span>
@@ -181,12 +181,12 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
   }, [historyOpen, isMobileSearchOpen]);
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 h-14 bg-[#0f0f0f] border-b border-[#272727] px-3 sm:px-4 flex items-center justify-between select-none overflow-visible">
+    <header className="va-header fixed top-0 left-0 right-0 z-50 h-14 bg-[#090d12] border-b border-[#18212c] px-3 sm:px-4 flex items-center justify-between select-none overflow-visible">
       {/* ========================================================================= */}
       {/* MOBILE FULL-SCREEN SEARCH OVERLAY (when active on mobile)                */}
       {/* ========================================================================= */}
       {isMobileSearchOpen ? (
-        <div className="fixed inset-0 z-50 bg-[#0f0f0f] flex flex-col animate-in fade-in duration-300">
+        <div className="fixed inset-0 z-50 bg-[#090d12] flex flex-col animate-in fade-in duration-300">
           <div className="h-14 px-2 flex items-center gap-2 flex-shrink-0">
             <button
               type="button"
@@ -194,14 +194,14 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
                 setIsMobileSearchOpen(false);
                 setHistoryOpen(false);
               }}
-              className="p-2 rounded-full hover:bg-white/10 text-[#f1f1f1] cursor-pointer flex-shrink-0"
+              className="p-2 rounded-full hover:bg-white/10 text-[#f4f7fb] cursor-pointer flex-shrink-0"
               title={t('header.searchClose')}
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
 
             <form onSubmit={handleSearchSubmit} className="flex-1 flex items-center">
-              <div className="flex-1 flex items-center bg-[#121212] border border-[#303030] rounded-full px-3.5 py-1.5 focus-within:border-[#3ea6ff]">
+              <div className="flex-1 flex items-center bg-[#0c1118] border border-[#24303d] rounded-full px-3.5 py-1.5 focus-within:border-[#73c7e8]">
                 <input
                   ref={mobileInputRef}
                   type="text"
@@ -209,7 +209,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onFocus={openSearchHistory}
                   placeholder={localOnly ? t('header.searchPlaceholderLocal') : t('header.searchPlaceholder')}
-                  className="w-full bg-transparent text-[16px] sm:text-sm text-white focus:outline-none placeholder-[#717171]"
+                  className="w-full bg-transparent text-[16px] sm:text-sm text-white focus:outline-none placeholder-[#657383]"
                   autoComplete="off"
                 />
                 {searchQuery && (
@@ -224,7 +224,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
               </div>
               <button
                 type="submit"
-                className="p-2 ml-1 text-[#f1f1f1] hover:text-white transition cursor-pointer"
+                className="p-2 ml-1 text-[#f4f7fb] hover:text-white transition cursor-pointer"
               >
                 <Search className="w-4 h-4" />
               </button>
@@ -232,7 +232,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
           </div>
 
           {showHistory && (
-            <div className="flex-1 overflow-y-auto border-t border-[#272727]">
+            <div className="flex-1 overflow-y-auto border-t border-[#18212c]">
               <SearchHistoryList
                 items={filteredHistory}
                 onPick={runSearch}
@@ -249,10 +249,10 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
       {/* ========================================================================= */}
       
       {/* Left: Hamburger & Logo */}
-      <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0 z-20">
+      <div className="flex items-center gap-3 sm:gap-4 flex-shrink-0 z-20">
         <button
           onClick={onToggleSidebar}
-          className="p-2 hover:bg-white/10 rounded-full transition text-[#f1f1f1] cursor-pointer"
+          className="p-2 hover:bg-white/10 rounded-full transition text-[#f4f7fb] cursor-pointer"
           title={t('nav.menu')}
         >
           <Menu className="w-5 h-5" />
@@ -269,8 +269,8 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
       {/* Center: Desktop search — lg+ only so landscape phones keep the portrait icon */}
       <div className="hidden lg:flex absolute left-1/2 -translate-x-1/2 w-full max-w-[500px] md:max-w-[560px] lg:max-w-[620px] px-4 justify-center z-10 pointer-events-auto">
         <div ref={desktopSearchRef} className="relative w-full">
-          <form onSubmit={handleSearchSubmit} className="flex items-center w-full">
-            <div className="flex items-center flex-1 bg-[#121212] border border-[#303030] rounded-l-full px-4 py-1.5 focus-within:border-[#3ea6ff] focus-within:ring-1 focus-within:ring-[#3ea6ff] transition">
+          <form onSubmit={handleSearchSubmit} className="va-search-shell flex items-center w-full">
+            <div className="flex items-center flex-1 bg-transparent px-4 py-1.5 transition">
               <Search className="w-4 h-4 text-[#888] mr-2 flex-shrink-0" />
               <input
                 type="text"
@@ -279,7 +279,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
                 onFocus={openSearchHistory}
                 onClick={openSearchHistory}
                 placeholder={localOnly ? t('header.searchPlaceholderLocal') : t('header.searchPlaceholder')}
-                className="w-full bg-transparent text-[16px] sm:text-sm text-[#f1f1f1] placeholder-[#717171] focus:outline-none"
+                className="w-full bg-transparent text-[16px] sm:text-sm text-[#f4f7fb] placeholder-[#657383] focus:outline-none"
                 autoComplete="off"
               />
               {searchQuery && (
@@ -294,7 +294,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
             </div>
             <button
               type="submit"
-              className="bg-[#222] hover:bg-[#2a2a2a] text-[#f1f1f1] px-5 py-2 border border-l-0 border-[#303030] rounded-r-full flex items-center justify-center transition cursor-pointer flex-shrink-0"
+              className="va-search-button text-[#f4f7fb] px-5 py-2 border-0 flex items-center justify-center transition cursor-pointer flex-shrink-0"
               title={t('header.search')}
             >
               <Search className="w-4 h-4" />
@@ -318,7 +318,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
       <div className="flex items-center gap-1 sm:gap-1.5 justify-end flex-shrink-0">
         <button
           onClick={() => setIsMobileSearchOpen(true)}
-          className="lg:hidden p-2 rounded-full hover:bg-white/10 text-[#f1f1f1] transition cursor-pointer"
+          className="lg:hidden p-2 rounded-full hover:bg-white/10 text-[#f4f7fb] transition cursor-pointer"
           title={t('header.search')}
         >
           <Search className="w-5 h-5" />
@@ -341,7 +341,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
             ref={accountBtnRef}
             type="button"
             onClick={() => setAccountOpen((open) => !open)}
-            className="relative w-8 h-8 rounded-full flex items-center justify-center bg-[#272727] cursor-pointer flex-shrink-0 outline-none hover:opacity-90 transition"
+            className="relative w-8 h-8 rounded-full flex items-center justify-center bg-[#18212c] cursor-pointer flex-shrink-0 outline-none hover:opacity-90 transition"
             title={t('nav.yourChannel')}
           >
             <span className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center">
@@ -354,7 +354,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
                   textClassName="text-xs"
                 />
               ) : (
-                <span className="w-full h-full bg-[#272727] text-[#aaa] flex items-center justify-center">
+                <span className="w-full h-full bg-[#18212c] text-[#aaa] flex items-center justify-center">
                   <User className="w-4 h-4" />
                 </span>
               )}
@@ -493,4 +493,3 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
     </header>
   );
 };
-

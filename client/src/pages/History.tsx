@@ -129,7 +129,7 @@ export const HistoryPage: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 w-full px-4 sm:px-6 pt-6 pb-8 flex flex-col lg:flex-row gap-8 text-[#f1f1f1]">
+    <div className="flex-1 w-full px-4 sm:px-6 pt-6 pb-8 flex flex-col lg:flex-row gap-8 text-[#f4f7fb]">
       {/* ========================================================================= */}
       {/* Video List or Search List (Left on desktop, below controls on mobile)     */}
       {/* ========================================================================= */}
@@ -153,7 +153,7 @@ export const HistoryPage: React.FC = () => {
                     <div
                       key={video.id}
                       onClick={() => goTo('watch', { videoId: video.id })}
-                      className="flex flex-col sm:flex-row gap-4 p-2 rounded-2xl hover:bg-[#181818] transition group cursor-pointer"
+                      className="flex flex-col sm:flex-row gap-4 p-2 rounded-2xl hover:bg-[#0f151d] transition group cursor-pointer"
                     >
                       {/* 16:9 Thumbnail */}
                       <div className="relative w-full sm:w-60 md:w-64 aspect-video rounded-xl overflow-hidden bg-[#222] flex-shrink-0 shadow-sm">
@@ -174,7 +174,7 @@ export const HistoryPage: React.FC = () => {
                         )}
                         {progressPercent > 0 && (
                           <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/20">
-                            <div className="h-full bg-[#ff0033]" style={{ width: `${progressPercent}%` }} />
+                            <div className="h-full bg-[#ff5a67]" style={{ width: `${progressPercent}%` }} />
                           </div>
                         )}
                       </div>
@@ -184,7 +184,7 @@ export const HistoryPage: React.FC = () => {
                         <div>
                           <div className="flex items-start justify-between gap-2">
                             <div className="min-w-0">
-                              <h3 className="text-sm font-semibold text-white group-hover:text-[#3ea6ff] line-clamp-2 leading-snug">
+                              <h3 className="text-sm font-semibold text-white group-hover:text-[#73c7e8] line-clamp-2 leading-snug">
                                 {video.title}
                               </h3>
                             </div>
@@ -210,12 +210,12 @@ export const HistoryPage: React.FC = () => {
                           </div>
 
                           {video.description && (
-                            <ExpandableText text={video.description} className="text-xs text-[#717171]" />
+                            <ExpandableText text={video.description} className="text-xs text-[#657383]" />
                           )}
                         </div>
 
                         {/* Timestamp */}
-                        <div className="flex items-center gap-2 text-[11px] text-[#717171] mt-2">
+                        <div className="flex items-center gap-2 text-[11px] text-[#657383] mt-2">
                           {(video as any).last_watched_at ? (
                             <span>{t('history.watchedOn', { date: formatDate((video as any).last_watched_at) })}</span>
                           ) : (
@@ -232,7 +232,7 @@ export const HistoryPage: React.FC = () => {
               </div>
             ) : !isLoading && (
               <div className="py-20 text-center max-w-md mx-auto space-y-3">
-                <div className="w-16 h-16 rounded-full bg-[#272727] flex items-center justify-center text-[#aaa] mx-auto">
+                <div className="w-16 h-16 rounded-full bg-[#18212c] flex items-center justify-center text-[#aaa] mx-auto">
                   <HistoryIcon className="w-8 h-8" />
                 </div>
                 <h3 className="font-bold text-base text-white">{t('history.emptyVideos')}</h3>
@@ -253,15 +253,15 @@ export const HistoryPage: React.FC = () => {
                   <div
                     key={s.id}
                     onClick={() => goTo('search', { query: s.query })}
-                    className="flex items-center justify-between p-3 rounded-xl hover:bg-[#181818] transition cursor-pointer group"
+                    className="flex items-center justify-between p-3 rounded-xl hover:bg-[#0f151d] transition cursor-pointer group"
                   >
                     <div className="flex items-center gap-3.5 min-w-0">
                       <SearchIcon className="w-4 h-4 text-[#aaa] group-hover:text-white flex-shrink-0" />
                       <div className="min-w-0">
-                        <span className="text-sm font-semibold text-white group-hover:text-[#3ea6ff] transition block truncate">
+                        <span className="text-sm font-semibold text-white group-hover:text-[#73c7e8] transition block truncate">
                           {s.query}
                         </span>
-                        <span className="text-[11px] text-[#717171]">
+                        <span className="text-[11px] text-[#657383]">
                           {formatDate(s.searched_at)}
                         </span>
                       </div>
@@ -281,7 +281,7 @@ export const HistoryPage: React.FC = () => {
               </div>
             ) : !isLoading && (
               <div className="py-20 text-center max-w-md mx-auto space-y-3">
-                <div className="w-16 h-16 rounded-full bg-[#272727] flex items-center justify-center text-[#aaa] mx-auto">
+                <div className="w-16 h-16 rounded-full bg-[#18212c] flex items-center justify-center text-[#aaa] mx-auto">
                   <SearchIcon className="w-8 h-8" />
                 </div>
                 <h3 className="font-bold text-base text-white">{t('history.emptySearches')}</h3>
@@ -297,7 +297,7 @@ export const HistoryPage: React.FC = () => {
       {/* ========================================================================= */}
       {/* Controls Sidebar (Top on mobile, Right pinned on desktop)                 */}
       {/* ========================================================================= */}
-      <div className="order-1 lg:order-2 w-full lg:w-72 xl:w-80 flex-shrink-0 space-y-5 pt-1 lg:sticky lg:top-18 lg:self-start border-b lg:border-b-0 border-[#272727] pb-6 lg:pb-0">
+      <div className="order-1 lg:order-2 w-full lg:w-72 xl:w-80 flex-shrink-0 space-y-5 pt-1 lg:sticky lg:top-18 lg:self-start border-b lg:border-b-0 border-[#18212c] pb-6 lg:pb-0">
         {/* Search Input with underline */}
         <div className="flex items-center border-b border-[#3e3e3e] focus-within:border-white py-1.5 transition">
           <SearchIcon className="w-4 h-4 text-[#888] mr-3 flex-shrink-0" />
@@ -306,7 +306,7 @@ export const HistoryPage: React.FC = () => {
             value={searchFilter}
             onChange={(e) => setSearchFilter(e.target.value)}
             placeholder={t('history.searchPh')}
-            className="w-full bg-transparent text-[16px] sm:text-xs text-white placeholder-[#717171] focus:outline-none"
+            className="w-full bg-transparent text-[16px] sm:text-xs text-white placeholder-[#657383] focus:outline-none"
           />
           {searchFilter && (
             <button onClick={() => setSearchFilter('')} className="text-[#888] hover:text-white p-0.5">
@@ -320,7 +320,7 @@ export const HistoryPage: React.FC = () => {
           <button
             onClick={handleClearVideosHistory}
             disabled={videos.length === 0}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-[#f1f1f1] hover:bg-[#272727] transition cursor-pointer disabled:opacity-40"
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-[#f4f7fb] hover:bg-[#18212c] transition cursor-pointer disabled:opacity-40"
           >
             <Trash2 className="w-4 h-4 text-[#aaa]" />
             <span>{t('history.clearVideos')}</span>
@@ -329,7 +329,7 @@ export const HistoryPage: React.FC = () => {
           <button
             onClick={handleClearSearchHistory}
             disabled={searches.length === 0}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-[#f1f1f1] hover:bg-[#272727] transition cursor-pointer disabled:opacity-40"
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-[#f4f7fb] hover:bg-[#18212c] transition cursor-pointer disabled:opacity-40"
           >
             <Trash2 className="w-4 h-4 text-[#aaa]" />
             <span>{t('history.clearSearches')}</span>
@@ -343,7 +343,7 @@ export const HistoryPage: React.FC = () => {
           <div className="space-y-1">
             <label 
               onClick={() => setActiveTab('videos')}
-              className="flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-[#272727] cursor-pointer transition"
+              className="flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-[#18212c] cursor-pointer transition"
             >
               <span className={`text-xs font-medium ${activeTab === 'videos' ? 'text-white font-bold' : 'text-[#aaa]'}`}>
                 {t('history.watchedCount', { count: videos.length })}
@@ -353,14 +353,14 @@ export const HistoryPage: React.FC = () => {
                 name="history_type"
                 checked={activeTab === 'videos'}
                 onChange={() => setActiveTab('videos')}
-                className="accent-[#ff0033] w-4 h-4 cursor-pointer"
+                className="accent-[#ff5a67] w-4 h-4 cursor-pointer"
               />
             </label>
 
             {!localOnly && (
             <label 
               onClick={() => setActiveTab('searches')}
-              className="flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-[#272727] cursor-pointer transition"
+              className="flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-[#18212c] cursor-pointer transition"
             >
               <span className={`text-xs font-medium ${activeTab === 'searches' ? 'text-white font-bold' : 'text-[#aaa]'}`}>
                 {t('history.searchesCount', { count: searches.length })}

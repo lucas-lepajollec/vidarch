@@ -25,7 +25,7 @@ export const ChannelAvatar: React.FC<ChannelAvatarProps> = ({
   }, [src]);
 
   return (
-    <div className={`${className} overflow-hidden bg-[#272727] flex-shrink-0 flex items-center justify-center`}>
+    <div className={`${className} overflow-hidden bg-[#18212c] flex-shrink-0 flex items-center justify-center`}>
       {src && !failed ? (
         <img
           src={src}
@@ -35,7 +35,7 @@ export const ChannelAvatar: React.FC<ChannelAvatarProps> = ({
           onError={() => setFailed(true)}
         />
       ) : (
-        <div className="w-full h-full bg-[#272727] flex items-center justify-center text-[#aaa]">
+        <div className="w-full h-full bg-[#18212c] flex items-center justify-center text-[#aaa]">
           <User className="w-[52%] h-[52%]" />
         </div>
       )}

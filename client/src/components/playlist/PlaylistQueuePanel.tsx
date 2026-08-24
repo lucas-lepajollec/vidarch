@@ -42,12 +42,12 @@ export const PlaylistQueuePanel: React.FC<PlaylistQueuePanelProps> = ({
 
   return (
     <div
-      className={`w-full flex flex-col rounded-2xl border border-[#272727] bg-[#181818] overflow-hidden ${
+      className={`w-full flex flex-col rounded-2xl border border-[#18212c] bg-[#0f151d] overflow-hidden ${
         fill ? 'h-full rounded-none border-0 border-l' : ''
       }`}
       style={!fill && maxHeight ? { maxHeight } : undefined}
     >
-      <div className="flex-shrink-0 px-3 pt-2.5 pb-2 border-b border-[#303030]">
+      <div className="flex-shrink-0 px-3 pt-2.5 pb-2 border-b border-[#24303d]">
         <div className="flex items-start gap-2">
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-white truncate">{title}</p>
@@ -102,7 +102,7 @@ export const PlaylistQueuePanel: React.FC<PlaylistQueuePanelProps> = ({
               }`}
             >
               <span className={`w-4 text-center text-[10px] tabular-nums flex-shrink-0 ${
-                active ? 'text-white font-semibold' : 'text-[#717171]'
+                active ? 'text-white font-semibold' : 'text-[#657383]'
               }`}>
                 {idx + 1}
               </span>
@@ -126,7 +126,7 @@ export const PlaylistQueuePanel: React.FC<PlaylistQueuePanelProps> = ({
               </div>
               <div className="flex-1 min-w-0">
                 <p className={`text-xs font-semibold line-clamp-2 leading-snug ${
-                  active ? 'text-white' : 'text-[#f1f1f1]'
+                  active ? 'text-white' : 'text-[#f4f7fb]'
                 }`}>
                   {item.title}
                 </p>

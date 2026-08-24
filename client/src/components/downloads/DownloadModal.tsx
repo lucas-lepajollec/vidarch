@@ -107,10 +107,10 @@ export const DownloadModal: React.FC = () => {
       }}
     >
       <div
-        className="w-full max-w-md bg-[#212121] border border-[#383838] rounded-3xl shadow-2xl overflow-hidden text-[#f1f1f1]"
+        className="w-full max-w-md bg-[#111821] border border-[#23303e] rounded-3xl shadow-2xl overflow-hidden text-[#f4f7fb]"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[#303030]">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[#24303d]">
           <div>
             <h3 className="text-base font-bold text-white tracking-tight">{t('dl.title')}</h3>
             <p className="text-xs text-[#aaa] mt-0.5">{t('dl.subtitle')}</p>
@@ -128,7 +128,7 @@ export const DownloadModal: React.FC = () => {
 
         <div className="px-5 pt-4">
           <div className="flex gap-3.5 items-center">
-            <div className="relative w-[7.5rem] aspect-video rounded-xl overflow-hidden bg-[#121212] flex-shrink-0">
+            <div className="relative w-[7.5rem] aspect-video rounded-xl overflow-hidden bg-[#0c1118] flex-shrink-0">
               {downloadModal.videoId ? (
                 <MediaThumb
                   video={{ id: downloadModal.videoId, thumbnailUrl: downloadModal.thumbnailUrl }}
@@ -136,7 +136,7 @@ export const DownloadModal: React.FC = () => {
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <div className="w-full h-full flex items-center justify-center text-[#717171]">
+                <div className="w-full h-full flex items-center justify-center text-[#657383]">
                   <Film className="w-6 h-6" />
                 </div>
               )}
@@ -160,8 +160,8 @@ export const DownloadModal: React.FC = () => {
         <form onSubmit={handleSubmit}>
           <div className="px-5 pt-5">
             <p className="text-xs font-semibold text-[#aaa] mb-2">{t('dl.quality')}</p>
-            <p className="text-[11px] text-[#717171] mb-2.5 leading-relaxed">{t('dl.qualityHint')}</p>
-            <div className="rounded-2xl border border-[#303030] overflow-hidden divide-y divide-[#303030]">
+            <p className="text-[11px] text-[#657383] mb-2.5 leading-relaxed">{t('dl.qualityHint')}</p>
+            <div className="rounded-2xl border border-[#24303d] overflow-hidden divide-y divide-[#24303d]">
               {qualityOptions.map((opt) => {
                 const isSelected = resolution === opt.id;
                 const isDefault = opt.id === defaultResolution;
@@ -171,19 +171,19 @@ export const DownloadModal: React.FC = () => {
                     type="button"
                     onClick={() => setResolution(opt.id)}
                     className={`w-full flex items-center gap-3 px-3.5 py-3 text-left transition cursor-pointer ${
-                      isSelected ? 'bg-[#3d3d3d]' : 'bg-[#181818] hover:bg-[#272727]'
+                      isSelected ? 'bg-[#3d3d3d]' : 'bg-[#0f151d] hover:bg-[#18212c]'
                     }`}
                   >
                     <span
                       className={`w-[18px] h-[18px] rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
-                        isSelected ? 'border-white' : 'border-[#717171]'
+                        isSelected ? 'border-white' : 'border-[#657383]'
                       }`}
                     >
                       {isSelected ? <span className="w-2 h-2 rounded-full bg-white" /> : null}
                     </span>
                     <span className="flex-1 min-w-0">
                       <span className="flex items-center gap-2">
-                        <span className={`text-sm font-medium ${isSelected ? 'text-white' : 'text-[#f1f1f1]'}`}>
+                        <span className={`text-sm font-medium ${isSelected ? 'text-white' : 'text-[#f4f7fb]'}`}>
                           {opt.label}
                         </span>
                         {isDefault && (
@@ -219,7 +219,7 @@ export const DownloadModal: React.FC = () => {
             </div>
           )}
 
-          <div className="flex items-center justify-end gap-2 px-5 py-4 mt-4 border-t border-[#303030]">
+          <div className="flex items-center justify-end gap-2 px-5 py-4 mt-4 border-t border-[#24303d]">
             <button
               type="button"
               onClick={close}

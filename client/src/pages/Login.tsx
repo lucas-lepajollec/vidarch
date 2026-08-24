@@ -48,10 +48,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({ setupAvailable, onAuthenti
   };
 
   return (
-    <div className="min-h-screen bg-[#0f0f0f] text-[#f1f1f1] flex items-center justify-center px-4">
+    <div className="min-h-screen bg-[#090d12] text-[#f4f7fb] flex items-center justify-center px-4">
       <form
         onSubmit={handleSubmit}
-        className="w-full max-w-md bg-[#181818] border border-[#272727] rounded-2xl p-8 space-y-6"
+        className="w-full max-w-md bg-[#0f151d] border border-[#18212c] rounded-2xl p-8 space-y-6"
       >
         <div className="flex flex-col items-center gap-3 text-center">
           <VidArchLogo size="lg" />
@@ -75,7 +75,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ setupAvailable, onAuthenti
             autoFocus
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full bg-[#121212] border border-[#383838] focus:border-white text-sm rounded-xl px-3.5 py-2.5 outline-none"
+            className="w-full bg-[#0c1118] border border-[#23303e] focus:border-white text-sm rounded-xl px-3.5 py-2.5 outline-none"
           />
         </label>
 
@@ -86,7 +86,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ setupAvailable, onAuthenti
               type="password"
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
-              className="w-full bg-[#121212] border border-[#383838] focus:border-white text-sm rounded-xl px-3.5 py-2.5 outline-none"
+              className="w-full bg-[#0c1118] border border-[#23303e] focus:border-white text-sm rounded-xl px-3.5 py-2.5 outline-none"
             />
           </label>
         )}

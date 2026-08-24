@@ -585,11 +585,11 @@ export const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = React.memo(({
             )}
           </div>
           <div 
-            className="absolute left-0 h-1.5 sm:h-1 group-hover/bar:h-2 bg-[#ff0033] rounded-full transition-all pointer-events-none"
+            className="absolute left-0 h-1.5 sm:h-1 group-hover/bar:h-2 bg-[#ff5a67] rounded-full transition-all pointer-events-none"
             style={{ width: `${duration > 0 ? (currentTime / duration) * 100 : 0}%` }}
           />
           <div 
-            className="absolute w-3.5 h-3.5 bg-[#ff0033] rounded-full shadow-md scale-100 sm:scale-0 sm:group-hover/bar:scale-100 transition-transform pointer-events-none"
+            className="absolute w-3.5 h-3.5 bg-[#ff5a67] rounded-full shadow-md scale-100 sm:scale-0 sm:group-hover/bar:scale-100 transition-transform pointer-events-none"
             style={{ left: `calc(${duration > 0 ? (currentTime / duration) * 100 : 0}% - 7px)` }}
           />
           <input
@@ -613,7 +613,7 @@ export const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = React.memo(({
                 togglePlay();
                 bumpControls(true);
               }}
-              className="hover:text-[#ff0033] transition p-1 cursor-pointer"
+              className="hover:text-[#ff5a67] transition p-1 cursor-pointer"
               title={isPlaying ? t('player.pause') : t('player.play')}
             >
               {isPlaying ? <Pause className="w-5 h-5 fill-current" /> : <Play className="w-5 h-5 fill-current" />}
@@ -633,7 +633,7 @@ export const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = React.memo(({
                   handleVolumeChange(e);
                   bumpControls(true);
                 }}
-                className="w-14 sm:w-16 h-1 bg-white/30 accent-[#ff0033] rounded-lg cursor-pointer"
+                className="w-14 sm:w-16 h-1 bg-white/30 accent-[#ff5a67] rounded-lg cursor-pointer"
               />
             </div>
 
