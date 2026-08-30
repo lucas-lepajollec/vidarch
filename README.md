@@ -161,6 +161,7 @@ The demo is not connected to a private library, cookies file, downloader, or per
 
 - [Documentation](https://docs.vidarch.lucas-homelab.fr)
 - [Contributing guide](CONTRIBUTING.md)
+- [Changelog](CHANGELOG.md)
 - [Code of Conduct](CODE_OF_CONDUCT.md)
 - [Security policy](SECURITY.md)
 - [MIT License](LICENSE)

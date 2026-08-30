@@ -14,8 +14,8 @@ Thank you for your interest in contributing to **VidArch**! Follow these guideli
    ```
 3. **Install dependencies**:
    ```bash
-   npm install
-   npm --prefix client install
+   npm ci
+   npm --prefix client ci
    ```
 4. **Run the local development server**:
    ```bash
@@ -45,3 +45,9 @@ Thank you for your interest in contributing to **VidArch**! Follow these guideli
 - Ensure your branch is up-to-date with the `main` branch.
 - Include a concise summary of what changes were made and why.
 - Confirm that no temporary files, node_modules, or real media/data files are committed.
+
+Use `npm ci` for an existing checkout so the committed lockfiles remain unchanged. Use `npm install` only when intentionally changing dependencies, and include all resulting manifest and lockfile changes in the same pull request.
+
+## Maintainer release process
+
+Releases are deliberate milestones, not snapshots of every merge. Prepare a release pull request that updates every declared version source, moves completed entries out of `Unreleased` in [CHANGELOG.md](CHANGELOG.md), and documents storage compatibility, migrations, and rollback when relevant. After all required checks pass, tag the exact accepted `main` commit with an annotated `vMAJOR.MINOR.PATCH` tag and push it through the authoritative Forgejo remote. Verify that the identical tag reaches GitHub and that the versioned container finishes successfully before publishing a draft GitHub release. Never move or reuse a published version tag.
