@@ -4,7 +4,7 @@
 # ==========================================
 
 # Stage 1: Build React Client
-FROM node:22-alpine AS client-builder
+FROM node:26-alpine AS client-builder
 WORKDIR /app/client
 COPY client/package*.json ./
 RUN npm ci
@@ -12,7 +12,7 @@ COPY client/ ./
 RUN npm run build
 
 # Stage 2: Build Server & Native Dependencies (better-sqlite3)
-FROM node:22-bookworm-slim AS server-builder
+FROM node:26-bookworm-slim AS server-builder
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 \
     make \
@@ -26,7 +26,7 @@ RUN npx tsc -p server/tsconfig.json
 RUN npm prune --omit=dev
 
 # Stage 3: Production Runtime (Clean & Lightweight)
-FROM node:22-bookworm-slim AS runner
+FROM node:26-bookworm-slim AS runner
 
 ARG YT_DLP_VERSION=2026.08.19
 
