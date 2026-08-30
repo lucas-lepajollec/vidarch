@@ -1,62 +1,48 @@
 <div align="center">
-  <img src="assets/vidarch-logo.svg" width="88" height="88" alt="VidArch" />
+  <img src="assets/vidarch-logo.svg" width="88" height="88" alt="VidArch logo" />
   <h1>VidArch</h1>
-  <p><strong>A modern, self-hosted YouTube archiver, subscriptions manager, and ad-free offline video player.</strong></p>
+  <p><strong>A self-hosted video discovery, download, and library experience built for permanent local ownership.</strong></p>
 
   <p>
-    <a href="https://github.com/lucas-lepajollec/vidarch/pkgs/container/vidarch"><img src="https://img.shields.io/badge/Docker-GHCR-2CA5E0?style=for-the-badge&logo=docker&logoColor=white" alt="Docker GHCR" /></a>
-    <a href="https://nodejs.org/"><img src="https://img.shields.io/badge/Node.js-22-339933?style=for-the-badge&logo=node.js&logoColor=white" alt="Node.js" /></a>
-    <a href="https://react.dev/"><img src="https://img.shields.io/badge/React-19-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" alt="React" /></a>
-    <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-6%20%2F%207-007ACC?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript 6 and 7" /></a>
-    <a href="https://tailwindcss.com/"><img src="https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white" alt="Tailwind CSS" /></a>
-    <a href="https://github.com/yt-dlp/yt-dlp"><img src="https://img.shields.io/badge/yt--dlp-powered-FF0000?style=for-the-badge&logo=youtube&logoColor=white" alt="yt-dlp" /></a>
-    <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge" alt="MIT license" /></a>
+    <a href="https://vidarch.lucas-homelab.fr"><strong>Website</strong></a> ·
+    <a href="https://demo.vidarch.lucas-homelab.fr"><strong>Live demo</strong></a> ·
+    <a href="https://docs.vidarch.lucas-homelab.fr"><strong>Documentation</strong></a>
   </p>
+
+  <p>
+    <a href="https://github.com/lucas-lepajollec/vidarch/pkgs/container/vidarch"><img src="https://img.shields.io/badge/container-GHCR-e54b64" alt="Container on GHCR" /></a>
+    <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-e54b64" alt="MIT license" /></a>
+    <img src="https://img.shields.io/badge/self--hosted-111827" alt="Self-hosted" />
+  </p>
+
+  <img src="docs/assets/screenshots/vidarch-demo-home.png" alt="VidArch home feed with downloaded and discoverable videos" width="1200" />
 </div>
 
----
+VidArch keeps familiar video discovery patterns while adding a durable local layer. Browse subscriptions and online results, choose what matters, follow downloads, and return to the same material later from a private library backed by ordinary files and SQLite.
 
-## ✨ Overview
+The product is intentionally one experience across online and local use: discovery becomes download, download becomes archived media, and archived media remains browsable even when network-dependent features are unavailable.
 
-**VidArch** is an independent, self-hosted media platform designed to archive your favorite YouTube channels, download high-resolution videos (up to 4K/60fps) automatically or on-demand, explore disk directories physically, and provide an ultra-slick, modern browsing and playback experience without ads, sponsors, or tracking.
+## Discovery becomes ownership
 
-It runs locally or on your home server / NAS using Docker, keeping your media, subscriptions, and viewing history completely private, self-contained, and persistent.
+| Familiar discovery | Permanent local library |
+| --- | --- |
+| Follow subscriptions, search, browse channels, and move naturally between online and downloaded material. | Filter archived files, inspect disk usage, organize channel spaces, and play media directly from the server. |
+| <img src="docs/assets/screenshots/vidarch-demo-home.png" alt="VidArch discovery and downloaded-video feed" width="640" /> | <img src="docs/assets/screenshots/vidarch-demo-library.png" alt="VidArch permanent local video library" width="640" /> |
 
----
+## Highlights
 
-## 🚀 Key Features
+- Unified search across local media, subscriptions, channels, and supported online results.
+- Automatic or on-demand archiving with selectable video quality or audio-only output.
+- Download queue, progress, history, and subscription checks.
+- Physical folder view matching the files stored under `downloads/`.
+- Local HTML5 playback with HTTP range requests, seeking, playback speed, theater mode, and picture-in-picture.
+- Playlists, viewing history, creator/channel spaces, banners, avatars, and imported local MP4/WebM files.
+- Explicit online/local mode rather than a separate reduced application.
+- Optional password lock, constrained paths, request throttling, and content-security headers.
 
-- 🎯 **Pixel-Perfect Responsive UI**: Dark mode interface with modern fluid layout across desktop, tablet, and mobile (centered fixed search bar, navigation drawer, responsive 4-column cards).
-- 📥 **High-Resolution Archiving**: Automatic or on-demand video downloads with resolution selector (4K, 1440p, 1080p, 720p, 480p, audio only).
-- 🗂️ **Real Disk Folder Explorer**: Visual folder cards matching your physical disk directory structure (`downloads/<channel>/`) with folder disk weight in Mo/Go, video counts, and instant playback.
-- 📡 **Automated Subscriptions Radar**: Real-time status indicator of pending/un-downloaded videos across all subscribed creator channels.
-- 🎬 **Offline & Direct Video Streaming**: Custom HTML5 media player supporting HTTP 206 Partial Content range requests, instant scrubbing, theater mode, picture-in-picture, and custom playback speeds.
-- 🔍 **Unified Live & Local Search**: Instant search through locally archived videos, subscribed channels, and live YouTube results with instant metadata extraction.
-- 👤 **Creator Studio & Custom Channel Spaces**: Claim existing YouTube channels or create custom spaces with banners, logos, and descriptions to organize imported MP4/WebM videos.
-- 🔄 **Account & Channel Switcher**: 1-click channel switching dropdown to manage multiple owned creator channels or dissociate unclaimed spaces.
-- 🛡️ **Hardened self-hosting**: Optional password lock, Helmet CSP, rate limiting, YouTube-only yt-dlp targets, path confinement, cookies/DB never served as static files.
-- 🍪 **YouTube Authentication (Cookies)**: `cookies.txt` import (stored privately in `data/`, not exposed over HTTP).
+VidArch uses `yt-dlp`, FFmpeg, and FFprobe. Supported sources, formats, and metadata behavior can change when third-party sites or tools change; keep the bundled toolchain current and validate important workflows after upgrades.
 
----
-
-## 🛠️ Tech Stack
-
-| Component | Technology |
-|---|---|
-| **Frontend** | React 19, TypeScript, Vite, Tailwind CSS, Lucide Icons |
-| **Backend** | Node.js 22, Express 5, TypeScript |
-| **Database** | SQLite 3 via `better-sqlite3` (WAL Mode) |
-| **Media Processing** | `yt-dlp`, `ffmpeg`, `ffprobe` |
-| **Security** | Helmet (CSP), Express Rate Limit, Compression, Path Confinement |
-| **Containerization** | Docker, Docker Compose, GitHub Container Registry (GHCR) |
-
----
-
-## 🐳 Quick Start with Docker (Recommended)
-
-### Option A: Using Pre-Built Image from GitHub Container Registry (Fastest)
-
-Create a `docker-compose.yml` file:
+## Quick start with Docker
 
 ```yaml
 services:
@@ -67,154 +53,114 @@ services:
     ports:
       - "127.0.0.1:2499:2499"
     environment:
-      - PORT=2499
-      - NODE_ENV=production
-      - DATA_DIR=/app/data
-      - DOWNLOADS_DIR=/app/downloads
-      - AUTH_PASSWORD=${AUTH_PASSWORD:-}
+      PORT: 2499
+      NODE_ENV: production
+      DATA_DIR: /app/data
+      DOWNLOADS_DIR: /app/downloads
+      AUTH_PASSWORD: ${AUTH_PASSWORD:-}
     volumes:
       - ./data:/app/data
       - ./downloads:/app/downloads
 ```
 
-Then launch the container:
 ```bash
 docker compose up -d
 ```
 
-### Option B: Build from Source
+Open `http://127.0.0.1:2499`. The default Compose binding is local-only. If you deliberately expose VidArch to a LAN, set a strong `AUTH_PASSWORD`, override `VIDARCH_BIND_ADDRESS`, and use HTTPS when traffic leaves a trusted host.
+
+To build the current checkout instead of using GHCR:
 
 ```bash
-# 1. Clone the repository
 git clone https://github.com/lucas-lepajollec/vidarch.git
 cd vidarch
-
-# 2. Configure environment
 cp .env.example .env
-
-# 3. Launch with Docker Compose
-docker compose up -d
+docker compose up -d --build
 ```
 
-Open **`http://localhost:2499`** in your browser.
-
-Docker and Docker Compose listen on localhost by default. To expose the Compose service on your LAN, set a password and deliberately override the bind address before starting it:
-
-```powershell
-$env:AUTH_PASSWORD="choose-a-long-password"
-$env:VIDARCH_BIND_ADDRESS="0.0.0.0"
-docker compose up -d
-```
-
-Keep the localhost default if VidArch is only used from the host or sits behind a local reverse proxy.
-
----
-
-## 💻 Manual Installation (Local / Development)
+## Local development
 
 ### Requirements
-- **Node.js**: `v20+` or `v22+`
-- **Python**: `3.10+` with `yt-dlp` installed (`pip install -U yt-dlp`)
-- **FFmpeg & FFprobe**: Installed and available in your system `PATH`
 
-### 1. Install dependencies
+- Node.js 20 or 22.
+- Python 3.10+ with a current `yt-dlp` installation.
+- FFmpeg and FFprobe available on `PATH`.
+
 ```bash
-# Install the exact root and server dependencies from the lockfile
 npm ci
-
-# Install the exact client dependencies from the lockfile
 npm --prefix client ci
-```
-
-### 2. Start development mode
-```bash
 npm run dev
 ```
-- Local-only binding (default): accessible from this computer only.
-- Client dev server: `http://localhost:2499`
-- Server API: `http://localhost:2498`
 
-To deliberately expose the development servers on your LAN:
-```bash
-npm run dev:lan
-```
-This mode binds both the client and API to `0.0.0.0`. Configure authentication before using it on an untrusted network.
+The frontend is available on `http://127.0.0.1:2499` and the development API on `http://127.0.0.1:2498`. Both bind locally by default. Use `npm run dev:lan` only for deliberate testing on a trusted network and configure authentication first when other users share that network.
 
-### 3. Production build & start
 ```bash
 npm run build
+npm test
 npm start
 ```
 
----
+## Storage and configuration
 
-## ⚙️ Environment Variables
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `PORT` | `2498` in development, `2499` in production | Express listening port. |
+| `DATA_DIR` | `./data` | SQLite database, session material, and optional `cookies.txt`. |
+| `DOWNLOADS_DIR` | `./downloads` | Archived video, thumbnails, and metadata. |
+| `YT_DLP_PATH` | Auto-detected | Override the `yt-dlp` executable. |
+| `AUTH_PASSWORD` | Unset | Require a password for the UI and API. |
+| `SESSION_SECRET` | Generated and persisted | Sign session cookies. |
+| `VIDARCH_BIND_ADDRESS` | `127.0.0.1` in Compose | Deliberately change the host network binding. |
 
-| Variable | Default | Description |
-|---|---|---|
-| `PORT` | `2498` (dev) / `2499` (prod) | HTTP listening port for Express server |
-| `NODE_ENV` | `development` | Runtime environment (`development` or `production`) |
-| `DATA_DIR` | `./data` | Directory for SQLite database (`vidarch.db`) and `cookies.txt` |
-| `DOWNLOADS_DIR` | `./downloads` | Directory for archived videos, thumbnails, and JSON metadata |
-| `YT_DLP_PATH` | Auto-detected | Custom absolute path to the `yt-dlp` binary |
-| `AUTH_PASSWORD` | _unset_ | If set, the UI and API require this password (session cookie, 30 days). You can also set it in **Settings → Sécurité**. |
-| `SESSION_SECRET` | auto-generated | HMAC secret for session cookies (otherwise stored in `data/.session_secret`) |
-| `VIDARCH_BIND_ADDRESS` | `127.0.0.1` (Compose) | Host address published by Docker Compose. Use `0.0.0.0` only for deliberate LAN exposure. |
+Back up `DATA_DIR` and `DOWNLOADS_DIR` together. The database describes the library while the download directory contains the media it references.
 
-yt-dlp is kept **in the same process/container**. On startup (and every Sunday 04:15) VidArch runs `yt-dlp -U` when `auto_update_ytdlp` is enabled (default). A sidecar container is unnecessary for a homelab install.
+## Security and network exposure
 
-When exposing VidArch beyond localhost, set `AUTH_PASSWORD` (or a password in Settings) **and** put the app behind HTTPS.
+- Set `AUTH_PASSWORD` before exposing VidArch beyond localhost.
+- Place remote access behind HTTPS and a trusted reverse proxy.
+- Keep `cookies.txt`, the SQLite database, session secrets, and downloaded media out of public static paths.
+- Do not publish the data or downloads directories through an unrelated file server.
+- Review filesystem ownership instead of granting world-writable permissions.
+- Treat imported cookies as account credentials and rotate them if exposure is suspected.
+- Keep third-party download targets and legal use within the permissions that apply to you.
 
----
+The server applies Helmet content-security policy, rate limiting, path confinement, restricted remote-image handling, and optional password-based sessions. These controls reduce risk; they do not make an internet-exposed personal media server maintenance-free.
 
-## 🔒 Reverse Proxy & Authentication
+## Architecture
 
-Set `AUTH_PASSWORD` (or a password in Settings → Sécurité) before exposing VidArch on a network. Place it behind a reverse proxy with HTTPS.
+| Layer | Technology |
+| --- | --- |
+| Frontend | React 19, TypeScript, Vite, Tailwind CSS |
+| Backend | Node.js 22, Express 5, TypeScript |
+| Persistence | SQLite via `better-sqlite3`, WAL mode |
+| Media | `yt-dlp`, FFmpeg, FFprobe |
+| Operations | Docker, Docker Compose, GHCR |
 
-### Caddy Example
-```caddyfile
-vidarch.yourdomain.com {
-    reverse_proxy localhost:2499
-}
+```text
+vidarch/
+├── client/             # React application and isolated demo
+├── server/src/         # API, library, download, search, and security logic
+├── data/               # Runtime state; keep private and persistent
+├── downloads/          # Archived media; keep private and persistent
+├── scripts/            # Development and operational helpers
+├── Dockerfile
+└── docker-compose.yml
 ```
 
-### Nginx Example
-```nginx
-server {
-    server_name vidarch.yourdomain.com;
+## Public demo
 
-    client_max_body_size 10G;
+The [public demo](https://demo.vidarch.lucas-homelab.fr) runs the real interface with a curated Blender Open Movies dataset. Actions and counters are simulated in the browser, external services are disabled, and the state resets. Artwork comes from Blender Studio projects released under Creative Commons licenses; attribution is included in the corresponding demo entries.
 
-    location / {
-        proxy_pass http://127.0.0.1:2499;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-}
-```
+The demo is a safe product walkthrough. It is not connected to a private library, cookies file, downloader, or personal account.
 
----
+## Legal notice
 
-## ⚖️ Legal Disclaimer
+VidArch is an independent open-source project for personal archiving, offline viewing, and other lawful uses. It is not affiliated with, endorsed by, or sponsored by Google LLC or YouTube LLC. YouTube is a trademark of Google LLC; other names and marks belong to their respective owners.
 
-**VidArch** is an independent, community-driven open-source project created for personal backup, offline viewing, and educational purposes. It is **not affiliated with, endorsed by, or sponsored by Google LLC or YouTube LLC**. 
+You are responsible for complying with applicable copyright law, licenses, third-party terms, and access restrictions. The presence of a technical download path does not grant permission to copy or redistribute content.
 
-YouTube is a registered trademark of Google LLC. All trademarks and brand names belong to their respective owners. Users are responsible for complying with applicable local copyright laws and third-party terms of service.
+## Contributing and license
 
----
+Contributions, bug reports, and feature requests are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md), [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md), and [SECURITY.md](SECURITY.md) before participating.
 
-## 🤝 Contributing
-
-Contributions, bug reports, and feature requests are welcome!
-Please check [CONTRIBUTING.md](CONTRIBUTING.md) and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
-
----
-
-## 📄 License
-
-This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
+VidArch is distributed under the [MIT License](LICENSE). Third-party tools and demo media retain their own licenses.
