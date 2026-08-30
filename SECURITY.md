@@ -1,34 +1,22 @@
-# Security Policy
+# Security policy
 
-## 🛡️ Supported Versions
+VidArch downloads and stores media, account cookies, metadata, session state, and a local database. Reports involving unauthorized access, unsafe paths, remote-content handling, command execution, session protection, or the dependency and container supply chain are especially important.
 
-We actively provide security updates for the latest release branch of VidArch.
+## Supported versions
 
-| Version | Supported          |
-| ------- | ------------------ |
-| 1.x.x   | :white_check_mark: |
-| < 1.0   | :x:                |
+Until the first deliberate public release, security fixes target `main`. After releases begin, this section will identify the supported release line explicitly.
 
----
+## Reporting a vulnerability
 
-## 🔒 Reporting a Vulnerability
+Use the repository's [private vulnerability reporting form](https://github.com/lucas-lepajollec/vidarch/security/advisories/new).
 
-If you discover a potential security vulnerability in VidArch, please **do NOT open a public GitHub issue**.
+If private reporting is unavailable, open a minimal public issue asking for a private contact channel. Do not include cookies, downloaded media, private URLs, database contents, exploit code, or other sensitive details in that issue.
 
-Instead, please report it privately:
-- Open a **GitHub Security Advisory** on this repository (under the "Security" tab -> "Advisories" -> "New draft security advisory"), or
-- Contact the maintainer directly via their GitHub profile.
-
-Please include:
-1. A description of the vulnerability and its potential impact.
-2. Step-by-step instructions (or proof of concept) to reproduce the issue.
-3. Your proposed fix or mitigation if you have one.
-
-We will review your submission promptly and coordinate a patch and release before public disclosure.
+Include the affected commit or image tag, deployment method, clear reproduction steps, the expected impact, and a sanitized proof of concept when possible. You should receive an acknowledgement within seven days and an initial assessment within fourteen days.
 
 ## Hardening a deployment
 
-- Set `AUTH_PASSWORD` or a password in **Settings → Sécurité** before exposing the host.
-- Do not serve or share the `data/` directory: it contains `vidarch.db`, `cookies.txt`, and the session secret.
-- Put VidArch behind HTTPS (Caddy / Nginx). The session cookie is `HttpOnly` + `SameSite=Lax` (and `Secure` when the request is HTTPS).
-- Keep yt-dlp updated (`yt-dlp -U` on startup / weekly, or the Settings button). YouTube extractors break often.
+- Configure authentication before exposing VidArch beyond a trusted host.
+- Do not serve or share the `data/` directory; it can contain `vidarch.db`, `cookies.txt`, and session secrets.
+- Put remote deployments behind HTTPS and keep the shipped cookie protections intact.
+- Keep `yt-dlp` and the container image updated because upstream extractors change frequently.

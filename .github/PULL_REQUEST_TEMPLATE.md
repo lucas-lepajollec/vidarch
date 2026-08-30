@@ -1,15 +1,28 @@
-## Description
-Briefly describe the purpose of this PR and what changes were made.
+## Summary
 
-## Type of Change
-- [ ] 🐛 Bug fix (non-breaking change which fixes an issue)
-- [ ] ✨ New feature (non-breaking change which adds functionality)
-- [ ] 🔒 Security fix / Hardening
-- [ ] ⚡ Performance improvement
-- [ ] 📝 Documentation update
+<!-- What changed, and what user or maintainer problem does it solve? -->
 
-## Checklist
-- [ ] My code follows the code style and guidelines of this project
-- [ ] I have performed a self-review of my own code
-- [ ] I have verified that `npm run build` succeeds with zero errors
-- [ ] My changes generate no new warnings or console errors
+## Change type
+
+- [ ] Fix
+- [ ] Feature or source support
+- [ ] Documentation
+- [ ] Security, privacy, or hardening
+- [ ] Maintenance or refactor
+- [ ] Breaking change
+
+## Validation
+
+- [ ] I ran the relevant root/client tests, lint, build, and container checks described in `CONTRIBUTING.md`.
+- [ ] I added or updated tests when behavior changed.
+- [ ] I considered authentication, remote content, paths, downloads, persistence, upgrades, and rollback where relevant.
+- [ ] I updated documentation and `CHANGELOG.md` when users or operators are affected.
+- [ ] I did not include cookies, downloaded media, databases, credentials, generated state, or unrelated dependency churn.
+
+## Compatibility and migration
+
+<!-- Describe source compatibility, stored-data changes, breaking behavior, migration and rollback. Write "None" when not applicable. -->
+
+## Visual evidence
+
+<!-- Add before/after screenshots or recordings for visible changes. Remove this section when not applicable. -->
