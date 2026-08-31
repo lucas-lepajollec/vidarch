@@ -60,3 +60,7 @@ Thumbs.db
 .agents/
 .agent/
 .gemini/
+
+# Local private project context (never commit)
+AGENTS.override.md
+.project-local/
