@@ -21,7 +21,7 @@ const { result } = concurrently([
     env: sharedEnv,
   },
   {
-    command: 'node scripts/wait-for-server.mjs && npm --prefix client run dev',
+    command: `node scripts/wait-for-server.mjs && npm --prefix client run ${lanMode ? 'dev:lan' : 'dev'}`,
     name: 'CLIENT',
     prefixColor: 'magenta',
     env: sharedEnv,

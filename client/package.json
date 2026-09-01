@@ -3,14 +3,21 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "engines": {
+    "node": "22.x"
+  },
   "scripts": {
-    "dev": "vite",
-    "dev:demo": "vite --mode demo",
+    "dev": "vite --host 127.0.0.1",
+    "dev:lan": "vite --host 0.0.0.0",
+    "dev:demo": "vite --mode demo --host 127.0.0.1",
+    "dev:demo:lan": "vite --mode demo --host 0.0.0.0",
     "build": "tsc -b && vite build",
     "build:demo": "tsc -b && vite build --mode demo",
     "lint": "oxlint",
-    "preview": "vite preview",
-    "preview:demo": "vite preview --mode demo --port 2505"
+    "preview": "vite preview --host 127.0.0.1",
+    "preview:lan": "vite preview --host 0.0.0.0",
+    "preview:demo": "vite preview --mode demo --host 127.0.0.1 --port 2505",
+    "preview:demo:lan": "vite preview --mode demo --host 0.0.0.0 --port 2505"
   },
   "dependencies": {
     "clsx": "^2.1.1",
