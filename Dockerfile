@@ -29,6 +29,7 @@ RUN npm prune --omit=dev
 FROM node:22-bookworm-slim AS runner
 
 ARG YT_DLP_VERSION=2026.08.19
+ARG YT_DLP_SHA256=1fa6733c37ea6fb51c99ad8fe785e7b7e5f3246c9b980230329d4fb72ed8d4d6
 
 # Install runtime system dependencies: python3, ffmpeg, ca-certificates, curl
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -40,6 +41,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Install a pinned standalone yt-dlp binary for reproducible images
 RUN curl -fL --retry 3 "https://github.com/yt-dlp/yt-dlp/releases/download/${YT_DLP_VERSION}/yt-dlp" -o /usr/local/bin/yt-dlp \
+    && echo "${YT_DLP_SHA256}  /usr/local/bin/yt-dlp" | sha256sum --check --strict \
     && chmod a+rx /usr/local/bin/yt-dlp
 
 WORKDIR /app
@@ -53,8 +55,10 @@ COPY --from=server-builder /app/server ./server
 # Copy built frontend from Stage 1
 COPY --from=client-builder /app/client/dist ./client/dist
 
-# Create persistent storage directories
-RUN mkdir -p /app/data /app/downloads
+# The official Node image already provides the explicit non-root node:node
+# identity at UID/GID 1000.
+RUN mkdir -p /app/data /app/downloads \
+    && chown -R node:node /app/data /app/downloads
 
 # Environment variables
 ENV NODE_ENV=production
@@ -66,5 +70,10 @@ ENV YT_DLP_PATH=/usr/local/bin/yt-dlp
 EXPOSE 2499
 
 VOLUME ["/app/data", "/app/downloads"]
+
+USER node
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+  CMD curl --fail --silent --show-error http://127.0.0.1:2499/api/health >/dev/null || exit 1
 
 CMD ["node", "dist/server/index.js"]

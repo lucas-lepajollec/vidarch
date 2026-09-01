@@ -51,7 +51,7 @@ Create `docker-compose.yml`:
 ```yaml
 services:
   vidarch:
-    image: ghcr.io/lucas-lepajollec/vidarch:latest
+    image: ${VIDARCH_IMAGE:-ghcr.io/lucas-lepajollec/vidarch:latest}
     container_name: vidarch
     restart: unless-stopped
     ports:
@@ -65,6 +65,14 @@ services:
     volumes:
       - ./data:/app/data
       - ./downloads:/app/downloads
+    read_only: true
+    tmpfs:
+      - /tmp:size=128m,uid=1000,gid=1000,mode=1770
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    init: true
 ```
 
 ```bash
@@ -72,6 +80,8 @@ docker compose up -d
 ```
 
 Open `http://127.0.0.1:2499`. The default binding is local-only. Set a strong `AUTH_PASSWORD` before deliberately changing `VIDARCH_BIND_ADDRESS` for LAN access.
+
+Before an update, back up `./data` and `./downloads` together and record the current image digest. Pull, recreate, and verify `/api/health`. Roll back by setting `VIDARCH_IMAGE` to the previous version or `sha-<full-commit>` tag. Removing the container is safe; deleting either persistent directory is not.
 
 To build the current checkout:
 
@@ -84,7 +94,7 @@ docker compose up -d --build
 
 ### Local development
 
-Requirements: Node.js 20 or 22, Python 3.10+ with current `yt-dlp`, and FFmpeg/FFprobe on `PATH`.
+Requirements: Node.js 22, Python 3.10+ with current `yt-dlp`, and FFmpeg/FFprobe on `PATH`.
 
 ```bash
 npm ci
