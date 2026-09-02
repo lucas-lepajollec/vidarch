@@ -3,7 +3,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import type { Channel, DownloadTask, SystemStatus, PageRoute, NavigationState, AuthStatus } from '../types';
 import { navToPath, pathToNav } from '../utils/routes';
 import { parseQualityNote } from '../utils/qualityNote';
-import { useI18n } from '../i18n/I18nProvider';
+import { readRequestedLanguage, useI18n } from '../i18n/I18nProvider';
 import type { UiLanguage } from '../i18n/messages';
 import { isDemoMode } from '../demo/config';
 
@@ -400,7 +400,10 @@ export const VidArchProvider: React.FC<{ children: React.ReactNode }> = ({ child
         if (!data) return;
         setLocalOnlyState(data.local_only === 'true');
         setScanEnabledState(data.scan_enabled !== 'false');
-        if (data.ui_language === 'en' || data.ui_language === 'fr' || data.ui_language === 'es' || data.ui_language === 'de') {
+        const requestedLanguage = readRequestedLanguage();
+        if (requestedLanguage) {
+          setLanguage(requestedLanguage);
+        } else if (data.ui_language === 'en' || data.ui_language === 'fr' || data.ui_language === 'es' || data.ui_language === 'de') {
           setLanguage(data.ui_language);
         }
       })

@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Maximize, Minimize, Pause, Play, RotateCcw, RotateCw, Tv, Volume2, VolumeX } from 'lucide-react';
 import type { Video } from '../types';
 import { resolveThumbnail } from '../utils/media';
+import { useI18n } from '../i18n/I18nProvider';
 
 type DemoVideoSurfaceProps = {
   video: Video;
@@ -24,6 +25,7 @@ export const DemoVideoSurface: React.FC<DemoVideoSurfaceProps> = ({
   autoPlay = false,
   onEnded,
 }) => {
+  const { t } = useI18n();
   const containerRef = useRef<HTMLDivElement>(null);
   const duration = Math.max(30, video.duration || 300);
   const [playing, setPlaying] = useState(autoPlay);
@@ -73,7 +75,7 @@ export const DemoVideoSurface: React.FC<DemoVideoSurfaceProps> = ({
       className={`vidarch-player relative isolate overflow-hidden bg-black text-white ${isTheatre ? 'is-theatre' : ''}`}
       style={{ ['--player-ratio' as string]: 16 / 9 }}
       tabIndex={0}
-      aria-label="Lecteur vidéo synthétique de la démonstration"
+      aria-label={t('demo.syntheticPlayer')}
     >
       <img src={thumbnail} alt="" className={`absolute inset-0 h-full w-full object-cover transition duration-700 ${playing ? 'scale-[1.025]' : 'scale-100'}`} />
       <div className="absolute inset-0 bg-[linear-gradient(110deg,rgba(0,0,0,.16),transparent_42%,rgba(255,90,103,.12))]" />
@@ -83,17 +85,17 @@ export const DemoVideoSurface: React.FC<DemoVideoSurfaceProps> = ({
       </div>
       <div className="absolute inset-0 bg-gradient-to-t from-black/88 via-black/5 to-black/18" />
       <div className="absolute left-4 top-4 rounded-full border border-white/15 bg-black/45 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-white/80 backdrop-blur-md">
-        Séquence synthétique · démo
+        {t('demo.syntheticSequence')}
       </div>
 
       <div className="absolute inset-0 z-10 flex items-center justify-center gap-10 sm:gap-16">
-        <button type="button" onClick={() => skip(-10)} className="va-player-jump flex h-12 w-12 items-center justify-center text-white sm:h-14 sm:w-14" title="Reculer de 10 secondes">
+        <button type="button" onClick={() => skip(-10)} className="va-player-jump flex h-12 w-12 items-center justify-center text-white sm:h-14 sm:w-14" title={t('demo.rewind')}>
           <RotateCcw className="h-5 w-5 sm:h-6 sm:w-6" />
         </button>
-        <button type="button" onClick={() => setPlaying((value) => !value)} className="va-player-main flex h-16 w-16 items-center justify-center text-white sm:h-[72px] sm:w-[72px]" aria-label={playing ? 'Pause' : 'Lecture'}>
+        <button type="button" onClick={() => setPlaying((value) => !value)} className="va-player-main flex h-16 w-16 items-center justify-center text-white sm:h-[72px] sm:w-[72px]" aria-label={playing ? t('demo.pause') : t('demo.play')}>
           {playing ? <Pause className="h-7 w-7 fill-current" /> : <Play className="ml-1 h-7 w-7 fill-current" />}
         </button>
-        <button type="button" onClick={() => skip(10)} className="va-player-jump flex h-12 w-12 items-center justify-center text-white sm:h-14 sm:w-14" title="Avancer de 10 secondes">
+        <button type="button" onClick={() => skip(10)} className="va-player-jump flex h-12 w-12 items-center justify-center text-white sm:h-14 sm:w-14" title={t('demo.forward')}>
           <RotateCw className="h-5 w-5 sm:h-6 sm:w-6" />
         </button>
       </div>
@@ -109,15 +111,15 @@ export const DemoVideoSurface: React.FC<DemoVideoSurfaceProps> = ({
             value={currentTime}
             onChange={(event) => setCurrentTime(Number(event.target.value))}
             className="absolute -inset-x-1 -inset-y-2 h-5 w-[calc(100%+8px)] cursor-pointer opacity-0"
-            aria-label="Position de lecture"
+            aria-label={t('demo.playhead')}
           />
         </div>
 
         <div className="flex items-center gap-2 text-[11px] sm:gap-3">
-          <button type="button" onClick={() => setPlaying((value) => !value)} className="rounded-lg p-1.5 hover:bg-white/10" aria-label={playing ? 'Pause' : 'Lecture'}>
+          <button type="button" onClick={() => setPlaying((value) => !value)} className="rounded-lg p-1.5 hover:bg-white/10" aria-label={playing ? t('demo.pause') : t('demo.play')}>
             {playing ? <Pause className="h-4 w-4 fill-current" /> : <Play className="h-4 w-4 fill-current" />}
           </button>
-          <button type="button" onClick={() => setMuted((value) => !value)} className="rounded-lg p-1.5 hover:bg-white/10" aria-label={muted ? 'Activer le son' : 'Couper le son'}>
+          <button type="button" onClick={() => setMuted((value) => !value)} className="rounded-lg p-1.5 hover:bg-white/10" aria-label={muted ? t('demo.unmute') : t('demo.mute')}>
             {muted || volume === 0 ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
           </button>
           <input
@@ -128,7 +130,7 @@ export const DemoVideoSurface: React.FC<DemoVideoSurfaceProps> = ({
             value={muted ? 0 : volume}
             onChange={(event) => { setVolume(Number(event.target.value)); setMuted(false); }}
             className="hidden w-16 accent-[#ff5a67] sm:block"
-            aria-label="Volume"
+            aria-label={t('demo.volume')}
           />
           <span className="font-medium tabular-nums text-white/80">{formatTime(currentTime)} / {formatTime(duration)}</span>
 
@@ -146,11 +148,11 @@ export const DemoVideoSurface: React.FC<DemoVideoSurfaceProps> = ({
             )}
           </div>
           {onToggleTheatre && (
-            <button type="button" onClick={onToggleTheatre} className="hidden rounded-lg p-1.5 hover:bg-white/10 sm:block" title="Mode cinéma">
+            <button type="button" onClick={onToggleTheatre} className="hidden rounded-lg p-1.5 hover:bg-white/10 sm:block" title={t('demo.theatre')}>
               <Tv className="h-4 w-4" />
             </button>
           )}
-          <button type="button" onClick={() => void toggleFullscreen()} className="rounded-lg p-1.5 hover:bg-white/10" title="Plein écran">
+          <button type="button" onClick={() => void toggleFullscreen()} className="rounded-lg p-1.5 hover:bg-white/10" title={t('demo.fullscreen')}>
             {fullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
           </button>
         </div>

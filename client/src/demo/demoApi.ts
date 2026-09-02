@@ -36,6 +36,7 @@ function clone<T>(value: T): T {
 }
 
 function freshState(): DemoState {
+  const requestedLanguage = new URLSearchParams(window.location.search).get('lang');
   return {
     channels: clone(demoChannels),
     videos: clone(demoVideos),
@@ -46,7 +47,9 @@ function freshState(): DemoState {
     settings: {
       local_only: 'false',
       scan_enabled: 'true',
-      ui_language: 'fr',
+      ui_language: requestedLanguage === 'fr' || requestedLanguage === 'es' || requestedLanguage === 'de'
+        ? requestedLanguage
+        : 'en',
       default_max_resolution: '1080p',
       auto_update_ytdlp: 'true',
       preferred_video_codec: 'best',
@@ -204,7 +207,7 @@ function routeVideos(url: URL, method: string, body: Record<string, unknown>): R
     video.file_size = undefined;
     video.resolution = undefined;
     video.ext = undefined;
-    notify('Archive retirée de la bibliothèque de démonstration.');
+    notify('demo.noticeRemoved');
     return json({ success: true });
   }
   return null;
@@ -347,7 +350,7 @@ function routeDownloads(url: URL, method: string, body: Record<string, unknown>)
       started_at: new Date().toISOString(),
     };
     state.queue = [item, ...state.queue.filter((task) => task.video_id !== video.id)];
-    notify('Téléchargement simulé ajouté à la file.');
+    notify('demo.noticeQueued');
     return json({ success: true, item });
   }
   if (url.pathname === '/api/downloads/cancel-all' && method === 'POST') {
@@ -379,7 +382,7 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
   const body = readBody(init);
 
   if (url.origin !== window.location.origin) {
-    notify('Les connexions externes sont désactivées dans la démo publique.');
+    notify('demo.noticeExternal');
     return json({ error: 'Connexion externe désactivée en mode démo' }, 451);
   }
   if (!url.pathname.startsWith('/api/')) return nativeFetch!(input, init);
@@ -453,8 +456,8 @@ async function demoFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
     });
   }
   if (url.pathname.startsWith('/api/system/') && method === 'POST') {
-    notify('Cette action est simulée : aucun système réel n’est contacté.');
-    return json({ success: true, message: 'Action simulée en mode démo' });
+    notify('demo.noticeSimulated');
+    return json({ success: true, message: 'Demo action simulated' });
   }
   if (url.pathname === '/api/system/cookies' && method === 'DELETE') return json({ success: true });
 
@@ -500,7 +503,7 @@ export function installDemoApi(): void {
     if (href && new URL(href, window.location.origin).origin !== window.location.origin) {
       event.preventDefault();
       event.stopPropagation();
-      notify('Les liens externes sont neutralisés dans la démo publique.');
+      notify('demo.noticeLinksDisabled');
     }
   }, true);
 }
