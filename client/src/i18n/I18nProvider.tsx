@@ -13,7 +13,15 @@ function isUiLanguage(value: string | null | undefined): value is UiLanguage {
   return value === 'en' || value === 'fr' || value === 'es' || value === 'de';
 }
 
+export function readRequestedLanguage(): UiLanguage | null {
+  if (typeof window === 'undefined') return null;
+  const requested = new URLSearchParams(window.location.search).get('lang');
+  return isUiLanguage(requested) ? requested : null;
+}
+
 function readStoredLanguage(): UiLanguage {
+  const requested = readRequestedLanguage();
+  if (requested) return requested;
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (isUiLanguage(stored)) return stored;
@@ -44,6 +52,9 @@ export const I18nProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     document.documentElement.lang = language;
+    document.title = messages[language]['meta.title'];
+    document.querySelector<HTMLMetaElement>('meta[name="description"]')
+      ?.setAttribute('content', messages[language]['meta.description']);
   }, [language]);
 
   const t = useCallback<TranslateFn>((key, vars) => {

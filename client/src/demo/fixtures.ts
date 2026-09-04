@@ -45,7 +45,7 @@ function banner(label: string, index: number): string {
       <rect width="1600" height="360" fill="url(#b)"/>
       <path d="M0 300 C260 130 420 360 710 190 S1170 45 1600 210" fill="none" stroke="white" stroke-opacity=".14" stroke-width="3"/>
       <path d="M0 330 C270 160 470 400 770 210 S1220 80 1600 250" fill="none" stroke="${accent}" stroke-opacity=".7" stroke-width="8"/>
-      <text x="80" y="125" fill="white" fill-opacity=".55" font-family="Arial, sans-serif" font-size="22" font-weight="700" letter-spacing="10">ESPACE CRÉATEUR</text>
+      <text x="80" y="125" fill="white" fill-opacity=".55" font-family="Arial, sans-serif" font-size="22" font-weight="700" letter-spacing="10">CREATOR SPACE</text>
       <text x="80" y="215" fill="white" font-family="Arial, sans-serif" font-size="68" font-weight="800">${escapeSvg(label)}</text>
     </svg>
   `);
@@ -54,11 +54,11 @@ function banner(label: string, index: number): string {
 export const demoChannels: Channel[] = [
   {
     id: 'demo-owner',
-    title: 'Vidéothèque démo',
+    title: 'Demo library',
     handle: '@vidarch-demo',
-    description: 'Profil local fictif utilisé uniquement pour présenter les fonctions de VidArch.',
+    description: 'Fictional local profile used only to demonstrate VidArch features.',
     avatar_url: avatar('VidArch Demo', 0),
-    banner_url: banner('VIDÉOTHÈQUE DÉMO', 0),
+    banner_url: banner('DEMO LIBRARY', 0),
     subscriber_count: '0',
     video_count: 0,
     downloaded_count: 0,
@@ -69,13 +69,13 @@ export const demoChannels: Channel[] = [
     is_subscribed: 0,
     is_owner: 1,
     is_active_owner: 1,
-    language: 'fr',
+    language: 'en',
   },
   {
     id: 'demo-blender-open-movies',
-    title: 'Blender Open Movies · sélection',
+    title: 'Blender Open Movies · selection',
     handle: '@open-movies-demo',
-    description: 'Une sélection de films ouverts, making-of et études de production publiés par Blender Studio.',
+    description: 'A selection of open films, making-of videos, and production studies published by Blender Studio.',
     avatar_url: avatar('Open Movies Demo', 1),
     banner_url: banner('BLENDER OPEN MOVIES', 1),
     subscriber_count: '4,1 M',
