@@ -14,15 +14,16 @@
   .demo-video-motion { animation: none; }
 }
 
-@media (max-height: 500px) and (orientation: landscape) {
-  .va-demo-badge {
-    inset: 4rem 0.75rem auto auto;
-    width: auto;
-  }
+.lh-demo-dialog:modal {
+  margin: auto;
+}
 
-  .va-demo-badge .va-demo-detail {
-    display: none;
-  }
+.lh-demo-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.72);
+}
+
+#lh-demo-title:focus {
+  outline: none;
 }
 
 @layer base {

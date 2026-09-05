@@ -9,7 +9,6 @@ import { DownloadNotice } from './components/common/DownloadNotice';
 import { LoginPage } from './pages/Login';
 import { I18nProvider } from './i18n/I18nProvider';
 import { DemoExperience } from './demo/DemoExperience';
-import { isDemoMode } from './demo/config';
 
 const Home = lazy(() => import('./pages/Home').then((m) => ({ default: m.Home })));
 const Subscriptions = lazy(() => import('./pages/Subscriptions').then((m) => ({ default: m.Subscriptions })));
@@ -123,7 +122,7 @@ const MainContent: React.FC = () => {
 
       {/* Main Content Area */}
       <main 
-        className={`flex-1 pt-14 min-h-screen flex flex-col ml-0 transition-[margin] duration-200 ease-out-smooth ${isDemoMode ? 'pb-20 sm:pb-0' : ''} ${
+        className={`flex-1 pt-14 min-h-screen flex flex-col ml-0 transition-[margin] duration-200 ease-out-smooth ${
           showPersistentSidebar ? (isSidebarOpen ? 'lg:ml-60' : 'lg:ml-[72px]') : 'lg:ml-0'
         }`}
       >
