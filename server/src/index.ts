@@ -103,11 +103,7 @@ const mediaProxyLimiter = rateLimit({
   legacyHeaders: false,
   message: { error: 'Limite de médias atteinte, veuillez patienter une minute.' },
 });
-app.use('/media/thumb', mediaProxyLimiter);
-app.use('/media/avatar', mediaProxyLimiter);
-app.use('/media/banner', mediaProxyLimiter);
-
-app.get('/media/thumb/:id', async (req, res) => {
+app.get('/media/thumb/:id', mediaProxyLimiter, async (req, res) => {
   const id = String(req.params.id || '').replace(/\.(jpg|jpeg|webp|png)$/i, '');
   if (!isYouTubeVideoId(id)) return res.status(400).end();
   try {
@@ -120,7 +116,7 @@ app.get('/media/thumb/:id', async (req, res) => {
   }
 });
 
-app.get('/media/avatar/:id', async (req, res) => {
+app.get('/media/avatar/:id', mediaProxyLimiter, async (req, res) => {
   const id = String(req.params.id || '').slice(0, 80);
   if (!id || id.includes('..') || id.includes('/') || id.includes('\\')) return res.status(400).end();
   try {
@@ -133,7 +129,7 @@ app.get('/media/avatar/:id', async (req, res) => {
   }
 });
 
-app.get('/media/banner/:id', async (req, res) => {
+app.get('/media/banner/:id', mediaProxyLimiter, async (req, res) => {
   const id = String(req.params.id || '').slice(0, 80);
   if (!id || id.includes('..') || id.includes('/') || id.includes('\\')) return res.status(400).end();
   try {
