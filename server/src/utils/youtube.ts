@@ -77,7 +77,8 @@ export function sanitizeThumbUrl(url?: string | null): string {
   if (!url) return '';
   try {
     const u = new URL(url);
-    if (u.hostname.includes('ytimg.com')) {
+    const host = u.hostname.toLowerCase();
+    if (host === 'ytimg.com' || host.endsWith('.ytimg.com')) {
       u.search = '';
       u.hash = '';
       return u.toString();
@@ -204,11 +205,17 @@ export function parseYoutubeHandle(input: string): string | null {
   if (!raw) return null;
 
   let handle = '';
-  const urlMatch = raw.match(/(?:https?:\/\/)?(?:www\.|m\.)?youtube\.com\/@([A-Za-z0-9._-]+)/i);
-  if (urlMatch) {
-    handle = urlMatch[1];
-  } else if (raw.includes('youtube.com/') || raw.includes('youtu.be/')) {
-    return null;
+  if (looksLikeUrl(raw)) {
+    try {
+      const candidate = /^www\./i.test(raw) ? `https://${raw}` : raw;
+      const parsed = new URL(candidate);
+      if (!YT_HOSTS.has(parsed.hostname.toLowerCase())) return null;
+      const match = parsed.pathname.match(/^\/@([A-Za-z0-9._-]+)(?:\/videos)?\/?$/);
+      if (!match) return null;
+      handle = match[1];
+    } catch {
+      return null;
+    }
   } else if (raw.startsWith('@')) {
     handle = raw.slice(1).split(/[/?#\s]/)[0];
   } else if (/^[A-Za-z0-9._-]+$/.test(raw)) {

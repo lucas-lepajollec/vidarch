@@ -6,13 +6,21 @@ import { execFile } from 'child_process';
 import { promisify } from 'util';
 import { v4 as uuidv4 } from 'uuid';
 import { db } from '../db/database.js';
-import { DOWNLOADS_DIR, DATA_DIR } from '../config.js';
-import { getVideoDetails, getChannelDetails, formatDuration, sanitizeFilename } from '../services/ytdlp.js';
+import { DOWNLOADS_DIR, DATA_DIR, IS_PROD } from '../config.js';
+import { getVideoDetails, getChannelDetails, formatDuration } from '../services/ytdlp.js';
 import { isAllowedYouTubeTarget, looksLikeUrl, extractYouTubeVideoId } from '../utils/youtube.js';
 import { isLocalOnly } from '../utils/settings.js';
+import { resolveInside } from '../utils/paths.js';
 
 const execFileAsync = promisify(execFile);
 const router = Router();
+const VIDEO_EXTENSIONS = new Set(['.mp4', '.mkv', '.webm', '.mov', '.avi', '.m4v']);
+const THUMBNAIL_EXTENSIONS: Record<string, string> = {
+  'image/jpeg': '.jpg',
+  'image/png': '.png',
+  'image/webp': '.webp',
+};
+const MAX_THUMBNAIL_BYTES = 20 * 1024 * 1024;
 
 // Temp uploads directory
 const UPLOADS_TEMP_DIR = path.join(DATA_DIR, 'temp_uploads');
@@ -186,6 +194,18 @@ router.post('/file', upload.fields([
     return res.status(400).json({ error: 'Aucun fichier vidéo fourni' });
   }
 
+  const uploadedVideoPath = resolveInside(UPLOADS_TEMP_DIR, path.basename(videoFile.filename));
+  const uploadedThumbnailPath = thumbnailFile
+    ? resolveInside(UPLOADS_TEMP_DIR, path.basename(thumbnailFile.filename))
+    : null;
+  const videoExtension = path.extname(videoFile.originalname).toLowerCase();
+  if (!uploadedVideoPath || !VIDEO_EXTENSIONS.has(videoExtension)) {
+    return res.status(400).json({ error: 'Format vidéo non pris en charge.' });
+  }
+  if (thumbnailFile && (!uploadedThumbnailPath || !THUMBNAIL_EXTENSIONS[thumbnailFile.mimetype] || thumbnailFile.size > MAX_THUMBNAIL_BYTES)) {
+    return res.status(400).json({ error: 'Miniature invalide ou trop volumineuse.' });
+  }
+
   const {
     title,
     description = '',
@@ -245,7 +265,10 @@ router.post('/file', upload.fields([
       // Existing channel in database
       const existing = db.prepare('SELECT id, title FROM channels WHERE id = ?').get(channelId) as any;
       if (existing) {
+        channelId = existing.id;
         channelTitle = existing.title;
+      } else {
+        return res.status(400).json({ error: 'Chaîne inconnue.' });
       }
     } else {
       // Default Imported Videos Space
@@ -277,29 +300,33 @@ router.post('/file', upload.fields([
     const videoTitle = (title || videoFile.originalname.replace(/\.[^/.]+$/, '')).trim();
 
     // 3. Setup Target Folder in DOWNLOADS_DIR/<ChannelTitle>/
-    const sanitizedChannelDir = sanitizeFilename(channelTitle) || 'Vidéos Importées';
-    const channelFolderPath = path.join(DOWNLOADS_DIR, sanitizedChannelDir);
+    if (typeof channelId !== 'string' || !/^[a-zA-Z0-9_-]{1,80}$/.test(channelId)) {
+      return res.status(400).json({ error: 'Identifiant de chaîne invalide.' });
+    }
+    const channelFolderPath = resolveInside(DOWNLOADS_DIR, channelId);
+    if (!channelFolderPath) return res.status(400).json({ error: 'Chemin de chaîne invalide.' });
     if (!fs.existsSync(channelFolderPath)) {
       fs.mkdirSync(channelFolderPath, { recursive: true });
     }
 
-    const sanitizedVideoTitle = sanitizeFilename(videoTitle) || 'Video';
-    const finalVideoExt = path.extname(videoFile.originalname) || '.mp4';
-    const finalVideoFileName = `${sanitizedVideoTitle} [${videoId}]${finalVideoExt}`;
-    const finalVideoPath = path.join(channelFolderPath, finalVideoFileName);
-    const relativeVideoPath = path.join(sanitizedChannelDir, finalVideoFileName).replace(/\\/g, '/');
+    const finalVideoFileName = `${videoId}${videoExtension}`;
+    const finalVideoPath = resolveInside(channelFolderPath, finalVideoFileName);
+    if (!finalVideoPath) return res.status(400).json({ error: 'Chemin vidéo invalide.' });
+    const relativeVideoPath = `${channelId}/${finalVideoFileName}`;
 
     // Move uploaded video to destination
-    fs.renameSync(videoFile.path, finalVideoPath);
+    fs.renameSync(uploadedVideoPath, finalVideoPath);
 
     // 4. Handle Thumbnail
-    const finalThumbFileName = `${sanitizedVideoTitle} [${videoId}].jpg`;
-    const finalThumbPath = path.join(channelFolderPath, finalThumbFileName);
-    const relativeThumbPath = path.join(sanitizedChannelDir, finalThumbFileName).replace(/\\/g, '/');
+    const thumbExtension = thumbnailFile ? THUMBNAIL_EXTENSIONS[thumbnailFile.mimetype] : '.jpg';
+    const finalThumbFileName = `${videoId}${thumbExtension}`;
+    const finalThumbPath = resolveInside(channelFolderPath, finalThumbFileName);
+    if (!finalThumbPath) return res.status(400).json({ error: 'Chemin de miniature invalide.' });
+    const relativeThumbPath = `${channelId}/${finalThumbFileName}`;
 
     let hasThumb = false;
     if (thumbnailFile) {
-      fs.renameSync(thumbnailFile.path, finalThumbPath);
+      fs.renameSync(uploadedThumbnailPath!, finalThumbPath);
       hasThumb = true;
     } else {
       // Auto-extract frame with FFmpeg
@@ -366,13 +393,13 @@ router.post('/file', upload.fields([
   } catch (err: any) {
     console.error('Import file error:', err);
     // Cleanup temporary files
-    if (videoFile && fs.existsSync(videoFile.path)) {
-      try { fs.unlinkSync(videoFile.path); } catch (_) {}
+    if (uploadedVideoPath && fs.existsSync(uploadedVideoPath)) {
+      try { fs.unlinkSync(uploadedVideoPath); } catch (_) {}
     }
-    if (thumbnailFile && fs.existsSync(thumbnailFile.path)) {
-      try { fs.unlinkSync(thumbnailFile.path); } catch (_) {}
+    if (uploadedThumbnailPath && fs.existsSync(uploadedThumbnailPath)) {
+      try { fs.unlinkSync(uploadedThumbnailPath); } catch (_) {}
     }
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: IS_PROD ? 'Import impossible.' : err.message });
   }
 });
 

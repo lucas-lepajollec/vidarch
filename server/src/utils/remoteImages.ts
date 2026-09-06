@@ -14,6 +14,7 @@ const FETCH_HEADERS = {
   Referer: 'https://www.youtube.com/',
   Accept: 'image/avif,image/webp,image/apng,image/*,*/*;q=0.8',
 };
+const MAX_REMOTE_IMAGE_BYTES = 10 * 1024 * 1024;
 
 const thumbInflight = new Map<string, Promise<string | null>>();
 const avatarInflight = new Map<string, Promise<string | null>>();
@@ -73,16 +74,87 @@ function extFor(buf: Buffer): string {
   return '.jpg';
 }
 
+function parseRemoteImageUrl(raw: string): URL | null {
+  try {
+    const parsed = new URL(raw);
+    if (parsed.protocol !== 'https:' || parsed.username || parsed.password) return null;
+    if (!AVATAR_HOSTS.has(parsed.hostname.toLowerCase())) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+export const isAllowedRemoteImageUrl = (raw: string): boolean => parseRemoteImageUrl(raw) !== null;
+
+function trustedUrlForHost(parsed: URL): URL | null {
+  let trusted: URL;
+  switch (parsed.hostname.toLowerCase()) {
+    case 'yt3.ggpht.com':
+      trusted = new URL('https://yt3.ggpht.com/');
+      break;
+    case 'yt3.googleusercontent.com':
+      trusted = new URL('https://yt3.googleusercontent.com/');
+      break;
+    case 'lh3.googleusercontent.com':
+      trusted = new URL('https://lh3.googleusercontent.com/');
+      break;
+    case 'i.ytimg.com':
+      trusted = new URL('https://i.ytimg.com/');
+      break;
+    case 'img.youtube.com':
+      trusted = new URL('https://img.youtube.com/');
+      break;
+    case 'www.youtube.com':
+      trusted = new URL('https://www.youtube.com/');
+      break;
+    case 'youtube.com':
+      trusted = new URL('https://youtube.com/');
+      break;
+    default:
+      return null;
+  }
+
+  trusted.pathname = parsed.pathname;
+  trusted.search = parsed.search;
+  return trusted;
+}
+
+async function readLimitedImage(res: Response): Promise<Buffer | null> {
+  const declaredSize = Number(res.headers.get('content-length') || 0);
+  if (declaredSize > MAX_REMOTE_IMAGE_BYTES || !res.body) return null;
+
+  const chunks: Buffer[] = [];
+  let size = 0;
+  const reader = res.body.getReader();
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    size += value.byteLength;
+    if (size > MAX_REMOTE_IMAGE_BYTES) {
+      await reader.cancel();
+      return null;
+    }
+    chunks.push(Buffer.from(value));
+  }
+  return Buffer.concat(chunks);
+}
+
 async function fetchImage(url: string): Promise<Buffer | null> {
   try {
+    const parsed = parseRemoteImageUrl(url);
+    const trustedUrl = parsed && trustedUrlForHost(parsed);
+    if (!trustedUrl) return null;
     const ac = new AbortController();
     const timer = setTimeout(() => ac.abort(), 8000);
-    const res = await fetch(url, { headers: FETCH_HEADERS, redirect: 'follow', signal: ac.signal });
-    clearTimeout(timer);
-    if (!res.ok) return null;
-    const buf = Buffer.from(await res.arrayBuffer());
-    if (!looksLikeImage(buf)) return null;
-    return buf;
+    try {
+      const res = await fetch(trustedUrl, { headers: FETCH_HEADERS, redirect: 'error', signal: ac.signal });
+      if (!res.ok) return null;
+      const buf = await readLimitedImage(res);
+      return buf && looksLikeImage(buf) ? buf : null;
+    } finally {
+      clearTimeout(timer);
+    }
   } catch {
     return null;
   }
@@ -138,18 +210,6 @@ export async function ensureYoutubeThumb(videoId: string): Promise<string | null
   }
 }
 
-function isAllowedAvatarUrl(raw: string): boolean {
-  try {
-    const u = new URL(raw);
-    if (u.protocol !== 'https:' && u.protocol !== 'http:') return false;
-    const host = u.hostname.toLowerCase();
-    if (AVATAR_HOSTS.has(host)) return true;
-    return host.endsWith('.ggpht.com') || host.endsWith('.googleusercontent.com') || host.endsWith('.ytimg.com');
-  } catch {
-    return false;
-  }
-}
-
 function safeCacheId(id: string): string {
   return id.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 64);
 }
@@ -202,7 +262,7 @@ async function ensureChannelImage(
 
     const seen = new Set<string>();
     for (const candidate of [hint, sanitized, raw]) {
-      if (!candidate || seen.has(candidate) || !isAllowedAvatarUrl(candidate)) continue;
+      if (!candidate || seen.has(candidate) || !isAllowedRemoteImageUrl(candidate)) continue;
       seen.add(candidate);
       const buf = await fetchImage(candidate);
       if (buf && buf.length > 800) {

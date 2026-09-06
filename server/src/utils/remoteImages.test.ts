@@ -8,6 +8,7 @@ import {
   isDummyYoutubeThumb,
   jpegDimensions,
   looksLikeImage,
+  isAllowedRemoteImageUrl,
   pruneCacheDir,
   youtubeThumbCandidates,
 } from './remoteImages.js';
@@ -16,7 +17,14 @@ describe('remote image helpers', () => {
   it('lists youtube thumbnail candidates', () => {
     const urls = youtubeThumbCandidates('eMn43As24Bo');
     assert.ok(urls.some((u) => u.includes('/maxresdefault.jpg')));
-    assert.ok(urls.some((u) => u.includes('img.youtube.com')));
+    assert.ok(urls.some((u) => new URL(u).hostname === 'img.youtube.com'));
+  });
+
+  it('only allows HTTPS images from the explicit YouTube image allowlist', () => {
+    assert.equal(isAllowedRemoteImageUrl('https://i.ytimg.com/vi/eMn43As24Bo/hqdefault.jpg'), true);
+    assert.equal(isAllowedRemoteImageUrl('http://i.ytimg.com/vi/eMn43As24Bo/hqdefault.jpg'), false);
+    assert.equal(isAllowedRemoteImageUrl('https://ytimg.com.evil.example/image.jpg'), false);
+    assert.equal(isAllowedRemoteImageUrl('https://user:secret@i.ytimg.com/image.jpg'), false);
   });
 
   it('treats tiny buffers as dummy thumbs', () => {

@@ -38,18 +38,21 @@ jobs:
       - name: Unit tests
         run: |
           npm run check:version
+          npm run check:i18n
           npm test
 
       - name: Frontend lint
         run: npm --prefix client run lint
 
       - name: Build Full Project (Frontend & Backend)
-        run: npm run build
-
-      - name: Production dependency audit
         run: |
-          npm audit --omit=dev --audit-level=high
-          npm --prefix client audit --omit=dev --audit-level=high
+          npm run build
+          npm run build:demo
+
+      - name: Dependency audit
+        run: |
+          npm audit --audit-level=moderate
+          npm --prefix client audit --audit-level=moderate
 
       - name: Validate Docker Compose
         run: docker compose config --quiet
@@ -65,3 +68,15 @@ jobs:
 
       - name: Build container
         run: docker build --tag vidarch:ci .
+
+      - name: Smoke-test container health
+        run: |
+          docker run --detach --name vidarch-ci vidarch:ci
+          for attempt in {1..30}; do
+            status="$(docker inspect --format '{{.State.Health.Status}}' vidarch-ci)"
+            [ "$status" = healthy ] && exit 0
+            [ "$status" = unhealthy ] && break
+            sleep 1
+          done
+          docker logs vidarch-ci
+          exit 1
