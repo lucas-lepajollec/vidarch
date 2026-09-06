@@ -132,17 +132,21 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isOverlay = false, onC
               >
                 <Menu className="w-5 h-5" />
               </button>
-              <div 
+              <button
+                type="button"
                 onClick={() => handleItemClick('home')}
                 className="cursor-pointer"
+                aria-label={t('nav.home')}
               >
                 <VidArchLogo size="sm" />
-              </div>
+              </button>
             </div>
 
             <button
+              type="button"
               onClick={onClose}
               className="p-2 text-[#aaa] hover:text-white rounded-full hover:bg-[#18212c] transition"
+              aria-label={t('nav.closeMenu')}
             >
               <X className="w-4 h-4" />
             </button>

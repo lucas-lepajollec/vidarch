@@ -266,6 +266,7 @@ export const VideoCard: React.FC<VideoCardProps> = ({
             e.stopPropagation();
             if (video.channel_id) goTo('channel', { channelId: video.channel_id });
           }}
+          aria-label={`${t('header.viewChannel')}: ${video.channel_title}`}
           className="flex-shrink-0 self-start hover:ring-2 hover:ring-white/20 rounded-full transition cursor-pointer"
         >
           <ChannelAvatar channelId={video.channel_id} url={video.channel_avatar} title={video.channel_title} />

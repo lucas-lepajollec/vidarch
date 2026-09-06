@@ -209,6 +209,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onFocus={openSearchHistory}
                   placeholder={localOnly ? t('header.searchPlaceholderLocal') : t('header.searchPlaceholder')}
+                  aria-label={t('header.search')}
                   className="w-full bg-transparent text-[16px] sm:text-sm text-white focus:outline-none placeholder-[#657383]"
                   autoComplete="off"
                 />
@@ -216,6 +217,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
                   <button
                     type="button"
                     onClick={() => setSearchQuery('')}
+                    aria-label={t('common.clear')}
                     className="p-1 text-[#aaa] hover:text-white"
                   >
                     <X className="w-3.5 h-3.5" />
@@ -224,6 +226,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
               </div>
               <button
                 type="submit"
+                aria-label={t('header.search')}
                 className="p-2 ml-1 text-[#f4f7fb] hover:text-white transition cursor-pointer"
               >
                 <Search className="w-4 h-4" />
@@ -260,6 +263,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
 
         <button
           onClick={() => goTo('home')}
+          aria-label={t('nav.home')}
           className="flex items-center cursor-pointer focus:outline-none"
         >
           <VidArchLogo size="md" />
@@ -279,6 +283,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
                 onFocus={openSearchHistory}
                 onClick={openSearchHistory}
                 placeholder={localOnly ? t('header.searchPlaceholderLocal') : t('header.searchPlaceholder')}
+                aria-label={t('header.search')}
                 className="w-full bg-transparent text-[16px] sm:text-sm text-[#f4f7fb] placeholder-[#657383] focus:outline-none"
                 autoComplete="off"
               />
@@ -286,6 +291,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
                 <button
                   type="button"
                   onClick={() => setSearchQuery('')}
+                  aria-label={t('common.clear')}
                   className="text-[#888] hover:text-white p-0.5 rounded-full hover:bg-white/10 cursor-pointer"
                 >
                   <X className="w-4 h-4" />

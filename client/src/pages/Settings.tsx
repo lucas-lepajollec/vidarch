@@ -218,8 +218,8 @@ export const Settings: React.FC = () => {
     <div className="flex-1 flex flex-col md:flex-row min-h-[calc(100vh-3.5rem)] text-[#f4f7fb]">
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-[#111821] border border-[#23303e] text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-2xl flex items-center gap-2.5 animate-in fade-in slide-in-from-bottom-2 duration-150">
-          <div className="w-2 h-2 rounded-full bg-[#73c7e8]" />
+        <div role="status" aria-live="polite" className="fixed bottom-6 right-6 z-50 bg-[#111821] border border-[#23303e] text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-2xl flex items-center gap-2.5 animate-in fade-in slide-in-from-bottom-2 duration-150">
+          <div className="w-2 h-2 rounded-full bg-[#73c7e8]" aria-hidden="true" />
           <span>{toastMessage}</span>
         </div>
       )}
@@ -282,6 +282,7 @@ export const Settings: React.FC = () => {
               <button
                 key={item.id}
                 onClick={() => setActiveTab(item.id)}
+                aria-current={isActive ? 'page' : undefined}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium transition cursor-pointer whitespace-nowrap ${
                   isActive
                     ? 'bg-[#18212c] text-white font-bold'
@@ -297,7 +298,7 @@ export const Settings: React.FC = () => {
       </aside>
 
       {/* Main Content Area */}
-      <main className={`${mobileView === 'detail' ? 'block' : 'hidden'} md:block flex-1 p-4 sm:p-6 md:p-10 max-w-4xl`}>
+      <div className={`${mobileView === 'detail' ? 'block' : 'hidden'} md:block flex-1 p-4 sm:p-6 md:p-10 max-w-4xl`}>
         <div className="md:hidden mb-6 pb-4 border-b border-[#18212c]">
           <button
             onClick={() => {
@@ -322,10 +323,11 @@ export const Settings: React.FC = () => {
             <div className="divide-y divide-[#18212c] border-t border-b border-[#18212c]">
               <div className="py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="space-y-0.5 max-w-lg">
-                  <span className="text-sm font-semibold text-white block">{t('settings.uiLanguage')}</span>
+                  <span id="settings-ui-language-label" className="text-sm font-semibold text-white block">{t('settings.uiLanguage')}</span>
                   <span className="text-xs text-[#aaa] block">{t('settings.uiLanguageHint')}</span>
                 </div>
                 <select
+                  aria-labelledby="settings-ui-language-label"
                   value={uiLanguage}
                   onChange={async (e) => {
                     const next = e.target.value as typeof uiLanguage;
@@ -342,10 +344,14 @@ export const Settings: React.FC = () => {
 
               <div className="py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="space-y-0.5 max-w-lg">
-                  <span className="text-sm font-semibold text-white block">{t('settings.localOnly')}</span>
+                  <span id="settings-local-only-label" className="text-sm font-semibold text-white block">{t('settings.localOnly')}</span>
                   <span className="text-xs text-[#aaa] block">{t('settings.localOnlyHint')}</span>
                 </div>
                 <button
+                  type="button"
+                  role="switch"
+                  aria-checked={localOnly}
+                  aria-labelledby="settings-local-only-label"
                   onClick={() => { setLocalOnly(!localOnly); showToast(t('settings.saved')); }}
                   className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
                     localOnly ? 'bg-[#ff5a67]' : 'bg-[#18212c]'
@@ -386,7 +392,7 @@ export const Settings: React.FC = () => {
               {/* Row: Résolution par défaut */}
               <div className="py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="space-y-0.5">
-                  <span className="text-sm font-semibold text-white block">{t('settings.defaultQuality')}</span>
+                  <span id="settings-default-quality-label" className="text-sm font-semibold text-white block">{t('settings.defaultQuality')}</span>
                   <span className="text-xs text-[#aaa] block">
                     {t('settings.defaultQualityHint')}
                   </span>
@@ -394,6 +400,7 @@ export const Settings: React.FC = () => {
 
                 <div className="flex-shrink-0">
                   <select
+                    aria-labelledby="settings-default-quality-label"
                     value={defaultResolution}
                     onChange={(e) => {
                       setDefaultResolution(e.target.value);
@@ -412,7 +419,7 @@ export const Settings: React.FC = () => {
               {/* Row: Auto-téléchargement pour les nouveaux abonnements */}
               <div className="py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="space-y-0.5 max-w-lg">
-                  <span className="text-sm font-semibold text-white block">
+                  <span id="settings-auto-download-label" className="text-sm font-semibold text-white block">
                     {t('settings.autoDownload')}
                   </span>
                   <span className="text-xs text-[#aaa] block">
@@ -422,6 +429,10 @@ export const Settings: React.FC = () => {
 
                 <div className="flex-shrink-0">
                   <button
+                    type="button"
+                    role="switch"
+                    aria-checked={autoDownloadNewSubs}
+                    aria-labelledby="settings-auto-download-label"
                     onClick={() => {
                       const nextVal = !autoDownloadNewSubs;
                       setAutoDownloadNewSubs(nextVal);
@@ -443,7 +454,7 @@ export const Settings: React.FC = () => {
               {/* Row: Téléchargements simultanés */}
               <div className="py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="space-y-0.5 max-w-lg">
-                  <span className="text-sm font-semibold text-white block">
+                  <span id="settings-concurrent-label" className="text-sm font-semibold text-white block">
                     {t('settings.concurrentDl')}
                   </span>
                   <span className="text-xs text-[#aaa] block">
@@ -453,6 +464,7 @@ export const Settings: React.FC = () => {
 
                 <div className="flex-shrink-0">
                   <select
+                    aria-labelledby="settings-concurrent-label"
                     value={concurrentDownloads}
                     onChange={(e) => {
                       setConcurrentDownloads(e.target.value);
@@ -504,7 +516,7 @@ export const Settings: React.FC = () => {
             <div className="divide-y divide-[#18212c] border-t border-b border-[#18212c]">
               <div className="py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="space-y-0.5 max-w-lg">
-                  <span className="text-sm font-semibold text-white block">{t('settings.scanEnabled')}</span>
+                  <span id="settings-scan-enabled-label" className="text-sm font-semibold text-white block">{t('settings.scanEnabled')}</span>
                   <span className="text-xs text-[#aaa] block">
                     {scanEnabled ? t('settings.scanEnabledHint') : t('settings.scanEnabledOffHint')}
                   </span>
@@ -512,6 +524,9 @@ export const Settings: React.FC = () => {
                 <div className="flex-shrink-0">
                   <button
                     type="button"
+                    role="switch"
+                    aria-checked={scanEnabled}
+                    aria-labelledby="settings-scan-enabled-label"
                     onClick={() => setScanEnabled(!scanEnabled)}
                     className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
                       scanEnabled ? 'bg-[#ff5a67]' : 'bg-[#18212c]'
@@ -529,7 +544,7 @@ export const Settings: React.FC = () => {
               {/* Row: Fréquence */}
               <div className="py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="space-y-0.5">
-                  <span className="text-sm font-semibold text-white block">{t('settings.scanFreq')}</span>
+                  <span id="settings-scan-frequency-label" className="text-sm font-semibold text-white block">{t('settings.scanFreq')}</span>
                   <span className="text-xs text-[#aaa] block">
                     {t('settings.scanFreqHint')}
                   </span>
@@ -537,6 +552,7 @@ export const Settings: React.FC = () => {
 
                 <div className="flex-shrink-0">
                   <select
+                    aria-labelledby="settings-scan-frequency-label"
                     value={scanInterval}
                     onChange={(e) => {
                       setScanInterval(e.target.value);
@@ -653,6 +669,7 @@ export const Settings: React.FC = () => {
                 {showCookiesEditor && (
                   <div className="p-4 bg-[#0d131b] border border-[#18212c] rounded-xl space-y-3">
                     <textarea
+                      aria-label={t('settings.manualEditor')}
                       rows={5}
                       value={cookiesText}
                       onChange={(e) => setCookiesText(e.target.value)}
@@ -672,7 +689,7 @@ export const Settings: React.FC = () => {
                 )}
 
                 {cookiesMessage && (
-                  <div className={`p-3 rounded-lg text-xs flex items-center gap-2 ${
+                  <div role={cookiesMessage.type === 'error' ? 'alert' : 'status'} className={`p-3 rounded-lg text-xs flex items-center gap-2 ${
                     cookiesMessage.type === 'success' ? 'text-[#b8d9e6] bg-[#73c7e8]/10' : 'text-red-400 bg-red-500/10'
                   }`}>
                     <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
@@ -740,7 +757,7 @@ export const Settings: React.FC = () => {
             </div>
 
             {cleanupResult && (
-              <div className="p-3 bg-[#73c7e8]/10 text-[#b8d9e6] text-xs rounded-lg flex items-center gap-2">
+              <div role="status" className="p-3 bg-[#73c7e8]/10 text-[#b8d9e6] text-xs rounded-lg flex items-center gap-2">
                 <Check className="w-4 h-4" />
                 <span>{cleanupResult}</span>
               </div>
@@ -802,10 +819,14 @@ export const Settings: React.FC = () => {
 
               <div className="py-5 flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <span className="text-sm font-semibold text-white block">{t('settings.autoYtdlp')}</span>
+                  <span id="settings-auto-ytdlp-label" className="text-sm font-semibold text-white block">{t('settings.autoYtdlp')}</span>
                   <span className="text-xs text-[#aaa] block">{t('settings.autoYtdlpHint')}</span>
                 </div>
                 <button
+                  type="button"
+                  role="switch"
+                  aria-checked={autoUpdateYtdlp}
+                  aria-labelledby="settings-auto-ytdlp-label"
                   onClick={async () => {
                     const next = !autoUpdateYtdlp;
                     setAutoUpdateYtdlp(next);
@@ -834,7 +855,7 @@ export const Settings: React.FC = () => {
             </div>
 
             {updateMessage && (
-              <div className="p-3 bg-[#0f151d] border border-[#18212c] text-xs font-mono text-[#ddd] rounded-lg">
+              <div role="status" className="p-3 bg-[#0f151d] border border-[#18212c] text-xs font-mono text-[#ddd] rounded-lg">
                 {updateMessage}
               </div>
             )}
@@ -864,6 +885,7 @@ export const Settings: React.FC = () => {
                   <div className="space-y-2 max-w-sm">
                     {auth.required && (
                       <input
+                        aria-label={t('settings.pwCurrent')}
                         type="password"
                         value={currentPassword}
                         onChange={(e) => setCurrentPassword(e.target.value)}
@@ -872,6 +894,7 @@ export const Settings: React.FC = () => {
                       />
                     )}
                     <input
+                      aria-label={auth.required ? t('settings.pwNew') : t('settings.pwChoose')}
                       type="password"
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
@@ -912,7 +935,7 @@ export const Settings: React.FC = () => {
                     </button>
                   </div>
                 )}
-                {authMessage && <p className="text-xs text-[#aaa]">{authMessage}</p>}
+                {authMessage && <p role="status" className="text-xs text-[#aaa]">{authMessage}</p>}
               </div>
 
               {auth.required && !auth.envLocked && (
@@ -966,7 +989,7 @@ export const Settings: React.FC = () => {
           </p>
         </div>
 
-      </main>
+      </div>
     </div>
   );
 };
