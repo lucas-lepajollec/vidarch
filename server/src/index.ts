@@ -96,6 +96,17 @@ app.use('/api/import', heavyOpsLimiter);
 
 app.use(authGuard);
 
+const mediaProxyLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 120,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Limite de médias atteinte, veuillez patienter une minute.' },
+});
+app.use('/media/thumb', mediaProxyLimiter);
+app.use('/media/avatar', mediaProxyLimiter);
+app.use('/media/banner', mediaProxyLimiter);
+
 app.get('/media/thumb/:id', async (req, res) => {
   const id = String(req.params.id || '').replace(/\.(jpg|jpeg|webp|png)$/i, '');
   if (!isYouTubeVideoId(id)) return res.status(400).end();

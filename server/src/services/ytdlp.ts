@@ -277,7 +277,9 @@ function toChannelUrl(channelUrlOrHandle: string): string {
   const safe = assertAllowedTarget(channelUrlOrHandle);
   if (looksLikeUrl(safe)) {
     if (!safe.endsWith('/videos') && !safe.includes('/watch')) {
-      return `${safe.replace(/\/+$/, '')}/videos`;
+      const normalized = new URL(safe);
+      normalized.pathname = `${normalized.pathname.endsWith('/') ? normalized.pathname.slice(0, -1) : normalized.pathname}/videos`;
+      return normalized.toString();
     }
     return safe;
   }

@@ -207,7 +207,7 @@ class DownloadQueueService extends EventEmitter {
         this.processNext();
       }
     } catch (err: any) {
-      console.error(`Failed to enqueue catalog for ${channelId}:`, err.message);
+      console.error('Failed to enqueue channel catalog:', err.message);
     } finally {
       if (generation === this.catalogGeneration) this.catalogJobs.delete(channelId);
     }

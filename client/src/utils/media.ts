@@ -43,13 +43,14 @@ export function sanitizeThumbUrl(url?: string | null): string | undefined {
   if (!url) return undefined;
   try {
     const u = new URL(url);
-    if (u.hostname.includes('ytimg.com')) {
+    const host = u.hostname.toLowerCase();
+    if (host === 'ytimg.com' || host.endsWith('.ytimg.com')) {
       u.search = '';
       u.hash = '';
       return u.toString();
     }
   } catch {}
-  return url;
+  return undefined;
 }
 
 export function sanitizeAvatarUrl(url?: string | null): string | undefined {
