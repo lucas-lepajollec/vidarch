@@ -1,6 +1,6 @@
 import cron, { ScheduledTask } from 'node-cron';
 import { db } from '../db/database.js';
-import { getChannelDetails, getVideoDetails, formatDuration, updateYtDlp } from './ytdlp.js';
+import { getChannelDetails, getVideoDetails, formatDuration, isYtDlpManagedByImage, updateYtDlp } from './ytdlp.js';
 import { downloadQueue } from './queue.js';
 import { isLocalOnly, isScanEnabled } from '../utils/settings.js';
 import { trimSubscribedChannelCatalog, materializeChannelBranding, prefetchCatalogThumbs } from '../utils/remoteImages.js';
@@ -220,6 +220,7 @@ class ChannelScannerService {
 
     this.ytdlpCron = cron.schedule('15 4 * * 0', async () => {
       try {
+        if (isYtDlpManagedByImage()) return;
         const row = db.prepare('SELECT value FROM settings WHERE key = ?').get('auto_update_ytdlp') as { value: string } | undefined;
         if (row?.value === 'false') return;
         const result = await updateYtDlp();

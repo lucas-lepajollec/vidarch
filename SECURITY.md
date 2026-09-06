@@ -4,7 +4,7 @@ VidArch downloads and stores media, account cookies, metadata, session state, an
 
 ## Supported versions
 
-Until the first deliberate public release, security fixes target `main`. After releases begin, this section will identify the supported release line explicitly.
+Security fixes target the latest `0.1.x` release and `main`. Older pre-1.0 releases may require upgrading to receive a fix.
 
 ## Reporting a vulnerability
 

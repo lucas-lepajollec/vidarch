@@ -2,6 +2,7 @@ import Database from 'better-sqlite3';
 import fs from 'fs';
 import path from 'path';
 import { DB_PATH, DOWNLOADS_DIR } from '../config.js';
+import { addColumnIfMissing, assertSupportedSchema, recordCurrentSchema } from './schema.js';
 
 export const db = new Database(DB_PATH);
 
@@ -10,6 +11,7 @@ db.pragma('journal_mode = WAL');
 db.pragma('foreign_keys = ON');
 
 export function initDatabase() {
+  assertSupportedSchema(db);
   // 1. Channels table
   db.exec(`
     CREATE TABLE IF NOT EXISTS channels (
@@ -29,26 +31,11 @@ export function initDatabase() {
     );
   `);
 
-  // Migration for is_owner in channels table
-  try {
-    db.exec(`ALTER TABLE channels ADD COLUMN is_owner INTEGER DEFAULT 0;`);
-  } catch (_) {}
-
-  try {
-    db.exec(`ALTER TABLE channels ADD COLUMN linked_youtube_id TEXT;`);
-  } catch (_) {}
-
-  try {
-    db.exec(`ALTER TABLE channels ADD COLUMN owner_branding_backup TEXT;`);
-  } catch (_) {}
-
-  try {
-    db.exec(`ALTER TABLE channels ADD COLUMN is_active_owner INTEGER DEFAULT 0;`);
-  } catch (_) {}
-
-  try {
-    db.exec(`ALTER TABLE channels ADD COLUMN origin_branding TEXT;`);
-  } catch (_) {}
+  addColumnIfMissing(db, 'channels', 'is_owner', 'INTEGER DEFAULT 0');
+  addColumnIfMissing(db, 'channels', 'linked_youtube_id', 'TEXT');
+  addColumnIfMissing(db, 'channels', 'owner_branding_backup', 'TEXT');
+  addColumnIfMissing(db, 'channels', 'is_active_owner', 'INTEGER DEFAULT 0');
+  addColumnIfMissing(db, 'channels', 'origin_branding', 'TEXT');
 
   try {
     db.exec(`
@@ -107,15 +94,9 @@ export function initDatabase() {
     );
   `);
 
-  try {
-    db.exec(`ALTER TABLE videos ADD COLUMN last_watched_at TEXT;`);
-  } catch (_) {}
-  try {
-    db.exec(`ALTER TABLE videos ADD COLUMN updated_at TEXT;`);
-  } catch (_) {}
-  try {
-    db.exec(`ALTER TABLE subscriptions ADD COLUMN auto_download_mode TEXT DEFAULT 'future';`);
-  } catch (_) {}
+  addColumnIfMissing(db, 'videos', 'last_watched_at', 'TEXT');
+  addColumnIfMissing(db, 'videos', 'updated_at', 'TEXT');
+  addColumnIfMissing(db, 'subscriptions', 'auto_download_mode', "TEXT DEFAULT 'future'");
 
   // 4. Download Queue table
   db.exec(`
@@ -142,8 +123,8 @@ export function initDatabase() {
     );
   `);
 
-  try { db.exec(`ALTER TABLE download_queue ADD COLUMN requested_resolution TEXT;`); } catch (_) {}
-  try { db.exec(`ALTER TABLE download_queue ADD COLUMN quality_note TEXT;`); } catch (_) {}
+  addColumnIfMissing(db, 'download_queue', 'requested_resolution', 'TEXT');
+  addColumnIfMissing(db, 'download_queue', 'quality_note', 'TEXT');
 
   // 5. Recent Search Videos table
   db.exec(`
@@ -187,15 +168,9 @@ export function initDatabase() {
     INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)
   `);
 
-  try {
-    db.exec(`ALTER TABLE videos ADD COLUMN language TEXT;`);
-  } catch (_) {}
-  try {
-    db.exec(`ALTER TABLE channels ADD COLUMN language TEXT;`);
-  } catch (_) {}
-  try {
-    db.exec(`ALTER TABLE recent_search_videos ADD COLUMN language TEXT;`);
-  } catch (_) {}
+  addColumnIfMissing(db, 'videos', 'language', 'TEXT');
+  addColumnIfMissing(db, 'channels', 'language', 'TEXT');
+  addColumnIfMissing(db, 'recent_search_videos', 'language', 'TEXT');
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS content_locales (
@@ -295,6 +270,8 @@ export function initDatabase() {
     CREATE INDEX IF NOT EXISTS idx_videos_liked ON videos(liked);
     CREATE INDEX IF NOT EXISTS idx_download_queue_status ON download_queue(status);
   `);
+
+  recordCurrentSchema(db);
 
   console.log('✅ SQLite Database initialized with WAL mode at:', DB_PATH);
 }

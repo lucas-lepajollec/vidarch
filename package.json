@@ -1,6 +1,7 @@
 {
   "name": "vidarch",
-  "version": "1.0.0",
+  "version": "0.1.0",
+  "private": true,
   "description": "Self-hosted Video Archiver, Subscriptions Manager & Player",
   "type": "module",
   "engines": {
@@ -17,8 +18,9 @@
     "build:server": "tsc -p server/tsconfig.json",
     "build": "npm run build:client && npm run build:server",
     "check:i18n": "node scripts/check-i18n.mjs",
+    "check:version": "node scripts/check-version.mjs",
     "start": "node dist/server/index.js",
-    "test": "tsx --test server/src/utils/youtube.test.ts server/src/utils/paths.test.ts server/src/utils/innertube.test.ts server/src/utils/remoteImages.test.ts server/src/utils/ytdlpDownload.test.ts"
+    "test": "tsx --test server/src/db/database.test.ts server/src/db/schema.test.ts server/src/utils/youtube.test.ts server/src/utils/paths.test.ts server/src/utils/innertube.test.ts server/src/utils/remoteImages.test.ts server/src/utils/ytdlpDownload.test.ts"
   },
   "keywords": [
     "youtube",

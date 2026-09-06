@@ -39,6 +39,7 @@ jobs:
         run: |
           npm ci
           npm --prefix client ci
+          npm run check:version
           npm test
           npm --prefix client run lint
           npm run build

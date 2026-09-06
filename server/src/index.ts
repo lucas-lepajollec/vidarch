@@ -12,7 +12,7 @@ import { isAuthRequired } from './services/auth.js';
 import { ensureYoutubeThumb, ensureChannelAvatar, ensureChannelBanner, pruneRemoteImageCache } from './utils/remoteImages.js';
 import cron from 'node-cron';
 import { isYouTubeVideoId } from './utils/youtube.js';
-import { updateYtDlp } from './services/ytdlp.js';
+import { isYtDlpManagedByImage, updateYtDlp } from './services/ytdlp.js';
 import { scannerService } from './services/scanner.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -221,7 +221,7 @@ function bootstrapBackgroundJobs() {
   scannerService.initCron();
 
   const autoUpdate = readSetting('auto_update_ytdlp', 'true') !== 'false';
-  if (autoUpdate && process.env.VIDARCH_DEV_MODE !== '1') {
+  if (autoUpdate && !isYtDlpManagedByImage() && process.env.VIDARCH_DEV_MODE !== '1') {
     setTimeout(() => {
       updateYtDlp()
         .then((r) => console.log('yt-dlp auto-update:', r.message))
