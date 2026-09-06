@@ -20,6 +20,6 @@ Include the affected commit or image tag, deployment method, clear reproduction 
 - Do not serve or share the `data/` directory; it can contain `vidarch.db`, `cookies.txt`, and session secrets.
 - Put remote deployments behind HTTPS and keep the shipped cookie protections intact.
 - Keep `yt-dlp` and the container image updated because upstream extractors change frequently.
-- Remote image fetching follows only a small HTTPS YouTube/Google image-host allowlist, revalidates redirects and enforces a response-size limit. Do not broaden that allowlist without a new SSRF review.
+- Remote image fetching uses only a small HTTPS YouTube/Google image-host allowlist, reconstructs requests from fixed trusted origins, rejects redirects and enforces a response-size limit. Do not broaden that allowlist without a new SSRF review.
 - Imported media is confined to generated channel/video paths and thumbnails are size/type checked. Treat every imported file as untrusted content nonetheless.
 - Search, imports, maintenance operations and media proxies have separate rate limits in addition to the global API limit. A reverse proxy should preserve the real client address only when its proxy chain is trusted.
