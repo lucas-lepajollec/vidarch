@@ -6,6 +6,19 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-09-06
+
+### Security
+
+- Confine imported media and generated assets to trusted storage paths and validate thumbnail type and size.
+- Rebuild remote image requests from fixed HTTPS origins, reject redirects and bound response sizes.
+- Add explicit rate limits to media proxies, imports and other expensive operations.
+- Tighten YouTube URL, identifier and error handling around remote metadata and downloads.
+
+### Changed
+
+- Audit both Node dependency trees and verify production/demo builds plus container health in protected CI.
+
 ## [0.1.0] - 2026-09-06
 
 ### Added
@@ -23,5 +36,6 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 Earlier development remains available in Git history; this changelog does not invent releases that were never deliberately published.
 
-[Unreleased]: https://github.com/lucas-lepajollec/vidarch/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/lucas-lepajollec/vidarch/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/lucas-lepajollec/vidarch/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/lucas-lepajollec/vidarch/releases/tag/v0.1.0
