@@ -36,7 +36,9 @@ jobs:
         run: npm --prefix client ci
 
       - name: Unit tests
-        run: npm test
+        run: |
+          npm run check:version
+          npm test
 
       - name: Frontend lint
         run: npm --prefix client run lint

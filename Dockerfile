@@ -66,6 +66,7 @@ ENV PORT=2499
 ENV DATA_DIR=/app/data
 ENV DOWNLOADS_DIR=/app/downloads
 ENV YT_DLP_PATH=/usr/local/bin/yt-dlp
+ENV YT_DLP_UPDATE_MODE=image
 
 EXPOSE 2499
 

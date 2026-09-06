@@ -81,7 +81,7 @@ docker compose up -d
 
 Open `http://127.0.0.1:2499`. The default binding is local-only. Set a strong `AUTH_PASSWORD` before deliberately changing `VIDARCH_BIND_ADDRESS` for LAN access.
 
-Before an update, back up `./data` and `./downloads` together and record the current image digest. Pull, recreate, and verify `/api/health`. Roll back by setting `VIDARCH_IMAGE` to the previous version or `sha-<full-commit>` tag. Removing the container is safe; deleting either persistent directory is not.
+Before an update, stop VidArch, back up `./data` and `./downloads` together, and record the current image digest. Pull, recreate, and verify `/api/health` plus representative local playback. Roll back by restoring the matching pair of backups and setting `VIDARCH_IMAGE` to the previous version or `sha-<full-commit>` tag. Removing the container is safe; deleting either persistent directory is not. VidArch records its SQLite schema and refuses to open data created by a newer unsupported application version rather than attempting an unsafe downgrade.
 
 To build the current checkout:
 
@@ -116,7 +116,7 @@ The frontend uses `http://127.0.0.1:2499` and the development API `http://127.0.
 | `SESSION_SECRET` | Generated and persisted | Sign session cookies. |
 | `VIDARCH_BIND_ADDRESS` | `127.0.0.1` in Compose | Control deliberate host network exposure. |
 
-Back up `DATA_DIR` and `DOWNLOADS_DIR` together: the database describes the library while the download directory contains its media.
+Back up `DATA_DIR` and `DOWNLOADS_DIR` together while VidArch is stopped: the database describes the library while the download directory contains its media, so a mismatched pair is not a complete recovery point.
 
 ## Security, privacy, and limitations
 
@@ -126,6 +126,7 @@ Back up `DATA_DIR` and `DOWNLOADS_DIR` together: the database describes the libr
 - Treat imported cookies as account credentials and rotate them if exposure is suspected.
 - Review filesystem ownership instead of granting world-writable permissions.
 - Supported sources and metadata behavior can change when third-party sites or `yt-dlp` change.
+- Published containers use the verified yt-dlp build shipped in the image; update it by pulling a newer VidArch image. Direct yt-dlp self-update remains available only in writable source installations.
 - Keep download targets and media use within applicable law, licenses, terms, and access restrictions.
 
 VidArch applies content-security policy, rate limiting, path confinement, restricted remote-image handling, and optional password sessions. These controls reduce risk; they do not make an internet-exposed personal media server maintenance-free.

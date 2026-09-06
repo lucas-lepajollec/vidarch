@@ -50,4 +50,6 @@ Use `npm ci` for an existing checkout so the committed lockfiles remain unchange
 
 ## Maintainer release process
 
+The private root `package.json` is the authoritative product version. The private client package is an internal build component and is not released separately; `npm run check:version` enforces the root lockfile and tag contract.
+
 Releases are deliberate milestones, not snapshots of every merge. Prepare a release pull request that updates every declared version source, moves completed entries out of `Unreleased` in [CHANGELOG.md](CHANGELOG.md), and documents storage compatibility, migrations, and rollback when relevant. After all required checks pass, tag the exact accepted `main` commit with an annotated `vMAJOR.MINOR.PATCH` tag and push it through the authoritative Forgejo remote. Verify that the identical tag reaches GitHub and that the versioned container finishes successfully before publishing a draft GitHub release. Never move or reuse a published version tag.

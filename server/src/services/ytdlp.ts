@@ -194,6 +194,10 @@ export async function getYtDlpVersion(): Promise<string> {
   }
 }
 
+export function isYtDlpManagedByImage(): boolean {
+  return process.env.YT_DLP_UPDATE_MODE === 'image';
+}
+
 async function updateYtDlpWithPip(): Promise<string> {
   const candidates: Array<{ command: string; args: string[] }> = process.platform === 'win32'
     ? [
@@ -222,6 +226,12 @@ async function updateYtDlpWithPip(): Promise<string> {
 }
 
 export async function updateYtDlp(): Promise<{ success: boolean; message: string }> {
+  if (isYtDlpManagedByImage()) {
+    return {
+      success: false,
+      message: 'This container uses a verified yt-dlp build. Pull a newer VidArch image to update it safely.',
+    };
+  }
   const ytDlp = findYtDlpPath();
   const pipManaged = /[/\\]scripts[/\\]yt-dlp(?:\.exe)?$/i.test(ytDlp);
 
