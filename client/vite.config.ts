@@ -8,7 +8,7 @@ function demoMetadataPlugin(enabled: boolean): Plugin {
     transformIndexHtml(html) {
       if (!enabled) return html
       return html
-        .replace('<title>VidArch — Self-Hosted Video Archiver & Player</title>', '<title>VidArch — Démonstration publique</title>')
+        .replace('<title>VidArch — Self-Hosted Video Archiver & Player</title>', '<title>VidArch — Public demo</title>')
         .replace(
           '</head>',
           `    <meta name="robots" content="noindex,nofollow,noarchive" />\n    <meta name="vidarch-mode" content="demo" />\n    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: blob:; media-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self'; font-src 'self' data:; connect-src 'self'; object-src 'none'; frame-src 'none'; worker-src 'none'; base-uri 'self'; form-action 'self'" />\n  </head>`,
