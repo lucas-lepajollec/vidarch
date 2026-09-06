@@ -99,14 +99,16 @@ export const Home: React.FC = () => {
       </div>
       )}
 
+      <h1 className="sr-only">{t('nav.home')}</h1>
+
       {!hasAnyContent && !isLoading && (
         <div className="max-w-xl pt-10 sm:pt-16 md:pt-20">
           <p className="text-[11px] font-semibold tracking-[0.22em] uppercase text-[#ff5a67]">
             {t('home.welcomeEyebrow')}
           </p>
-          <h1 className="mt-4 text-3xl sm:text-[2.6rem] font-semibold text-white tracking-tight leading-[1.15]">
+          <h2 className="mt-4 text-3xl sm:text-[2.6rem] font-semibold text-white tracking-tight leading-[1.15]">
             {t('home.welcomeTitle')}
-          </h1>
+          </h2>
           <p className="mt-5 text-[15px] text-[#aaa] leading-relaxed">
             {localOnly ? t('home.welcomeBodyLocal') : t('home.welcomeBody')}
           </p>
