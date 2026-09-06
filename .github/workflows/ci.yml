@@ -46,10 +46,10 @@ jobs:
       - name: Build Full Project (Frontend & Backend)
         run: npm run build
 
-      - name: Production dependency audit
+      - name: Dependency audit
         run: |
-          npm audit --omit=dev --audit-level=high
-          npm --prefix client audit --omit=dev --audit-level=high
+          npm audit --audit-level=moderate
+          npm --prefix client audit --audit-level=moderate
 
       - name: Validate Docker Compose
         run: docker compose config --quiet

@@ -31,6 +31,10 @@ const AVATAR_HOSTS = new Set([
   'youtube.com',
 ]);
 
+const REMOTE_IMAGE_ORIGINS = new Map(
+  [...AVATAR_HOSTS].map((host) => [host, `https://${host}`]),
+);
+
 export function jpegDimensions(buf: Buffer): { width: number; height: number } | null {
   if (buf.length < 4 || buf[0] !== 0xff || buf[1] !== 0xd8) return null;
   let i = 2;
@@ -75,19 +79,20 @@ function extFor(buf: Buffer): string {
   return '.jpg';
 }
 
-export function isAllowedRemoteImageUrl(raw: string): boolean {
+function resolveRemoteImageUrl(raw: string): string | null {
   try {
     const parsed = new URL(raw);
-    if (parsed.protocol !== 'https:' || parsed.username || parsed.password) return false;
+    if (parsed.protocol !== 'https:' || parsed.username || parsed.password) return null;
     const host = parsed.hostname.toLowerCase();
-    if (AVATAR_HOSTS.has(host)) return true;
-    return host.endsWith('.ggpht.com')
-      || host.endsWith('.googleusercontent.com')
-      || host.endsWith('.ytimg.com');
+    const trustedOrigin = REMOTE_IMAGE_ORIGINS.get(host);
+    if (!trustedOrigin) return null;
+    return new URL(`${parsed.pathname}${parsed.search}`, trustedOrigin).href;
   } catch {
-    return false;
+    return null;
   }
 }
+
+export const isAllowedRemoteImageUrl = (raw: string): boolean => resolveRemoteImageUrl(raw) !== null;
 
 async function readLimitedImage(res: Response): Promise<Buffer | null> {
   const declaredSize = Number(res.headers.get('content-length') || 0);
@@ -113,15 +118,16 @@ async function fetchImage(url: string): Promise<Buffer | null> {
   let currentUrl = url;
   try {
     for (let redirects = 0; redirects <= MAX_REDIRECTS; redirects += 1) {
-      if (!isAllowedRemoteImageUrl(currentUrl)) return null;
+      const trustedUrl = resolveRemoteImageUrl(currentUrl);
+      if (!trustedUrl) return null;
       const ac = new AbortController();
       const timer = setTimeout(() => ac.abort(), 8000);
       try {
-        const res = await fetch(currentUrl, { headers: FETCH_HEADERS, redirect: 'manual', signal: ac.signal });
+        const res = await fetch(trustedUrl, { headers: FETCH_HEADERS, redirect: 'manual', signal: ac.signal });
         if (res.status >= 300 && res.status < 400) {
           const location = res.headers.get('location');
           if (!location || redirects === MAX_REDIRECTS) return null;
-          currentUrl = new URL(location, currentUrl).href;
+          currentUrl = new URL(location, trustedUrl).href;
           continue;
         }
         if (!res.ok) return null;
