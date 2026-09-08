@@ -55,23 +55,12 @@ services:
     container_name: vidarch
     restart: unless-stopped
     ports:
-      - "2499:2499"
+      - "2508:2508"
     environment:
-      PORT: 2499
-      NODE_ENV: production
-      DATA_DIR: /app/data
-      DOWNLOADS_DIR: /app/downloads
       AUTH_PASSWORD: ${AUTH_PASSWORD:-}
     volumes:
       - ./data:/app/data
       - ./downloads:/app/downloads
-    read_only: true
-    tmpfs:
-      - /tmp:size=128m,uid=1000,gid=1000,mode=1770
-    security_opt:
-      - no-new-privileges:true
-    cap_drop:
-      - ALL
     init: true
 ```
 
@@ -79,7 +68,7 @@ services:
 docker compose up -d
 ```
 
-Open `http://127.0.0.1:2499` on the host, or `http://<host-ip>:2499` from the LAN. Docker publishes the port on the host interfaces by default; use `127.0.0.1:2499:2499` for localhost-only publication. Set a strong `AUTH_PASSWORD` before making the service reachable outside a trusted LAN.
+Open `http://<server-ip>:2508` from the LAN, or `http://localhost:2508` on the Docker host. VidArch uses port `2508` both on the NAS and inside the production container. Set a strong `AUTH_PASSWORD` before making the service reachable outside a trusted LAN.
 
 Before an update, stop VidArch, back up `./data` and `./downloads` together, and record the current image digest. Pull, recreate, and verify `/api/health` plus representative local playback. Roll back by restoring the matching pair of backups and setting `VIDARCH_IMAGE` to the previous version or `sha-<full-commit>` tag. Removing the container is safe; deleting either persistent directory is not. VidArch records its SQLite schema and refuses to open data created by a newer unsupported application version rather than attempting an unsafe downgrade.
 
@@ -108,7 +97,7 @@ The frontend uses `http://127.0.0.1:2499` and the development API `http://127.0.
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
-| `PORT` | `2498` in development, `2499` in production | Express listening port. |
+| `PORT` | `2498` for the development API, `2508` in production | Express listening port. |
 | `DATA_DIR` | `./data` | SQLite, sessions, configuration, and optional `cookies.txt`. |
 | `DOWNLOADS_DIR` | `./downloads` | Archived video, thumbnails, and metadata. |
 | `YT_DLP_PATH` | Auto-detected | Override the `yt-dlp` executable. |

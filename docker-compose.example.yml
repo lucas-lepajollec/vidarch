@@ -9,30 +9,12 @@ services:
     container_name: vidarch
     restart: unless-stopped
     ports:
-      # Docker publishes this port on the host interfaces by default.
-      - "2499:2499"
+      - "2508:2508"
     environment:
-      - PORT=2499
-      - NODE_ENV=production
-      - DATA_DIR=/app/data
-      - DOWNLOADS_DIR=/app/downloads
-      - AUTH_PASSWORD=${AUTH_PASSWORD:-}
+      AUTH_PASSWORD: ${AUTH_PASSWORD:-}
     volumes:
       # Persistent SQLite database (vidarch.db) and optional cookies.txt
       - ./data:/app/data
       # Downloaded videos, channel folders, thumbnails, and info.json
       - ./downloads:/app/downloads
-    read_only: true
-    tmpfs:
-      - /tmp:size=128m,uid=1000,gid=1000,mode=1770
-    security_opt:
-      - no-new-privileges:true
-    cap_drop:
-      - ALL
     init: true
-    healthcheck:
-      test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1:2499/api/health"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 20s
