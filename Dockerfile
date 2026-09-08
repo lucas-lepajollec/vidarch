@@ -62,19 +62,19 @@ RUN mkdir -p /app/data /app/downloads \
 
 # Environment variables
 ENV NODE_ENV=production
-ENV PORT=2499
+ENV PORT=2508
 ENV DATA_DIR=/app/data
 ENV DOWNLOADS_DIR=/app/downloads
 ENV YT_DLP_PATH=/usr/local/bin/yt-dlp
 ENV YT_DLP_UPDATE_MODE=image
 
-EXPOSE 2499
+EXPOSE 2508
 
 VOLUME ["/app/data", "/app/downloads"]
 
 USER node
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
-  CMD curl --fail --silent --show-error http://127.0.0.1:2499/api/health >/dev/null || exit 1
+  CMD curl --fail --silent --show-error http://127.0.0.1:2508/api/health >/dev/null || exit 1
 
 CMD ["node", "dist/server/index.js"]
