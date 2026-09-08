@@ -6,6 +6,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+### Changed
+
+- Treat `.env` as an optional advanced override so the default Docker path starts cleanly when it is absent.
+- Let Docker Compose derive the stack and container names, and remove the obsolete duplicate Compose example now that the default file pulls GHCR directly.
+
 ## [0.1.4] - 2026-09-08
 
 ### Changed
@@ -16,7 +21,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ### Changed
 
-- Use the established port `2508` both on the NAS and inside the production container; local frontend development remains on `2499`.
+- Use the established port `2508` both on the Docker host and inside the production container; local frontend development remains on `2499`.
 - Simplify the copy-ready Compose configuration to the settings required for persistence, optional authentication and child-process handling.
 
 ## [0.1.2] - 2026-09-08

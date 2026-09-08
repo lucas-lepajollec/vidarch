@@ -46,27 +46,35 @@ It remains one product across online and local use: discovery becomes download, 
 
 ### Docker Compose
 
+Requirements: Docker Engine with Compose `2.24.0` or newer, and host port `2508`.
+
 Create `docker-compose.yml`:
 
 ```yaml
 services:
   vidarch:
     image: ghcr.io/lucas-lepajollec/vidarch:latest
-    container_name: vidarch
-    restart: unless-stopped
     ports:
       - "2508:2508"
+    env_file:
+      - path: .env
+        required: false
     volumes:
       - ./data:/app/data
       - ./downloads:/app/downloads
     init: true
+    restart: unless-stopped
 ```
 
 ```bash
+mkdir -p data downloads
+sudo chown -R 1000:1000 data downloads
 docker compose up -d
 ```
 
-Open `http://<server-ip>:2508` from the LAN, or `http://localhost:2508` on the Docker host. VidArch uses port `2508` both on the NAS and inside the production container. On first start, set a password in **Settings → Security** before making the service reachable outside a trusted LAN. Advanced unattended deployments may provide `AUTH_PASSWORD` through an untracked `.env` file or a platform secret.
+Open `http://<server-ip>:2508` from the LAN, or `http://localhost:2508` on the Docker host. VidArch uses port `2508` both on the Docker host and inside the production container. No `.env` is required. On first start, set a password in **Settings → Security** before making the service reachable outside a trusted LAN. Advanced unattended deployments may provide `AUTH_PASSWORD` through the optional untracked `.env` file or a platform secret.
+
+The ownership preparation is required for Linux bind mounts because the image runs as UID/GID `1000:1000`; Docker Desktop normally handles host-file sharing itself. When mounting an existing shared media library instead of `./downloads`, follow the ACL method below rather than changing all files to world-writable mode.
 
 Before an update, stop VidArch, back up `./data` and `./downloads` together, and record the current image digest. Pull, recreate, and verify `/api/health` plus representative local playback. Roll back by restoring the matching pair of backups and changing the `image:` line to the previous version or `sha-<full-commit>` tag. Removing the container is safe; deleting either persistent directory is not. VidArch records its SQLite schema and refuses to open data created by a newer unsupported application version rather than attempting an unsafe downgrade.
 
@@ -103,6 +111,8 @@ The frontend uses `http://127.0.0.1:2499` and the development API `http://127.0.
 | `SESSION_SECRET` | Generated and persisted | Sign session cookies. |
 
 Back up `DATA_DIR` and `DOWNLOADS_DIR` together while VidArch is stopped: the database describes the library while the download directory contains its media, so a mismatched pair is not a complete recovery point.
+
+The published image runs as UID/GID `1000:1000`. When replacing `./downloads` with an existing host media directory, grant that identity read/write access with ownership or POSIX ACLs; do not solve bind-mount errors with `chmod 777`. The [storage documentation](https://docs.vidarch.lucas-homelab.fr/en/docs/getting-started/storage) includes copy-ready checks and permission commands.
 
 ## Security, privacy, and limitations
 

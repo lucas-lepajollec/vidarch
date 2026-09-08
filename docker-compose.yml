@@ -1,17 +1,13 @@
-# ==========================================
-# VidArch — Docker Compose Configuration
-# ==========================================
-
 services:
   vidarch:
     image: ghcr.io/lucas-lepajollec/vidarch:latest
-    container_name: vidarch
-    restart: unless-stopped
     ports:
       - "2508:2508"
+    env_file:
+      - path: .env
+        required: false
     volumes:
-      # Persistent SQLite database & cookies.txt
       - ./data:/app/data
-      # Downloaded videos and channel archives
       - ./downloads:/app/downloads
     init: true
+    restart: unless-stopped
