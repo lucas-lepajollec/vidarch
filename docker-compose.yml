@@ -4,13 +4,11 @@
 
 services:
   vidarch:
-    image: ${VIDARCH_IMAGE:-ghcr.io/lucas-lepajollec/vidarch:latest}
+    image: ghcr.io/lucas-lepajollec/vidarch:latest
     container_name: vidarch
     restart: unless-stopped
     ports:
       - "2508:2508"
-    environment:
-      AUTH_PASSWORD: ${AUTH_PASSWORD:-}
     volumes:
       # Persistent SQLite database & cookies.txt
       - ./data:/app/data
