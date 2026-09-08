@@ -4,14 +4,11 @@
 
 services:
   vidarch:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: vidarch:local
+    image: ${VIDARCH_IMAGE:-ghcr.io/lucas-lepajollec/vidarch:latest}
     container_name: vidarch
     restart: unless-stopped
     ports:
-      - "${VIDARCH_BIND_ADDRESS:-127.0.0.1}:2499:2499"
+      - "2499:2499"
     environment:
       - PORT=2499
       - NODE_ENV=production

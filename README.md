@@ -55,7 +55,7 @@ services:
     container_name: vidarch
     restart: unless-stopped
     ports:
-      - "${VIDARCH_BIND_ADDRESS:-127.0.0.1}:2499:2499"
+      - "2499:2499"
     environment:
       PORT: 2499
       NODE_ENV: production
@@ -79,7 +79,7 @@ services:
 docker compose up -d
 ```
 
-Open `http://127.0.0.1:2499`. The default binding is local-only. Set a strong `AUTH_PASSWORD` before deliberately changing `VIDARCH_BIND_ADDRESS` for LAN access.
+Open `http://127.0.0.1:2499` on the host, or `http://<host-ip>:2499` from the LAN. Docker publishes the port on the host interfaces by default; use `127.0.0.1:2499:2499` for localhost-only publication. Set a strong `AUTH_PASSWORD` before making the service reachable outside a trusted LAN.
 
 Before an update, stop VidArch, back up `./data` and `./downloads` together, and record the current image digest. Pull, recreate, and verify `/api/health` plus representative local playback. Roll back by restoring the matching pair of backups and setting `VIDARCH_IMAGE` to the previous version or `sha-<full-commit>` tag. Removing the container is safe; deleting either persistent directory is not. VidArch records its SQLite schema and refuses to open data created by a newer unsupported application version rather than attempting an unsafe downgrade.
 
@@ -89,7 +89,7 @@ To build the current checkout:
 git clone https://github.com/lucas-lepajollec/vidarch.git
 cd vidarch
 cp .env.example .env
-docker compose up -d --build
+docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build
 ```
 
 ### Local development
@@ -114,7 +114,6 @@ The frontend uses `http://127.0.0.1:2499` and the development API `http://127.0.
 | `YT_DLP_PATH` | Auto-detected | Override the `yt-dlp` executable. |
 | `AUTH_PASSWORD` | Unset | Require a password for the UI and API. |
 | `SESSION_SECRET` | Generated and persisted | Sign session cookies. |
-| `VIDARCH_BIND_ADDRESS` | `127.0.0.1` in Compose | Control deliberate host network exposure. |
 
 Back up `DATA_DIR` and `DOWNLOADS_DIR` together while VidArch is stopped: the database describes the library while the download directory contains its media, so a mismatched pair is not a complete recovery point.
 

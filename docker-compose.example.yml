@@ -9,8 +9,8 @@ services:
     container_name: vidarch
     restart: unless-stopped
     ports:
-      # Localhost by default. Set VIDARCH_BIND_ADDRESS=0.0.0.0 for deliberate LAN exposure.
-      - "${VIDARCH_BIND_ADDRESS:-127.0.0.1}:2499:2499"
+      # Docker publishes this port on the host interfaces by default.
+      - "2499:2499"
     environment:
       - PORT=2499
       - NODE_ENV=production
