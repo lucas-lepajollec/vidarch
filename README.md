@@ -51,13 +51,11 @@ Create `docker-compose.yml`:
 ```yaml
 services:
   vidarch:
-    image: ${VIDARCH_IMAGE:-ghcr.io/lucas-lepajollec/vidarch:latest}
+    image: ghcr.io/lucas-lepajollec/vidarch:latest
     container_name: vidarch
     restart: unless-stopped
     ports:
       - "2508:2508"
-    environment:
-      AUTH_PASSWORD: ${AUTH_PASSWORD:-}
     volumes:
       - ./data:/app/data
       - ./downloads:/app/downloads
@@ -68,9 +66,9 @@ services:
 docker compose up -d
 ```
 
-Open `http://<server-ip>:2508` from the LAN, or `http://localhost:2508` on the Docker host. VidArch uses port `2508` both on the NAS and inside the production container. Set a strong `AUTH_PASSWORD` before making the service reachable outside a trusted LAN.
+Open `http://<server-ip>:2508` from the LAN, or `http://localhost:2508` on the Docker host. VidArch uses port `2508` both on the NAS and inside the production container. On first start, set a password in **Settings → Security** before making the service reachable outside a trusted LAN. Advanced unattended deployments may provide `AUTH_PASSWORD` through an untracked `.env` file or a platform secret.
 
-Before an update, stop VidArch, back up `./data` and `./downloads` together, and record the current image digest. Pull, recreate, and verify `/api/health` plus representative local playback. Roll back by restoring the matching pair of backups and setting `VIDARCH_IMAGE` to the previous version or `sha-<full-commit>` tag. Removing the container is safe; deleting either persistent directory is not. VidArch records its SQLite schema and refuses to open data created by a newer unsupported application version rather than attempting an unsafe downgrade.
+Before an update, stop VidArch, back up `./data` and `./downloads` together, and record the current image digest. Pull, recreate, and verify `/api/health` plus representative local playback. Roll back by restoring the matching pair of backups and changing the `image:` line to the previous version or `sha-<full-commit>` tag. Removing the container is safe; deleting either persistent directory is not. VidArch records its SQLite schema and refuses to open data created by a newer unsupported application version rather than attempting an unsafe downgrade.
 
 To build the current checkout:
 
@@ -108,7 +106,7 @@ Back up `DATA_DIR` and `DOWNLOADS_DIR` together while VidArch is stopped: the da
 
 ## Security, privacy, and limitations
 
-- Set `AUTH_PASSWORD` before exposing VidArch beyond localhost.
+- Set a password in **Settings → Security**, or supply `AUTH_PASSWORD` through your deployment platform, before exposing VidArch beyond a trusted LAN.
 - Use HTTPS and a trusted reverse proxy for remote access.
 - Keep `cookies.txt`, SQLite, session secrets, and downloaded media out of public static paths.
 - Treat imported cookies as account credentials and rotate them if exposure is suspected.
