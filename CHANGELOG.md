@@ -6,9 +6,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-09-08
+
 ### Changed
 
 - Compose now pulls the published image and uses Docker's standard all-interface port mapping by default. Use `127.0.0.1:2499:2499` for localhost-only publication; source builds use the explicit build override.
+- No database or media migration is required; operators recreating an existing container should review the new LAN-reachable port default and retain both persistent mounts.
 
 ## [0.1.1] - 2026-09-06
 
@@ -40,6 +43,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 Earlier development remains available in Git history; this changelog does not invent releases that were never deliberately published.
 
-[Unreleased]: https://github.com/lucas-lepajollec/vidarch/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/lucas-lepajollec/vidarch/compare/v0.1.2...HEAD
+[0.1.2]: https://github.com/lucas-lepajollec/vidarch/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/lucas-lepajollec/vidarch/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/lucas-lepajollec/vidarch/releases/tag/v0.1.0
