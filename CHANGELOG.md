@@ -6,6 +6,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+### Security
+
+- Update multer to `2.3.0` so the protected dependency audit can pass.
+
 ### Changed
 
 - Treat `.env` as an optional advanced override so the default Docker path starts cleanly when it is absent.
