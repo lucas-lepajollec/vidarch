@@ -40,6 +40,21 @@ npm run build:demo
 npm --prefix client run preview:demo
 ```
 
+## Reproducible documentation screenshots
+
+Generate the README screenshot set from an isolated local demo server with:
+
+```bash
+npm ci
+npx playwright install chromium
+npm run demo:capture
+```
+
+The script starts its own Vite demo server on `127.0.0.1:2515`, forces English,
+closes the public-demo intro dialog before the first capture, and refuses to
+reuse an existing server. The compact demo chip may remain visible. Use
+`VIDARCH_CAPTURE_PORT` if port `2515` is unavailable.
+
 ## Intended deployment
 
 Create a second Vercel project from this repository and let the root `vercel.json` build only the demo profile. Keep the product itself on its self-hosted/Docker deployment.
