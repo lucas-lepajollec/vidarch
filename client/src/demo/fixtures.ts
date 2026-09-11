@@ -128,7 +128,7 @@ export const demoVideos: Video[] = videoSeeds.map((seed, index) => {
     channel_title: channel.title,
     channel_avatar: channel.avatar_url,
     title: seed.title,
-    description: `${seed.project} est présenté à partir de contenus publiés par Blender Studio sous licence ${seed.license}. Les compteurs et états de bibliothèque sont simulés localement pour la démonstration VidArch.`,
+    description: `${seed.project} is presented from Blender Studio materials released under ${seed.license}. Counters and library state are simulated locally for the VidArch demonstration.`,
     duration: seed.duration,
     duration_string: durationString(seed.duration),
     view_count: 48_000 + index * 37_420,

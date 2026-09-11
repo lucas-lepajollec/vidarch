@@ -26,10 +26,17 @@ It remains one product across online and local use: discovery becomes download, 
 
 ## Product preview
 
-| Familiar discovery | Permanent local library |
+Home, library, subscriptions, and playback below use locally bundled Blender Open Movie stills and simulated account state. Screenshots use the English interface with the demo intro dialog closed.
+
+| Permanent local library | Subscriptions |
 | --- | --- |
-| Follow subscriptions, search, browse channels, and move between online and downloaded media. | Filter archived files, inspect disk usage, organize channel spaces, and play media from the server. |
-| <img src="docs/assets/screenshots/vidarch-demo-home.png" alt="VidArch discovery and downloaded-video feed" width="640" /> | <img src="docs/assets/screenshots/vidarch-demo-library.png" alt="VidArch permanent local video library" width="640" /> |
+| Filter archived files, inspect disk usage, and keep channel spaces on the server. | Follow a creator space and move between downloaded and discoverable titles. |
+| <img src="docs/assets/screenshots/vidarch-demo-library.png" alt="VidArch permanent local video library" width="640" /> | <img src="docs/assets/screenshots/vidarch-demo-subscriptions.png" alt="VidArch subscriptions with a Blender Open Movies demo channel" width="640" /> |
+
+| Local playback | Settings |
+| --- | --- |
+| Play archived media with seeking, playback speed, and related titles in the same workspace. | Choose the interface language and keep remote discovery optional. |
+| <img src="docs/assets/screenshots/vidarch-demo-watch.png" alt="VidArch watch page for the Big Buck Bunny demo title" width="640" /> | <img src="docs/assets/screenshots/vidarch-demo-settings.png" alt="VidArch settings with English selected" width="640" /> |
 
 ## Highlights
 

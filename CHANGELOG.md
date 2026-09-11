@@ -10,6 +10,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 - Treat `.env` as an optional advanced override so the default Docker path starts cleanly when it is absent.
 - Let Docker Compose derive the stack and container names, and remove the obsolete duplicate Compose example now that the default file pulls GHCR directly.
+- Refresh README product screenshots from the isolated English public demo, with the intro dialog closed and additional views of the library, subscriptions, watch page, and settings.
+- Present Open Movie demo descriptions in English so the isolated showcase matches the English interface.
 
 ## [0.1.4] - 2026-09-08
 

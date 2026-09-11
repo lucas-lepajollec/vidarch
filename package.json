@@ -13,6 +13,7 @@
     "dev:server": "tsx watch server/src/index.ts",
     "dev:client": "npm --prefix client run dev",
     "dev:demo": "npm --prefix client run dev:demo",
+    "demo:capture": "node scripts/capture-demo.mjs",
     "build:client": "npm --prefix client run build",
     "build:demo": "npm --prefix client run build:demo",
     "build:server": "tsc -p server/tsconfig.json",
@@ -49,6 +50,7 @@
     "uuid": "^14.0.1"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "@types/better-sqlite3": "^9.6.0",
     "@types/compression": "^1.8.1",
     "@types/cors": "^2.8.19",
