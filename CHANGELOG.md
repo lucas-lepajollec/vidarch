@@ -6,6 +6,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+- Refresh compatible server and client dependency groups, retaining the Node 22 runtime and existing security fixes.
+
 - Refresh compatible server/client dependencies to fix compression, proxy address, upload, command quoting and source-map audit findings; update reviewed pinned CI actions.
 
 ### Security
